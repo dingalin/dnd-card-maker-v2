@@ -39,12 +39,31 @@ class CardRenderer {
     }
 
     async _loadTemplate() {
-        console.log("CardRenderer: Loading template from imported URL:", cardTemplateUrl);
+        console.log("CardRenderer: Loading template from URL:", cardTemplateUrl);
 
         try {
-            await this._loadImage(this.template, cardTemplateUrl);
-            console.log("CardRenderer: Template loaded successfully");
-            console.log("DEBUG: Template dimensions:", this.template.naturalWidth, "x", this.template.naturalHeight);
+            // Use fetch to get exact network status
+            const response = await fetch(cardTemplateUrl);
+            console.log("DEBUG: Fetch status:", response.status, response.statusText);
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            console.log("DEBUG: Blob created, size:", blob.size);
+
+            await new Promise((resolve, reject) => {
+                this.template.onload = () => {
+                    console.log("CardRenderer: Template loaded successfully from Blob");
+                    console.log("DEBUG: Template dimensions:", this.template.naturalWidth, "x", this.template.naturalHeight);
+                    URL.revokeObjectURL(objectUrl); // Cleanup
+                    resolve();
+                };
+                this.template.onerror = (e) => reject(new Error("Image onload failed via Blob"));
+                this.template.src = objectUrl;
+            });
 
             if (this.template.naturalWidth === 0) {
                 alert("CRITICAL: Template loaded but has 0 width. The file might be corrupted or empty.");
@@ -52,18 +71,10 @@ class CardRenderer {
 
             this.templateLoaded = true;
         } catch (e) {
-            console.error("CardRenderer: Failed to load template from imported URL!", e);
-            alert(`Error loading card template: ${e.message || e}. Check console for details.`);
+            console.error("CardRenderer: Failed to load template!", e);
+            alert(`Error loading card template: ${e.message}. \nPath: ${cardTemplateUrl}`);
             this.templateLoaded = false;
         }
-    }
-
-    _loadImage(img, src) {
-        return new Promise((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = (e) => reject(e);
-            img.src = src;
-        });
     }
 
     async setTemplate(url) {
