@@ -13,6 +13,7 @@ export class GeneratorController {
         this.onRegenerateImage = this.onRegenerateImage.bind(this);
         this.onRegenerateStats = this.onRegenerateStats.bind(this);
         this.onGenerateBackground = this.onGenerateBackground.bind(this);
+        this.onSurprise = this.onSurprise.bind(this);
 
         this.setupListeners();
     }
@@ -22,11 +23,25 @@ export class GeneratorController {
         const regenImageBtn = document.getElementById('regen-image-btn');
         const regenStatsBtn = document.getElementById('regen-stats-btn');
         const generateBgBtn = document.getElementById('generate-bg-btn');
+        const surpriseBtn = document.getElementById('surprise-btn');
 
         if (form) form.addEventListener('submit', this.onGenerate);
         if (regenImageBtn) regenImageBtn.addEventListener('click', this.onRegenerateImage);
         if (regenStatsBtn) regenStatsBtn.addEventListener('click', this.onRegenerateStats);
         if (generateBgBtn) generateBgBtn.addEventListener('click', this.onGenerateBackground);
+        if (surpriseBtn) surpriseBtn.addEventListener('click', this.onSurprise);
+
+        // Manual Save Button
+        const saveBtn = document.getElementById('save-gallery-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.state.saveToHistory();
+                this.ui.showToast('החפץ נשמר לגלריה!', 'success');
+                // Optional: Disable after save if you want 1 save per generation, 
+                // but keeping it enabled allows re-saving if overwritten (though history is usually append-only)
+                // saveBtn.disabled = true; 
+            });
+        }
     }
 
     getApiKey() {
@@ -50,7 +65,8 @@ export class GeneratorController {
         this.preview.updateProgress(0, 5, 'מתחיל...');
 
         try {
-            const formData = new FormData(e.target);
+            const form = document.getElementById('generator-form');
+            const formData = new FormData(form);
 
             // Read Sticky Note (Source of Truth)
             const noteLevel = document.getElementById('note-level');
@@ -132,7 +148,13 @@ export class GeneratorController {
 
             this.state.setCardData(newCardData);
             this.state.saveCurrentCard();
-            this.state.saveToHistory();
+            this.state.setCardData(newCardData);
+            this.state.saveCurrentCard();
+            // Auto-save removed: this.state.saveToHistory();
+
+            // Enable Save Button
+            const saveBtn = document.getElementById('save-gallery-btn');
+            if (saveBtn) saveBtn.disabled = false;
 
             this.preview.updateProgress(4, 100, 'מוכן!');
             await new Promise(r => setTimeout(r, 500));
@@ -269,6 +291,66 @@ export class GeneratorController {
                 btn.textContent = 'צור רקע';
             }
         }
+    }
+
+    async onSurprise(e) {
+        e.preventDefault();
+
+        const apiKey = this.getApiKey();
+        if (!apiKey) return;
+
+        // 1. Random Level
+        const levels = ['1-4', '5-10', '11-16', '17+'];
+        const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+
+        // 2. Random Type
+        const types = Object.keys(window.OFFICIAL_ITEMS);
+        const randomType = types[Math.floor(Math.random() * types.length)];
+
+        // 3. Random Subtype
+        let randomSubtype = '';
+        if (window.OFFICIAL_ITEMS[randomType]) {
+            const categories = window.OFFICIAL_ITEMS[randomType];
+            const allSubtypes = [];
+            for (const cat in categories) {
+                if (Array.isArray(categories[cat])) allSubtypes.push(...categories[cat]);
+            }
+            if (allSubtypes.length > 0) {
+                randomSubtype = allSubtypes[Math.floor(Math.random() * allSubtypes.length)];
+            }
+        }
+
+        console.log(`🎲 Surprise! Level: ${randomLevel}, Type: ${randomType}, Subtype: ${randomSubtype}`);
+
+        // 4. Update UI (So onGenerate reads correct values)
+        // We update the "Sticky Note" source of truth directly as onGenerate reads from it
+        const noteLevel = document.getElementById('note-level');
+        const noteType = document.getElementById('note-type');
+        const noteSubtype = document.getElementById('note-subtype');
+
+        if (noteLevel) {
+            noteLevel.textContent = randomLevel;
+            noteLevel.dataset.value = randomLevel;
+        }
+        if (noteType) {
+            noteType.textContent = randomType;
+            noteType.dataset.value = randomType;
+        }
+        if (noteSubtype) {
+            noteSubtype.textContent = randomSubtype.split('(')[0].trim(); // Display English/Hebrew mix cleanly
+            noteSubtype.dataset.value = randomSubtype;
+        }
+
+        // Also update form inputs for consistency (optional but good for UX)
+        const typeSelect = document.getElementById('item-type');
+        const levelSelect = document.getElementById('item-level');
+        if (typeSelect) typeSelect.value = randomType;
+        if (levelSelect) levelSelect.value = randomLevel;
+
+        this.ui.showToast('מגריל חפץ בהפתעה...', 'info');
+
+        // 5. Trigger Generation
+        await this.onGenerate(e);
     }
 
     async generateImage(prompt) {

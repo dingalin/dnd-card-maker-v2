@@ -236,21 +236,40 @@ class GeminiService {
         const styleKeywords = styles[style] || '';
 
         // Prompt Modification Logic
+        // Prompt Modification Logic
         let backgroundPrompt = `detailed cinematic ${userColor} background, atmospheric, context appropriate`;
+
+        // Helper to convert hex to name
+        const getColorName = (hex) => {
+            const map = {
+                '#ffffff': 'White', '#000000': 'Black', '#ff0000': 'Red', '#00ff00': 'Green', '#0000ff': 'Blue',
+                '#ffff00': 'Yellow', '#00ffff': 'Cyan', '#ff00ff': 'Magenta', '#8b4513': 'Brown', '#808080': 'Gray',
+                '#e6e6fa': 'Lavender', '#f0f8ff': 'Alice Blue', '#f5f5dc': 'Beige', '#ffe4e1': 'Rose'
+            };
+            return map[hex.toLowerCase()] || hex;
+        };
+        const colorName = getColorName(userColor);
+
         if (styleOption === 'no-background') {
-            backgroundPrompt = "isolated on white background";
+            backgroundPrompt = "white background";
         } else if (styleOption === 'colored-background') {
-            // Convert hex to approximate color name or just use hex (AI handles hex okay usually, or we can map)
-            // For simplicity, we'll try to use the hex or a generic "solid color" if needed.
-            // Actually, let's just say "solid background of color ${userColor}"
-            backgroundPrompt = `solid ${userColor} background`;
+            backgroundPrompt = `natural environment background, ${colorName} tones, atmospheric lighting, ${colorName} color palette`;
+        } else if (styleOption === 'square-frame') {
+            backgroundPrompt = `inside a decorative square border frame, framed illustration, parchment background, rpg icon style`;
+        } else if (styleOption === 'round-frame') {
+            backgroundPrompt = `inside a decorative circular round border frame, token style, round icon, isolated`;
+        } else if (styleOption === 'natural') {
+            backgroundPrompt = `natural environment background`;
         }
 
         // Truncate visualPrompt to avoid URL length issues (keep first 150 chars)
         const safePrompt = visualPrompt.substring(0, 150).replace(/[^a-zA-Z0-9, ]/g, '');
 
         // Construct final prompt
-        const enhancedPrompt = encodeURIComponent(`${styleKeywords}, ${safePrompt}, ${backgroundPrompt}, 8k`);        // Construct URL based on selected model
+        const enhancedPrompt = encodeURIComponent(`${styleKeywords}, ${safePrompt}, ${backgroundPrompt}, 8k`);
+        console.log(`GeminiService DEBUG: Style=${style}, Option=${styleOption}, Color=${userColor}`);
+        console.log(`GeminiService DEBUG: Background Prompt="${backgroundPrompt}"`);
+        // Construct URL based on selected model
         let modelParam = `model=${model}`;
 
         const imageUrl = `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=512&height=512&${modelParam}&seed=${Math.floor(Math.random() * 10000)}`;
@@ -258,9 +277,9 @@ class GeminiService {
         console.log(`GeminiService: Fetching image from (${model}) with style (${style})`, imageUrl);
 
         try {
-            // Fetch with 30s timeout
+            // Fetch with 90s timeout (Pollinations can be slow)
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const timeoutId = setTimeout(() => controller.abort(), 90000);
 
             const response = await fetch(imageUrl, { signal: controller.signal });
             clearTimeout(timeoutId);
@@ -279,7 +298,7 @@ class GeminiService {
 
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), 90000);
                 const response = await fetch(defaultUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
@@ -367,15 +386,28 @@ class GeminiService {
 
         const styleKeywords = styles[style] || '';
 
+        // Helper to convert hex to name
+        const getColorName = (hex) => {
+            const map = {
+                '#ffffff': 'White', '#000000': 'Black', '#ff0000': 'Red', '#00ff00': 'Green', '#0000ff': 'Blue',
+                '#ffff00': 'Yellow', '#00ffff': 'Cyan', '#ff00ff': 'Magenta', '#8b4513': 'Brown', '#808080': 'Gray',
+                '#e6e6fa': 'Lavender', '#f0f8ff': 'Alice Blue', '#f5f5dc': 'Beige', '#ffe4e1': 'Rose'
+            };
+            return map[hex.toLowerCase()] || hex;
+        };
+        const colorName = getColorName(userColor);
+
         // Prompt Modification Logic
-        let backgroundPrompt = `detailed cinematic ${userColor} background, atmospheric, context appropriate`;
+        let backgroundPrompt = `detailed cinematic ${colorName} background, atmospheric, context appropriate`;
         if (styleOption === 'no-background') {
-            backgroundPrompt = "isolated on white background";
+            backgroundPrompt = "white background";
         } else if (styleOption === 'colored-background') {
-            backgroundPrompt = `solid ${userColor} background`;
+            backgroundPrompt = `natural environment background, ${colorName} tones, atmospheric lighting, ${colorName} color palette`;
         }
 
         const finalPrompt = `${styleKeywords}, ${visualPrompt}, ${backgroundPrompt}, 8k`.replace(/^, /, '');
+        console.log(`GeminiService DEBUG (GetImg): Style=${style}, Option=${styleOption}, Color=${userColor}`);
+        console.log(`GeminiService DEBUG (GetImg): Final Prompt="${finalPrompt}"`);
 
         let endpoint = 'https://api.getimg.ai/v1/flux-schnell/text-to-image';
         let body = {
@@ -387,6 +419,34 @@ class GeminiService {
             endpoint = 'https://api.getimg.ai/v1/seedream-v4/text-to-image';
             // Seedream specific params if needed, otherwise same structure usually works or check docs
             // Docs say /v1/seedream-v4/text-to-image
+        }
+
+        // Check if getImgApiKey looks like a password (not starting with 'key-') or we want to force worker
+        // Assume keys start with 'key-' (standard GetImg). If not, we try worker with this "key" as password.
+        const useWorkersForGetImg = !getImgApiKey.startsWith('key-');
+
+        if (useWorkersForGetImg) {
+            console.log("GeminiService: Using Worker for GetImg (Proxy Mode)");
+            try {
+                const data = await this.callViaWorker('getimg-generate', {
+                    prompt: finalPrompt,
+                    model: model,
+                    response_format: 'b64'
+                });
+
+                if (data.image) {
+                    const imageUrl = `data:image/jpeg;base64,${data.image}`;
+                    const blob = await (await fetch(imageUrl)).blob();
+                    return URL.createObjectURL(blob);
+                } else if (data.error) {
+                    throw new Error(data.error);
+                } else {
+                    throw new Error("Worker did not return an image");
+                }
+            } catch (workerError) {
+                console.error("GetImg Proxy Error:", workerError);
+                throw workerError;
+            }
         }
 
         console.log(`GeminiService: Generating with Getimg.ai (${model})`, endpoint);
@@ -416,8 +476,8 @@ class GeminiService {
             return URL.createObjectURL(blob);
 
         } catch (error) {
-            console.error("All Background Generation failed:", fallbackError);
-            throw fallbackError;
+            console.error("All Background Generation failed:", error);
+            throw error;
         }
     }
 

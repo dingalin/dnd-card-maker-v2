@@ -70,7 +70,7 @@ async function handleGeminiGenerate(data, apiKey) {
 
 // GetImg API Handler
 async function handleGetImgGenerate(data, apiKey) {
-    const { prompt, model, width, height, steps, output_format } = data;
+    const { prompt, model, width, height, steps, output_format, response_format } = data;
 
     const response = await fetch('https://api.getimg.ai/v1/flux-schnell/text-to-image', {
         method: 'POST',
@@ -84,12 +84,13 @@ async function handleGetImgGenerate(data, apiKey) {
             width: width || 512,
             height: height || 512,
             steps: steps || 4,
-            output_format: output_format || 'png',
+            output_format: output_format || 'jpeg',
+            response_format: response_format || 'b64'
         }),
     });
 
     const result = await response.json();
-    return jsonResponse(result);
+    return jsonResponse(result, response.status);
 }
 
 // Helper function

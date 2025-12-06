@@ -9,6 +9,7 @@ export class EditorController {
         this.setupSliderListeners();
         this.setupFontListeners();
         this.setupTypeSelection();
+        this.setupColorPalette();
     }
 
     setupInputListeners() {
@@ -93,6 +94,24 @@ export class EditorController {
                 this.state.updateFontSize(target, action);
             });
         });
+
+        // Image Style Options (Color Picker Toggle)
+        const styleOption = document.getElementById('image-style-option');
+        const colorContainer = document.getElementById('image-color-picker-container');
+        const styleSelect = document.getElementById('image-style');
+
+        if (styleOption && colorContainer) {
+            styleOption.addEventListener('change', (e) => {
+                const val = e.target.value;
+                this.state.updateStyle('imageStyle', val); // Update state!
+
+                if (val === 'colored-background') {
+                    colorContainer.classList.remove('hidden');
+                } else {
+                    colorContainer.classList.add('hidden');
+                }
+            });
+        }
     }
 
     setupTypeSelection() {
@@ -135,4 +154,43 @@ export class EditorController {
             });
         }
     }
+
+    setupColorPalette() {
+        const palette = document.getElementById('color-palette');
+        const input = document.getElementById('image-bg-color');
+        if (!palette || !input) return;
+
+        const colors = [
+            '#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff',
+            '#ffff00', '#00ffff', '#ff00ff', '#8b4513', '#808080',
+            '#e6e6fa', '#f0f8ff', '#f5f5dc', '#ffe4e1'
+        ];
+
+        palette.innerHTML = '';
+        colors.forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color-swatch';
+            div.style.backgroundColor = color;
+            div.dataset.value = color;
+            div.onclick = () => {
+                // Remove active class from all
+                palette.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                div.classList.add('active');
+                input.value = color; // Store simple hex
+                this.state.updateStyle('imageColor', color); // Update state!
+            };
+            palette.appendChild(div);
+        });
+
+        // Manual Color Input
+        if (input) {
+            input.addEventListener('input', (e) => {
+                this.state.updateStyle('imageColor', e.target.value);
+            });
+        }
+
+        // Add custom color input logic if needed, but for now fixed palette
+    }
 }
+
+
