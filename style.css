@@ -8,6 +8,33 @@
   --border-color: #444;
   --font-main: 'Heebo', sans-serif;
   --font-display: 'Cinzel', serif;
+
+  /* Layout Variables */
+  --sidebar-width: 350px;
+}
+
+/* Responsive Scaling for Smaller Screens */
+@media (max-width: 1600px) {
+  :root {
+    font-size: 14px;
+    /* Scale down text and rem units by 12.5% */
+    --sidebar-width: 300px;
+    /* Shrink sidebars */
+  }
+}
+
+@media (max-width: 1366px) {
+  :root {
+    font-size: 13px;
+    /* Further scale down */
+    --sidebar-width: 280px;
+  }
+}
+
+@media (max-width: 1200px) {
+  :root {
+    --sidebar-width: 260px;
+  }
 }
 
 
@@ -24,7 +51,7 @@
   overflow-y: auto;
   position: sticky;
   top: 1rem;
-  width: 350px;
+  width: var(--sidebar-width);
   /* Fixed width */
 }
 
@@ -159,6 +186,8 @@ canvas {
   justify-content: center;
   align-items: center;
   z-index: 10;
+  padding-bottom: 15vh;
+  /* Lift card up visually */
 }
 
 .hidden {

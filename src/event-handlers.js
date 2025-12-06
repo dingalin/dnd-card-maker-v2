@@ -327,13 +327,47 @@ export function setupEventListeners() {
     }
 
     // Download Buttons
-    const handleDownload = () => {
+    // Download Buttons
+    const handleDownload = async () => {
         const canvas = document.getElementById('card-canvas');
-        if (canvas) {
-            const link = document.createElement('a');
-            link.download = `dnd-item-${Date.now()}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+        if (!canvas) return;
+
+        try {
+            // Quality set to 0.95
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+            // Check for modern Save File Picker API (Chrome/Edge)
+            if (window.showSaveFilePicker) {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: `dnd-item-${Date.now()}.jpg`,
+                    types: [{
+                        description: 'JPG Image',
+                        accept: { 'image/jpeg': ['.jpg'] },
+                    }],
+                });
+
+                // Convert DataURL to Blob
+                const res = await fetch(dataUrl);
+                const blob = await res.blob();
+
+                // Write to file
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                showToast('הקובץ נשמר בהצלחה!', 'success');
+            } else {
+                // Fallback for Firefox/others: standard download link (Downloads folder)
+                const link = document.createElement('a');
+                link.download = `dnd-item-${Date.now()}.jpg`;
+                link.href = dataUrl;
+                link.click();
+            }
+        } catch (err) {
+            // User cancelled picker or error
+            if (err.name !== 'AbortError') {
+                console.error('Download failed:', err);
+                showToast('שגיאה בשמירת הקובץ', 'error');
+            }
         }
     };
 

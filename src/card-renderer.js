@@ -239,12 +239,15 @@ class CardRenderer {
             const fadeFactor = fade / 100; // 0 to 1
 
             // At max fade, outer radius should be inside the smallest edge to ensure transparency at borders
-            const targetOuter = halfMin * 0.95;
+            // Adjusted: Pull in further (0.85) for "stronger" cropping
+            const targetOuter = halfMin * 0.85;
             const startOuter = diag * 1.1; // Start slightly larger than corners
 
             const outerRadius = startOuter - (startOuter - targetOuter) * fadeFactor;
+
             // Inner radius shrinks as fade increases
-            const innerRadius = outerRadius * (1 - fadeFactor * 0.8);
+            // Adjusted: Factor 0.5 (was 0.8) makes the transition zone NARROWER (less spread), creating a "focused" fade.
+            const innerRadius = outerRadius * (1 - fadeFactor * 0.5);
 
             const gradient = tCtx.createRadialGradient(tCx, tCy, Math.max(0, innerRadius), tCx, tCy, outerRadius);
             gradient.addColorStop(0, 'rgba(0, 0, 0, 1)'); // Fully visible
