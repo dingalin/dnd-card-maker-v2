@@ -9,6 +9,7 @@ export class EditorController {
         this.setupSliderListeners();
         this.setupFontListeners();
         this.setupTypeSelection();
+        this.setupLevelSelection();
         this.setupColorPalette();
     }
 
@@ -116,12 +117,37 @@ export class EditorController {
 
     setupTypeSelection() {
         const typeSelect = document.getElementById('item-type');
+        const noteType = document.getElementById('note-type');
+        const noteSubtype = document.getElementById('note-subtype');
+        const subtypeSelect = document.getElementById('item-subtype');
+
+        // Setup Subtype Listener (once)
+        if (subtypeSelect && noteSubtype) {
+            subtypeSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                // Display simple text, store full value
+                noteSubtype.textContent = val ? val.split('(')[0].trim() : '-';
+                noteSubtype.dataset.value = val;
+            });
+        }
+
         if (typeSelect) {
             typeSelect.addEventListener('change', (e) => {
                 const selectedType = e.target.value;
 
-                // Update Subtypes
-                const subtypeSelect = document.getElementById('item-subtype');
+                // Sync Sticky Note Type
+                if (noteType) {
+                    const typeText = typeSelect.options[typeSelect.selectedIndex].text.split('(')[0].trim();
+                    noteType.textContent = typeText;
+                    noteType.dataset.value = selectedType;
+                }
+                // Reset Sticky Note Subtype
+                if (noteSubtype) {
+                    noteSubtype.textContent = '-';
+                    noteSubtype.dataset.value = '';
+                }
+
+                // Update Subtypes UI (Existing Logic)
                 const subtypeContainer = document.getElementById('subtype-container');
 
                 if (subtypeSelect && window.OFFICIAL_ITEMS[selectedType]) {
@@ -151,6 +177,19 @@ export class EditorController {
 
                 if (selectedType === 'weapon' && weaponFields) weaponFields.classList.remove('hidden');
                 else if (selectedType === 'armor' && armorFields) armorFields.classList.remove('hidden');
+            });
+        }
+    }
+
+    setupLevelSelection() {
+        const levelSelect = document.getElementById('item-level');
+        const noteLevel = document.getElementById('note-level');
+
+        if (levelSelect && noteLevel) {
+            levelSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                noteLevel.textContent = val;
+                noteLevel.dataset.value = val;
             });
         }
     }

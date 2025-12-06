@@ -31,17 +31,8 @@ export class GeneratorController {
         if (generateBgBtn) generateBgBtn.addEventListener('click', this.onGenerateBackground);
         if (surpriseBtn) surpriseBtn.addEventListener('click', this.onSurprise);
 
-        // Manual Save Button
-        const saveBtn = document.getElementById('save-gallery-btn');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                this.state.saveToHistory();
-                this.ui.showToast('החפץ נשמר לגלריה!', 'success');
-                // Optional: Disable after save if you want 1 save per generation, 
-                // but keeping it enabled allows re-saving if overwritten (though history is usually append-only)
-                // saveBtn.disabled = true; 
-            });
-        }
+        // Manual Save Button - Handled by RenderController
+
     }
 
     getApiKey() {

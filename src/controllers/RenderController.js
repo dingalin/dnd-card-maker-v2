@@ -74,6 +74,7 @@ export class RenderController {
     handleStateChange(state, changedKey) {
         if (changedKey === 'cardData') {
             this.updateEditor(state.cardData);
+            this.updateSettingsUI(state.settings); // Sync sliders on full load
             this.render(state); // Render updates buttons now
         } else if (changedKey.startsWith('cardData.')) {
             // Single field update (e.g. typing in editor), just render
@@ -151,6 +152,37 @@ export class RenderController {
 
         // Update Custom Prompt if it exists in state but not input? 
         // Logic usually flows Input -> State, so we only update Input -> State here if we loaded a fresh card.
+
+        // Restore Generation Params (The "Sticky Note" and form inputs)
+        if (data.originalParams) {
+            const params = data.originalParams;
+            const setNote = (id, val, display) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.dataset.value = val;
+                    el.textContent = display || val;
+                }
+            };
+
+            setNote('note-level', params.level);
+            setNote('note-type', params.type);
+
+            // Handle subtype display nicely
+            let subtypeDisplay = params.subtype;
+            if (subtypeDisplay && subtypeDisplay.includes('(')) {
+                subtypeDisplay = subtypeDisplay.split('(')[0].trim();
+            }
+            setNote('note-subtype', params.subtype, subtypeDisplay);
+
+            // Also sync hidden form inputs if they exist, or the selects
+            const setInput = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            };
+            // If you have selects for these in the right sidebar, sync them too:
+            setInput('item-level', params.level);
+            setInput('item-type', params.type);
+        }
     }
 
     updateSettingsUI(settings) {
@@ -167,9 +199,23 @@ export class RenderController {
             // Sync sliders
             const setSlider = (id, val) => {
                 const el = document.getElementById(id);
-                if (el) el.value = val;
+                if (el && val !== undefined) el.value = val;
             };
-            // setSlider('image-scale', settings.offsets.imageScale); // Example
+
+            setSlider('image-scale', settings.offsets.imageScale);
+            setSlider('image-rotation', settings.offsets.imageRotation);
+            setSlider('image-fade', settings.offsets.imageFade);
+            setSlider('image-shadow', settings.offsets.imageShadow);
+            setSlider('bg-scale', settings.offsets.backgroundScale);
+
+            // Sync Text Inputs 
+            setSlider('image-offset', settings.offsets.imageYOffset);
+            setSlider('rarity-offset', settings.offsets.rarity);
+            setSlider('type-offset', settings.offsets.type);
+            setSlider('name-offset', settings.offsets.name);
+            setSlider('ability-offset', settings.offsets.abilityY);
+            setSlider('fluff-offset', settings.offsets.fluffPadding);
+            setSlider('gold-offset', settings.offsets.gold);
         }
 
         // Update Font Size Displays
