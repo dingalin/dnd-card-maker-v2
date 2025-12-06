@@ -1,14 +1,17 @@
 // Detect base path for GitHub Pages or local development
+/* 
+ * NOTE: Base path logic is no longer needed for assets imported via Vite, 
+ * but kept if needed for other dynamically constructed paths.
+ */
 const getBasePath = () => {
     const path = window.location.pathname;
-    // If running on GitHub Pages (path contains /dnd-card-maker/)
-    if (path.includes('/dnd-card-maker/')) {
-        return '/dnd-card-maker/';
-    }
-    // Local development
+    if (path.includes('/dnd-card-maker/')) return '/dnd-card-maker/';
     return '/';
 };
 const BASE_PATH = getBasePath();
+
+// Import assets to let Vite handle the path resolution
+import cardTemplateUrl from './assets/card-template.png';
 
 class CardRenderer {
     constructor(canvasId) {
@@ -31,25 +34,15 @@ class CardRenderer {
     }
 
     async _loadTemplate() {
-        const primaryPath = BASE_PATH + 'assets/card-template.png';
-        const fallbackPath = BASE_PATH + 'public/assets/card-template.png';
-
-        console.log("CardRenderer: Attempting to load template from:", primaryPath);
+        console.log("CardRenderer: Loading template from imported URL:", cardTemplateUrl);
 
         try {
-            await this._loadImage(this.template, primaryPath);
-            console.log("CardRenderer: Template loaded successfully from primary path");
+            await this._loadImage(this.template, cardTemplateUrl);
+            console.log("CardRenderer: Template loaded successfully");
             this.templateLoaded = true;
         } catch (e) {
-            console.log("CardRenderer: Failed to load from primary path, trying fallback...");
-            try {
-                await this._loadImage(this.template, fallbackPath);
-                console.log("CardRenderer: Template loaded successfully from fallback path");
-                this.templateLoaded = true;
-            } catch (e2) {
-                console.error("CardRenderer: Failed to load template from both paths!", e2);
-                this.templateLoaded = false;
-            }
+            console.error("CardRenderer: Failed to load template from imported URL!", e);
+            this.templateLoaded = false;
         }
     }
 
