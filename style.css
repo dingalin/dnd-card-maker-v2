@@ -540,6 +540,8 @@ body.left-menu-open .preview-panel {
 
 /* Global Layout */
 body {
+  zoom: 0.8;
+  /* User requested default 80% scale */
   overflow: hidden;
   /* Prevent scrolling */
   background-image: url('assets/textures/dungeon_wall.png');
