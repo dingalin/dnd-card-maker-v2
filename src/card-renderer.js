@@ -42,6 +42,7 @@ class CardRenderer {
             this.templateLoaded = true;
         } catch (e) {
             console.error("CardRenderer: Failed to load template from imported URL!", e);
+            alert(`Error loading card template: ${e.message || e}. Check console for details.`);
             this.templateLoaded = false;
         }
     }
@@ -101,6 +102,7 @@ class CardRenderer {
         await this.templateReady;
         if (!this.templateLoaded) {
             console.error("CardRenderer: Template failed to load, cannot render");
+            alert("Card Template failed to load. Please refresh or check connection. \nURL: " + cardTemplateUrl);
             return;
         }
 
