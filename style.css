@@ -153,11 +153,7 @@ textarea:focus {
   width: 100%;
   position: relative;
   transition: transform 0.3s ease;
-  z-index: 1000 !important;
-  /* Force on top */
-  overflow: visible !important;
-  border: 4px solid red;
-  /* DEBUG BORDER */
+  z-index: 10;
 }
 
 .canvas-container {

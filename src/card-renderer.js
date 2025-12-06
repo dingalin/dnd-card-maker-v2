@@ -133,7 +133,33 @@ class CardRenderer {
         // DEBUG: Verify BG dimensions
         console.log(`CardRenderer: bg dim: ${bgWidth}x${bgHeight} at ${bgX},${bgY}. Template nat: ${this.template.naturalWidth}x${this.template.naturalHeight}`);
 
-        this.ctx.drawImage(this.template, bgX, bgY, bgWidth, bgHeight);
+        // Safety: If template seems broken (0 width), draw fallback
+        if (this.template.naturalWidth === 0) {
+            console.warn("CardRenderer: Template width is 0, using fallback color");
+            this.ctx.fillStyle = '#e0cda8'; // Parchment color
+            this.ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+        } else {
+            this.ctx.drawImage(this.template, bgX, bgY, bgWidth, bgHeight);
+
+            // Double check: Did it draw anything? 
+            try {
+                const centerX = Math.floor(this.canvas.width / 2);
+                const centerY = Math.floor(this.canvas.height / 2);
+                const pixel = this.ctx.getImageData(centerX, centerY, 1, 1).data;
+                // If pixel is fully transparent (alpha 0), and we expected a solid background...
+                if (pixel[3] === 0) {
+                    console.warn("CardRenderer: Center pixel is transparent after drawing template! Drawing fallback.");
+                    // Draw fallback BEHIND the potentially transparent template
+                    this.ctx.save();
+                    this.ctx.globalCompositeOperation = 'destination-over';
+                    this.ctx.fillStyle = '#e0cda8';
+                    this.ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+                    this.ctx.restore();
+                }
+            } catch (e) {
+                console.warn("CardRenderer: Could not verify template pixels (CORS?). Assuming success or ignoring.", e);
+            }
+        }
 
         // 2. Draw Item Image
         if (cardData.imageUrl) {
@@ -164,12 +190,7 @@ class CardRenderer {
             console.error("CardRenderer: Failed to draw text", e);
         }
 
-        // DEBUG: Draw a Red Square at top-left to prove canvas is rendering and visible
-        this.ctx.fillStyle = "red";
-        this.ctx.fillRect(0, 0, 50, 50);
-        this.ctx.font = "20px Arial";
-        this.ctx.fillStyle = "white";
-        this.ctx.fillText("DEBUG", 2, 30);
+
 
         console.log("CardRenderer: Render complete");
     }
