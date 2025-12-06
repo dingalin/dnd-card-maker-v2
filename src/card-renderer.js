@@ -39,6 +39,11 @@ class CardRenderer {
         try {
             await this._loadImage(this.template, cardTemplateUrl);
             console.log("CardRenderer: Template loaded successfully");
+
+            if (this.template.naturalWidth === 0) {
+                alert("CRITICAL: Template loaded but has 0 width. The file might be corrupted or empty.");
+            }
+
             this.templateLoaded = true;
         } catch (e) {
             console.error("CardRenderer: Failed to load template from imported URL!", e);
@@ -71,6 +76,14 @@ class CardRenderer {
 
     async render(cardData, options = {}) {
         console.log("CardRenderer: render called", { cardData, options });
+
+        // DEBUG: Check if canvas is visible in DOM
+        const rect = this.canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            console.error("CardRenderer: Canvas has 0 dimensions on screen!", rect);
+            // Don't alert here to avoid spam loop, but good to know
+        }
+
         const imageYOffset = parseInt(options.imageYOffset) || 0;
 
         // Granular offsets
@@ -117,6 +130,9 @@ class CardRenderer {
         const bgX = (this.canvas.width - bgWidth) / 2;
         const bgY = (this.canvas.height - bgHeight) / 2;
 
+        // DEBUG: Verify BG dimensions
+        console.log(`CardRenderer: bg dim: ${bgWidth}x${bgHeight} at ${bgX},${bgY}. Template nat: ${this.template.naturalWidth}x${this.template.naturalHeight}`);
+
         this.ctx.drawImage(this.template, bgX, bgY, bgWidth, bgHeight);
 
         // 2. Draw Item Image
@@ -147,6 +163,14 @@ class CardRenderer {
         } catch (e) {
             console.error("CardRenderer: Failed to draw text", e);
         }
+
+        // DEBUG: Draw a Red Square at top-left to prove canvas is rendering and visible
+        this.ctx.fillStyle = "red";
+        this.ctx.fillRect(0, 0, 50, 50);
+        this.ctx.font = "20px Arial";
+        this.ctx.fillStyle = "white";
+        this.ctx.fillText("DEBUG", 2, 30);
+
         console.log("CardRenderer: Render complete");
     }
 
