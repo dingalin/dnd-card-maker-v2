@@ -62,24 +62,37 @@ export class BackgroundManager {
     }
 
     async loadAllGrids() {
-        this.gridDisplay.innerHTML = '<div style="color: #d4af37; grid-column: 1/-1; text-align: center;">טוען רקעים...</div>';
-
-        const allSlices = [];
+        // Clear initial loading text only when the first batch is ready
+        let firstBatch = true;
 
         for (const imagePath of this.gridImages) {
             try {
+                // Determine if we need to clear "Loading..." text
+                if (firstBatch) {
+                    this.gridDisplay.innerHTML = '';
+                    firstBatch = false;
+                }
+
+                // Show a mini loader or just process
+                console.log(`BackgroundManager: Processing ${imagePath}...`);
                 const slices = await this.sliceGrid(imagePath);
-                allSlices.push(...slices);
+
+                // Render this batch immediately
+                this.renderGrid(slices, true); // true = append
+
             } catch (error) {
                 console.error(`Failed to load grid ${imagePath}:`, error);
+                // If specific grid fails, continue to next
             }
         }
 
-        this.renderGrid(allSlices);
+        if (firstBatch) {
+            this.gridDisplay.innerHTML = '<div style="color: #ff6b6b; grid-column: 1/-1; text-align: center;">שגיאה בטעינת הרקעים. בדוק קונסול.</div>';
+        }
     }
 
-    renderGrid(slices) {
-        this.gridDisplay.innerHTML = '';
+    renderGrid(slices, append = false) {
+        if (!append) this.gridDisplay.innerHTML = '';
 
         slices.forEach((sliceUrl, index) => {
             const div = document.createElement('div');
@@ -91,6 +104,7 @@ export class BackgroundManager {
             div.style.transition = 'all 0.2s';
             div.style.position = 'relative';
             div.style.aspectRatio = '2/3'; // Card aspect ratio
+            div.style.animation = 'fadeIn 0.5s ease-out'; // Add nice fade in
 
             const img = document.createElement('img');
             img.src = sliceUrl;
@@ -124,7 +138,6 @@ export class BackgroundManager {
         if (this.renderer) {
             this.renderer.setTemplate(url);
             // Trigger re-render if needed
-            // Assuming stateManager is globally available or we can trigger an update
             if (window.stateManager) {
                 window.stateManager.setLastContext(url); // Store context
                 window.stateManager.notify('cardData');
