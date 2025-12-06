@@ -215,7 +215,7 @@ export class RenderController {
             setSlider('rarity-offset', settings.offsets.rarity);
             setSlider('type-offset', settings.offsets.type);
             setSlider('name-offset', settings.offsets.name);
-            setSlider('ability-offset', settings.offsets.abilityY);
+            setSlider('ability-offset', (settings.offsets.abilityY || 530) - 530);
             setSlider('fluff-offset', settings.offsets.fluffPadding);
             setSlider('gold-offset', settings.offsets.gold);
 

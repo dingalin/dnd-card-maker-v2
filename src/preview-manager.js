@@ -6,7 +6,7 @@ export class PreviewManager {
     constructor() {
         this.zoomLevel = 100;
         this.currentStep = 0;
-        this.init();
+        // this.init(); // Removed auto-init to allow waiting for DOM
     }
 
     init() {
@@ -18,55 +18,48 @@ export class PreviewManager {
     // ==================== Fullscreen ====================
 
     setupFullscreen() {
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const closeFullscreenBtn = document.getElementById('close-fullscreen-btn');
-        const fullscreenModal = document.getElementById('fullscreen-modal');
-        const mainCanvas = document.getElementById('card-canvas');
-        const fullscreenCanvas = document.getElementById('fullscreen-canvas');
+        // const fullscreenBtn = document.getElementById('fullscreen-btn'); // Removed
+        const container = document.querySelector('.canvas-container');
 
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', () => this.openFullscreen());
-        }
+        // Button Click - Removed
+        /* if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent bubbling
+                this.openFullscreen();
+            });
+        } */
 
-        if (closeFullscreenBtn) {
-            closeFullscreenBtn.addEventListener('click', () => this.closeFullscreen());
-        }
-
-        if (fullscreenModal) {
-            fullscreenModal.addEventListener('click', (e) => {
-                if (e.target === fullscreenModal) {
+        // Click on container to toggle zoom
+        if (container) {
+            container.addEventListener('click', () => {
+                if (container.classList.contains('expanded')) {
                     this.closeFullscreen();
+                } else {
+                    this.openFullscreen();
                 }
             });
         }
+
+        // Close on Escape key is handled in setupKeyboardShortcuts
     }
 
     openFullscreen() {
-        const fullscreenModal = document.getElementById('fullscreen-modal');
-        const mainCanvas = document.getElementById('card-canvas');
-        const fullscreenCanvas = document.getElementById('fullscreen-canvas');
+        const container = document.querySelector('.canvas-container');
+        if (!container) return;
 
-        if (!fullscreenModal || !mainCanvas || !fullscreenCanvas) return;
+        // Toggle expanded class
+        container.classList.toggle('expanded');
 
-        // Copy canvas content
-        fullscreenCanvas.width = mainCanvas.width;
-        fullscreenCanvas.height = mainCanvas.height;
-        const ctx = fullscreenCanvas.getContext('2d');
-        ctx.drawImage(mainCanvas, 0, 0);
-
-        // Show modal
-        fullscreenModal.classList.remove('hidden');
-        this.zoomLevel = 100;
-        this.updateZoomDisplay();
-
-        // Apply initial zoom
-        fullscreenCanvas.style.transform = `scale(1)`;
+        // Handle backdrop click to close (optional, but good UX)
+        if (container.classList.contains('expanded')) {
+            // Add one-time click listener to close if clicked again (handled by toggle, but maybe we want specific behavior)
+        }
     }
 
     closeFullscreen() {
-        const fullscreenModal = document.getElementById('fullscreen-modal');
-        if (fullscreenModal) {
-            fullscreenModal.classList.add('hidden');
+        const container = document.querySelector('.canvas-container');
+        if (container) {
+            container.classList.remove('expanded');
         }
     }
 
@@ -141,8 +134,8 @@ export class PreviewManager {
 
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            const fullscreenModal = document.getElementById('fullscreen-modal');
-            const isFullscreen = fullscreenModal && !fullscreenModal.classList.contains('hidden');
+            const container = document.querySelector('.canvas-container');
+            const isFullscreen = container && container.classList.contains('expanded');
 
             // F key to toggle fullscreen
             if (e.key === 'f' || e.key === 'F') {

@@ -48,6 +48,9 @@ async function initApp() {
     const uiManager = new UIManager();
     window.uiManager = uiManager;
 
+    // Init Preview Manager (after DOM ready)
+    previewManager.init();
+
     // 3. Initialize Controllers
     // Editor: Handles inputs and sliders -> State
     const editorController = new EditorController(stateManager);

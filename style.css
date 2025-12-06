@@ -162,6 +162,27 @@ textarea:focus {
   border-radius: 15px;
   overflow: hidden;
   max-width: 100%;
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: zoom-in;
+  transform-origin: center center;
+  z-index: 100;
+  /* Base z-index */
+}
+
+/* Zoomed State */
+.canvas-container.expanded {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.8);
+  /* Scale approx 2x */
+  z-index: 9999;
+  box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.85);
+  /* Backdrop effect */
+  cursor: zoom-out;
+  max-height: 90vh;
+  /* Prevent overflow */
+  width: auto;
 }
 
 canvas {
@@ -1377,8 +1398,10 @@ body::before {
 /* === 2.2 Fullscreen & Zoom === */
 .fullscreen-btn {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  bottom: 15px;
+  right: 15px;
+  top: auto;
+  left: auto;
   z-index: 20;
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid #444;
