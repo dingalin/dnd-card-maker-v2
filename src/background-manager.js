@@ -11,15 +11,15 @@ export class BackgroundManager {
         this.renderer = renderer;
         // Use BASE_PATH for asset loading
         this.gridImages = [
-            BASE_PATH + 'assets/5.jpeg',
-            BASE_PATH + 'assets/6.jpeg',
-            BASE_PATH + 'assets/7.png',
-            BASE_PATH + 'assets/8.png',
-            BASE_PATH + 'assets/_9_theme______________dnd_____________________cbfz6tpc0dv5spx1gr2g_0.jpeg',
-            BASE_PATH + 'assets/_9_theme______________dnd_____________________g97xoxyyadej6tpyx5ue_1.png',
-            BASE_PATH + 'assets/_9_theme______________dnd_____________________ixd0s7wfxvmxqz9kio7b_1.jpeg',
-            BASE_PATH + 'assets/_9_theme______________dnd_____________________mvhaww630hwswh556ktn_0.jpeg',
-            BASE_PATH + 'assets/_9_theme______________dnd_____________________qg2kfq9timfy3fonh9cb_0.png'
+            BASE_PATH + 'assets/gallery_1.jpeg',
+            BASE_PATH + 'assets/gallery_2.jpeg',
+            BASE_PATH + 'assets/gallery_3.png',
+            BASE_PATH + 'assets/gallery_4.png',
+            BASE_PATH + 'assets/gallery_5.jpeg',
+            BASE_PATH + 'assets/gallery_6.png',
+            BASE_PATH + 'assets/gallery_7.jpeg',
+            BASE_PATH + 'assets/gallery_8.jpeg',
+            BASE_PATH + 'assets/gallery_9.png'
         ];
 
         this.modal = document.getElementById('bg-selection-modal');
