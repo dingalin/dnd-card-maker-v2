@@ -87,6 +87,19 @@ async function initApp() {
 
         // Expose as requested for debugging
         window.CardRenderer = renderer;
+
+        // --- Fix: Handle Resize / Canvas Wipe ---
+        // Ensure that if the window is resized (causing layout changes that might wipe the canvas),
+        // we re-render immediately.
+        window.addEventListener('resize', () => {
+            // Debounce slightly or just run? User asked for "immediate".
+            // We'll use a tiny timeout to let the layout settle, then render.
+            if (window._resizeTimeout) clearTimeout(window._resizeTimeout);
+            window._resizeTimeout = setTimeout(() => {
+                console.log("Resize detected, forcing re-render...");
+                renderer.render(stateManager.getState().cardData, stateManager.getState().settings.offsets);
+            }, 100);
+        });
     } else {
         showToast("📂 קלף אחרון נטען!", 'info');
         // If we loaded a card, we should show the editor UI
