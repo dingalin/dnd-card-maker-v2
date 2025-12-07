@@ -23,7 +23,7 @@ class ComponentLoader {
      */
     static async loadComponent(placeholderId, componentPath) {
         try {
-            const fullPath = BASE_PATH + componentPath;
+            const fullPath = BASE_PATH + componentPath + '?v=' + new Date().getTime();
             const response = await fetch(fullPath);
             if (!response.ok) {
                 throw new Error(`Failed to load ${componentPath}: ${response.statusText}`);
