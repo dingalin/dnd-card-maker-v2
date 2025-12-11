@@ -45,6 +45,19 @@ async function initApp() {
         return;
     }
 
+    // 1.1 Initialize Back Renderer (for Split View)
+    let backRenderer = null;
+    try {
+        const backCanvas = document.getElementById('card-canvas-back');
+        if (backCanvas) {
+            backRenderer = new CardRenderer('card-canvas-back');
+            window.backRenderer = backRenderer; // Global for debug
+            console.log("✅ Back Renderer Initialized");
+        }
+    } catch (e) {
+        console.warn("Back Renderer Init Warning:", e);
+    }
+
     // 2. Initialize Managers
     const uiManager = new UIManager();
     window.uiManager = uiManager;
@@ -60,7 +73,8 @@ async function initApp() {
     const generatorController = new GeneratorController(stateManager, uiManager, previewManager);
 
     // Render: Handles State -> Canvas
-    const renderController = new RenderController(stateManager, renderer);
+    const renderController = new RenderController(stateManager, renderer, backRenderer);
+    window.renderController = renderController; // Expose for global access
 
     // History: Handles Gallery
     const historyController = new HistoryController(stateManager, uiManager);
@@ -80,34 +94,55 @@ async function initApp() {
             name: "שם החפץ",
             typeHe: "סוג חפץ",
             rarityHe: "נדירות",
-            description: "החפץ שלך יופיע כאן...",
+            quickStats: "2d6 נזק", // NEW: Quick stats for front
+            abilityName: "שם יכולת",
+            abilityDesc: "תיאור המכניקה יופיע כאן...",
+            description: "סיפור הרקע (Lore) יופיע כאן...",
             gold: "-"
         });
-        // Initial Render for empty state
-        renderer.render(stateManager.getState().cardData, stateManager.getState().settings.offsets);
 
-        // --- Fix: Force re-render after delay (Handle GitHub Pages font loading) ---
-        setTimeout(() => {
-            console.log("Force re-draw for GitHub Pages");
-            renderer.render(stateManager.getState().cardData, stateManager.getState().settings.offsets);
-        }, 500);
+        // NOTE: setCardData triggers 'cardData' event, which RenderController handles.
+        // No need for manual render call here.
 
         // Expose as requested for debugging
         window.CardRenderer = renderer;
 
         // --- Fix: Handle Resize / Canvas Wipe ---
         // Ensure that if the window is resized (causing layout changes that might wipe the canvas),
-        // we re-render immediately.
+        // we re-render immediately using the controller.
         window.addEventListener('resize', () => {
-            // Debounce slightly or just run? User asked for "immediate".
-            // We'll use a tiny timeout to let the layout settle, then render.
             if (window._resizeTimeout) clearTimeout(window._resizeTimeout);
             window._resizeTimeout = setTimeout(() => {
                 console.log("Resize detected, forcing re-render...");
-                renderer.render(stateManager.getState().cardData, stateManager.getState().settings.offsets);
+                if (window.renderController) {
+                    window.renderController.render(stateManager.getState());
+                }
             }, 100);
         });
     } else {
+        // We loaded a saved card.
+        // CHECK FOR MISSING DEFAULTS (Patching legacy/broken states)
+        const currentData = stateManager.getState().cardData;
+        let patched = false;
+
+        if (!currentData.back || (!currentData.back.title && !currentData.back.mechanics)) {
+            console.log("🔧 Patching missing Ability defaults in loaded card...");
+
+            // Ensure back object exists if missing (V1 corrupted state)
+            if (!currentData.back) {
+                currentData.back = { title: '', mechanics: '', lore: '' };
+            }
+
+            stateManager.updateCardField('back.title', "שם יכולת");
+            stateManager.updateCardField('back.mechanics', "תיאור היכולת יופיע כאן...");
+            patched = true;
+        }
+
+        if (patched) {
+            stateManager.saveCurrentCard();
+            // Updates trigger RenderController automatically
+        }
+
         showToast("📂 קלף אחרון נטען!", 'info');
         // If we loaded a card, we should show the editor UI
         if (uiManager.elements.regenerateControls) uiManager.elements.regenerateControls.classList.remove('hidden');

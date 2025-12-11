@@ -61,7 +61,28 @@ class GeminiService {
         return response.json();
     }
 
-    async generateItemDetails(level, type, subtype, rarity, ability, contextImage = null) {
+    async generateItemDetails(level, type, subtype, rarity, ability, contextImage = null, complexityMode = 'creative') {
+        let modeInstruction = "";
+
+        if (complexityMode === 'simple') {
+            modeInstruction = `
+            MODE: SIMPLE & CLASSIC (D\&D 5e Standard)
+            - Focus on PASSIVE stat boosts (e.g., +1 bonus to hit/damage, +1 AC, +1 to saving throws).
+            - Abilities should be SIMPLE and straight-forward (e.g., "Deal extra 1d6 fire damage").
+            - Avoid complex active abilities, charges, or multi-step mechanics.
+            - Keep it elegant and effective, like a standard +1 Longsword or Ring of Protection.
+            - Quick Stats Example: "+1 להתקפה ולנזק", "+1 לדרג השריון", "תוספת 1d6 נזק אש".
+            `;
+        } else {
+            modeInstruction = `
+            MODE: CREATIVE & UNIQUE
+            - Focus on UNIQUE, interesting mechanics that tell a story.
+            - Create custom active abilities with charges or cooldowns (e.g., "Once per day...").
+            - Avoid boring flat +1 bonuses unless necessary.
+            - Make the item feel special and distinct.
+            `;
+        }
+
         let prompt = `
       You are a D&D 5e Dungeon Master. Create a unique magic item in Hebrew.
       
@@ -71,6 +92,8 @@ class GeminiService {
       - Subtype/Specific Kind: ${subtype || 'Any appropriate for Main Type'}
       - Rarity: ${rarity}
       - Special Theme/Ability: ${ability || 'Random cool theme'}
+      
+      ${modeInstruction}
       `;
 
         if (contextImage) {
@@ -103,16 +126,17 @@ class GeminiService {
 
       Return ONLY a JSON object with this exact structure (no markdown, just raw JSON):
       {
-        "name": "Hebrew Name",
+        "name": "STRICT RULES: 1-3 Hebrew words MAX. FORBIDDEN WORDS (never use these in name): חרב, גרזן, רומח, קשת, מגל, פטיש, פגיון, מגן, שריון, טבעת, שרביט, מטה, שיקוי. Use ONLY creative nicknames like: להב הרעם, עוקץ הצל, שן הדרקון, קול הקרח, נשימת האש, עין הנשר.",
         "typeHe": "Hebrew Type (e.g. נשק, שריון, שיקוי, טבעת)",
-        "rarityHe": "Hebrew Rarity",
+        "rarityHe": "Hebrew Rarity - Use these exact translations: Common=נפוץ, Uncommon=לא נפוץ, Rare=נדיר, Very Rare=נדיר מאוד, Legendary=אגדי, Artifact=ארטיפקט",
         "abilityName": "Hebrew Ability Name",
-        "abilityDesc": "Hebrew Ability Description (max 30 words)",
+        "abilityDesc": "COMPLETE Hebrew mechanical description (max 50 words) with ALL game rules: include saving throw type and DC (e.g. 'DC 14 חכמה'), duration (e.g. 'דקה אחת', 'שעה אחת', 'עד המנוחה הארוכה הבאה'), number of uses (e.g. 'פעם ביום', '3 פעמים בלילה'), mechanical effects (e.g. 'חסרון בהתקפות', 'מהירות מופחתת ב-10'). Be specific and playable!",
         "description": "Hebrew Fluff Description (max 20 words)",
         "gold": "Estimated price in GP (number only, e.g. 500)",
-        "weaponDamage": "Damage dice (e.g. 1d8) if weapon, else null",
-        "damageType": "Damage type (Hebrew) if weapon, else null",
+        "weaponDamage": "Full damage string including dice and type in HEBREW (e.g. '1d8 + 1d6 אש' or '2d6 חותך'). Use Hebrew damage types: slashing=חותך, piercing=דוקר, bludgeoning=מוחץ, fire=אש, cold=קור, lightning=ברק, poison=רעל, acid=חומצה, necrotic=נמק, radiant=זוהר, force=כוח, psychic=נפשי, thunder=רעם.",
+        "damageType": "Always null (deprecated, put type in weaponDamage).",
         "armorClass": "AC value (number) if armor, else null",
+        "quickStats": "EXTREMELY CONCISE mechanical summary in Hebrew (max 4-5 words). Priority: mechanics over flavor. Examples: '1d8 + 1d6 אש', '+2 להגנה ולגלגולי הצלה', 'הטלת כדור אש פעם ביום', 'יתרון בבדיקות התגנבות'. Do NOT use full sentences.",
         "visualPrompt": "A SHORT, CONCISE English description (max 15 words) of the item for image generation. Focus ONLY on the main object's appearance. No background descriptions."
       }
     `;
@@ -263,10 +287,20 @@ class GeminiService {
         }
 
         // Truncate visualPrompt to avoid URL length issues (keep first 150 chars)
-        const safePrompt = visualPrompt.substring(0, 150).replace(/[^a-zA-Z0-9, ]/g, '');
+        const safePrompt = (visualPrompt || '').substring(0, 150).replace(/[^a-zA-Z0-9, ]/g, '').trim();
 
-        // Construct final prompt
-        const enhancedPrompt = encodeURIComponent(`full shot, entire object visible, centered, ${styleKeywords}, ${safePrompt}, ${backgroundPrompt}, 8k`);
+        // Construct final prompt, filtering out empty parts
+        const promptParts = [
+            'full shot',
+            'entire object visible',
+            'centered',
+            styleKeywords,
+            safePrompt,
+            backgroundPrompt,
+            '8k'
+        ].filter(part => part && part.trim()); // Remove empty parts
+
+        const enhancedPrompt = encodeURIComponent(promptParts.join(', '));
         console.log(`GeminiService DEBUG: Style=${style}, Option=${styleOption}, Color=${userColor}`);
         console.log(`GeminiService DEBUG: Background Prompt="${backgroundPrompt}"`);
         // Construct URL based on selected model
@@ -274,7 +308,6 @@ class GeminiService {
 
         const imageUrl = `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=512&height=512&${modelParam}&seed=${Math.floor(Math.random() * 10000)}`;
         console.log(`GeminiService: Generated Prompt: "${decodeURIComponent(enhancedPrompt)}"`);
-        console.log(`GeminiService: Fetching image from (${model}) with style (${style})`, imageUrl);
 
         try {
             // Fetch with 90s timeout (Pollinations can be slow)
@@ -577,6 +610,122 @@ class GeminiService {
                 console.error("All Background Generation failed:", fallbackError);
                 throw fallbackError;
             }
+        }
+    }
+
+    /**
+     * Analyze card layout using AI vision and suggest optimal positioning
+     * @param {string} cardImageBase64 - Base64 encoded screenshot of the current card
+     * @param {Object} contentInfo - Information about the card content
+     * @returns {Object} Suggested offsets and settings
+     */
+    async analyzeCardLayout(cardImageBase64, contentInfo) {
+        const prompt = `
+You are a professional D&D card designer. Your goal is to achieve a CLEAN, BALANCED layout like a professional trading card.
+
+IDEAL CARD LAYOUT (top to bottom):
+1. RARITY - small text at very top center (נפוץ, נדיר, etc.)
+2. TYPE - weapon/armor type below rarity (מגל (פשוט), חרב ארוכה (קרבי))
+3. NAME - large bold title, centered (עוקץ האבן)
+4. IMAGE - circular item image in the center, properly sized
+5. CORE STATS - damage or AC below image (1d4 חותך (קל))
+6. QUICK STATS - brief ability description (יוצר שטח קשה פעם ביום)
+7. GOLD - coin value at bottom (50)
+
+CARD CONTENT INFO:
+- Item Name: "${contentInfo.name}" (${contentInfo.nameLength} characters)
+- Item Type: "${contentInfo.type}"
+- Has Item Image: ${contentInfo.hasImage}
+- Has Stats (damage/AC): ${contentInfo.hasStats}
+- Description Length: ${contentInfo.descriptionLength} words
+
+CURRENT CARD IMAGE IS ATTACHED. Compare it to the ideal layout.
+
+YOUR TASK:
+Suggest Y-offset adjustments to achieve the ideal layout. Values are in PIXELS.
+- NEGATIVE values = move element UP
+- POSITIVE values = move element DOWN
+
+OFFSET GUIDELINES:
+- rarity: position at -200 to -100 (should be at TOP)
+- type: position at -150 to -50 (below rarity)
+- name: position at -50 to 50 (prominent title area)
+- imageYOffset: -100 to 100 (center the image nicely)
+- imageScale: 0.8 to 1.5 (size the image appropriately)
+- coreStats: 600 to 750 (damage/AC below image, around 680 is good)
+- stats: 700 to 800 (quick description below damage)
+- gold: -20 to 20 (fine-tune bottom position)
+
+FONT SIZE:
+- nameSize: 40-70 (use smaller for longer names, default 56)
+
+Return ONLY a JSON object (no markdown):
+{
+  "rarity": -100,
+  "type": -38,
+  "name": 0,
+  "imageYOffset": 0,
+  "imageScale": 1.0,
+  "coreStats": 680,
+  "stats": 0,
+  "gold": 0,
+  "nameSize": 56,
+  "reasoning": "Brief explanation"
+}
+`;
+
+        const parts = [
+            { text: prompt },
+            {
+                inline_data: {
+                    mime_type: "image/png",
+                    data: cardImageBase64.replace(/^data:image\/\w+;base64,/, '')
+                }
+            }
+        ];
+
+        const payload = {
+            contents: [{ parts }]
+        };
+
+        try {
+            console.log("GeminiService: Analyzing card layout with AI Vision...");
+
+            let data;
+            if (this.useWorker) {
+                data = await this.callViaWorker('gemini-generate', {
+                    model: 'gemini-2.0-flash',
+                    contents: payload.contents
+                });
+            } else {
+                const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || "Layout analysis failed");
+                }
+
+                data = await response.json();
+            }
+
+            if (!data.candidates || !data.candidates[0]) {
+                throw new Error("No layout suggestions returned");
+            }
+
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const suggestions = JSON.parse(jsonStr);
+
+            console.log("GeminiService: Layout suggestions:", suggestions);
+            return suggestions;
+
+        } catch (error) {
+            console.error("Layout Analysis Error:", error);
+            throw new Error("Failed to analyze card layout: " + error.message);
         }
     }
 }

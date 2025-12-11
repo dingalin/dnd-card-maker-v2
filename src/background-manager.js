@@ -27,6 +27,8 @@ export class BackgroundManager {
         this.themesContainer = document.getElementById('bg-themes-container');
         this.openBtn = document.getElementById('ready-made-bg-btn');
         this.closeBtn = document.getElementById('close-bg-modal');
+        this.cropBtn = document.getElementById('crop-to-frame-btn');
+        this.autoTrimBtn = document.getElementById('auto-trim-btn');
 
         this.init();
     }
@@ -37,6 +39,12 @@ export class BackgroundManager {
         }
         if (this.closeBtn) {
             this.closeBtn.addEventListener('click', () => this.closeModal());
+        }
+        if (this.cropBtn) {
+            this.cropBtn.addEventListener('click', () => this.cropCurrentBackground());
+        }
+        if (this.autoTrimBtn) {
+            this.autoTrimBtn.addEventListener('click', () => this.autoTrimBackground());
         }
 
         // Close on click outside
@@ -51,6 +59,337 @@ export class BackgroundManager {
             if (this.modal && !this.modal.classList.contains('hidden')) {
                 this.updateModalPosition();
             }
+        });
+    }
+
+    /**
+     * Open manual crop tool - allows user to select an area to crop and stretch to card size
+     */
+    async cropCurrentBackground() {
+        if (!this.renderer || !this.renderer.template) {
+            console.warn('cropCurrentBackground: No template loaded');
+            return;
+        }
+
+        const template = this.renderer.template;
+        if (!template.complete || template.naturalWidth === 0) {
+            console.warn('cropCurrentBackground: Template not fully loaded');
+            return;
+        }
+
+        // Open the manual crop modal
+        this.openCropModal(template);
+    }
+
+    /**
+     * Auto-trim background - uses brightness detection to remove dark margins automatically
+     */
+    async autoTrimBackground() {
+        if (!this.renderer || !this.renderer.template) {
+            console.warn('autoTrimBackground: No template loaded');
+            if (window.uiManager) {
+                window.uiManager.showToast('אין רקע לקיצוץ', 'warning');
+            }
+            return;
+        }
+
+        const template = this.renderer.template;
+        if (!template.complete || template.naturalWidth === 0) {
+            console.warn('autoTrimBackground: Template not fully loaded');
+            return;
+        }
+
+        // Create a canvas from current template
+        const sourceCanvas = document.createElement('canvas');
+        sourceCanvas.width = template.naturalWidth || 750;
+        sourceCanvas.height = template.naturalHeight || 1050;
+        const ctx = sourceCanvas.getContext('2d');
+        ctx.drawImage(template, 0, 0, sourceCanvas.width, sourceCanvas.height);
+
+        // Apply auto-crop using brightness detection
+        const croppedCanvas = this.autoCropToCard(sourceCanvas);
+
+        // Check if cropping was applied
+        if (croppedCanvas === sourceCanvas) {
+            if (window.uiManager) {
+                window.uiManager.showToast('לא נמצאו שוליים כהים לקיצוץ', 'info');
+            }
+            return;
+        }
+
+        // Convert to data URL and set as new template
+        const croppedUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+        this.selectBackground(croppedUrl);
+
+        if (window.uiManager) {
+            window.uiManager.showToast('✂️ שוליים כהים הוסרו אוטומטית!', 'success');
+        }
+        console.log('✂️ Auto-trim applied successfully');
+    }
+
+    /**
+     * Create and open the manual crop modal
+     */
+    openCropModal(templateImage) {
+        // Remove existing modal if any
+        const existing = document.getElementById('manual-crop-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'manual-crop-modal';
+        modal.innerHTML = `
+            <div class="crop-modal-overlay">
+                <div class="crop-modal-content">
+                    <div class="crop-header">
+                        <h3>✂️ חיתוך רקע</h3>
+                        <button class="crop-close-btn">&times;</button>
+                    </div>
+                    <div class="crop-body">
+                        <p class="crop-instructions">גרור מלבן על האזור שברצונך לחתוך. האזור הנבחר יימתח לגודל הקלף.</p>
+                        <div class="crop-canvas-container">
+                            <canvas id="crop-canvas"></canvas>
+                            <div id="crop-selection" class="crop-selection hidden"></div>
+                        </div>
+                    </div>
+                    <div class="crop-footer">
+                        <button class="crop-cancel-btn">ביטול</button>
+                        <button class="crop-apply-btn" disabled>החל חיתוך</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .crop-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.85);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            }
+            .crop-modal-content {
+                background: #1a1a2e;
+                border-radius: 16px;
+                border: 2px solid #d4af37;
+                max-width: 90vw;
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+            }
+            .crop-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 20px;
+                border-bottom: 1px solid #333;
+            }
+            .crop-header h3 {
+                margin: 0;
+                color: #d4af37;
+                font-size: 1.3rem;
+            }
+            .crop-close-btn {
+                background: none;
+                border: none;
+                color: #888;
+                font-size: 1.5rem;
+                cursor: pointer;
+                transition: color 0.2s;
+            }
+            .crop-close-btn:hover { color: #fff; }
+            .crop-body {
+                padding: 20px;
+                overflow: auto;
+            }
+            .crop-instructions {
+                color: #aaa;
+                margin-bottom: 16px;
+                text-align: center;
+            }
+            .crop-canvas-container {
+                position: relative;
+                display: inline-block;
+                cursor: crosshair;
+            }
+            #crop-canvas {
+                max-width: 80vw;
+                max-height: 60vh;
+                border: 1px solid #444;
+                border-radius: 8px;
+            }
+            .crop-selection {
+                position: absolute;
+                border: 2px dashed #d4af37;
+                background: rgba(212, 175, 55, 0.2);
+                pointer-events: none;
+            }
+            .crop-selection.hidden { display: none; }
+            .crop-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                padding: 16px 20px;
+                border-top: 1px solid #333;
+            }
+            .crop-cancel-btn {
+                padding: 10px 20px;
+                border: 1px solid #666;
+                background: #333;
+                color: #fff;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            .crop-cancel-btn:hover { background: #444; }
+            .crop-apply-btn {
+                padding: 10px 20px;
+                border: none;
+                background: linear-gradient(135deg, #d4af37, #b8860b);
+                color: #1a1a2e;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            .crop-apply-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .crop-apply-btn:not(:disabled):hover {
+                background: linear-gradient(135deg, #e4bf47, #c8961b);
+            }
+        `;
+        modal.appendChild(style);
+        document.body.appendChild(modal);
+
+        // Setup canvas
+        const canvas = document.getElementById('crop-canvas');
+        const ctx = canvas.getContext('2d');
+        const container = modal.querySelector('.crop-canvas-container');
+        const selectionDiv = document.getElementById('crop-selection');
+        const applyBtn = modal.querySelector('.crop-apply-btn');
+
+        // Get original image dimensions
+        const imgW = templateImage.naturalWidth || templateImage.width;
+        const imgH = templateImage.naturalHeight || templateImage.height;
+
+        // Calculate display size that fits in viewport
+        const maxW = window.innerWidth * 0.7;
+        const maxH = window.innerHeight * 0.6;
+        const displayScale = Math.min(maxW / imgW, maxH / imgH, 1);
+
+        const displayW = Math.round(imgW * displayScale);
+        const displayH = Math.round(imgH * displayScale);
+
+        // Set canvas to DISPLAY size (not full image size)
+        canvas.width = displayW;
+        canvas.height = displayH;
+        canvas.style.width = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+
+        // Draw scaled image
+        ctx.drawImage(templateImage, 0, 0, displayW, displayH);
+
+        // Set container to exact canvas size
+        container.style.width = displayW + 'px';
+        container.style.height = displayH + 'px';
+
+        // Store scale for final crop calculation
+        const cropScale = imgW / displayW;
+
+        // Selection state
+        let isDrawing = false;
+        let startX = 0, startY = 0;
+        let selection = { x: 0, y: 0, width: 0, height: 0 };
+
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            isDrawing = true;
+            selectionDiv.classList.remove('hidden');
+        });
+
+        // Use document-level mousemove so dragging works outside canvas
+        document.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+
+            // Calculate position and clamp to canvas bounds
+            let posX = e.clientX - rect.left;
+            let posY = e.clientY - rect.top;
+
+            // Clamp to display bounds
+            posX = Math.max(0, Math.min(displayW, posX));
+            posY = Math.max(0, Math.min(displayH, posY));
+
+            // Store selection in display coordinates
+            selection = {
+                x: Math.min(startX, posX),
+                y: Math.min(startY, posY),
+                width: Math.abs(posX - startX),
+                height: Math.abs(posY - startY)
+            };
+
+            // Position selection div directly (1:1 with canvas display)
+            selectionDiv.style.left = selection.x + 'px';
+            selectionDiv.style.top = selection.y + 'px';
+            selectionDiv.style.width = selection.width + 'px';
+            selectionDiv.style.height = selection.height + 'px';
+        });
+
+        // Use document-level mouseup so it triggers even if mouse is outside canvas
+        document.addEventListener('mouseup', () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            // Enable apply button if selection is valid
+            if (selection.width > 20 && selection.height > 20) {
+                applyBtn.disabled = false;
+            }
+        });
+
+        // Close handlers
+        const closeModal = () => modal.remove();
+        modal.querySelector('.crop-close-btn').addEventListener('click', closeModal);
+        modal.querySelector('.crop-cancel-btn').addEventListener('click', closeModal);
+        modal.querySelector('.crop-modal-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        // Apply crop
+        applyBtn.addEventListener('click', () => {
+            // Convert selection from display coordinates to original image coordinates
+            const origX = selection.x * cropScale;
+            const origY = selection.y * cropScale;
+            const origW = selection.width * cropScale;
+            const origH = selection.height * cropScale;
+
+            // Create cropped canvas at card size
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = 750;
+            croppedCanvas.height = 1050;
+            const croppedCtx = croppedCanvas.getContext('2d');
+
+            // Draw the selected area stretched to fill the card
+            croppedCtx.drawImage(
+                templateImage,
+                origX, origY, origW, origH,
+                0, 0, 750, 1050
+            );
+
+            // Convert to data URL and set as new background
+            const croppedUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+            this.selectBackground(croppedUrl);
+
+            console.log(`✂️ Manual crop applied: (${Math.round(origX)},${Math.round(origY)}) ${Math.round(origW)}x${Math.round(origH)} → 750x1050`);
+            closeModal();
         });
     }
 
@@ -203,6 +542,127 @@ export class BackgroundManager {
         this.closeModal();
     }
 
+    /**
+     * Auto-crop a canvas to find and remove ONLY very dark (black) outer margins
+     * Much less aggressive - only removes clearly black/very dark borders
+     * @param {HTMLCanvasElement} sourceCanvas - The canvas with potential dark margins
+     * @returns {HTMLCanvasElement} - Cropped canvas or original if no dark margins found
+     */
+    autoCropToCard(sourceCanvas) {
+        const ctx = sourceCanvas.getContext('2d');
+        const w = sourceCanvas.width;
+        const h = sourceCanvas.height;
+
+        let imageData;
+        try {
+            imageData = ctx.getImageData(0, 0, w, h);
+        } catch (e) {
+            console.warn('autoCropToCard: Cannot get image data (CORS?), skipping crop');
+            return sourceCanvas;
+        }
+
+        const data = imageData.data;
+
+        // Helper: Get brightness at (x, y) - returns 0-255
+        const getBrightness = (x, y) => {
+            const idx = (y * w + x) * 4;
+            return (data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114);
+        };
+
+        // Helper: Check if a line is very dark (average brightness < threshold)
+        const isLineDark = (start, end, fixed, isHorizontal, threshold = 40) => {
+            let sum = 0, count = 0;
+            const step = Math.max(1, Math.floor((end - start) / 30));
+            for (let i = start; i < end; i += step) {
+                const x = isHorizontal ? i : fixed;
+                const y = isHorizontal ? fixed : i;
+                if (x >= 0 && x < w && y >= 0 && y < h) {
+                    sum += getBrightness(x, y);
+                    count++;
+                }
+            }
+            return count > 0 && (sum / count) < threshold;
+        };
+
+        // VERY DARK threshold - only trim if margin is almost black
+        const DARK_THRESHOLD = 40;  // Very dark (0-255 scale)
+        const MIN_MARGIN_PERCENT = 0.05;  // Require at least 5% margin to trim
+
+        let top = 0, bottom = h - 1, left = 0, right = w - 1;
+
+        // Scan from TOP - find first row that's NOT very dark
+        for (let y = 0; y < h * 0.15; y++) {
+            if (!isLineDark(w * 0.2, w * 0.8, y, true, DARK_THRESHOLD)) {
+                top = y;
+                break;
+            }
+        }
+
+        // Scan from BOTTOM
+        for (let y = h - 1; y > h * 0.85; y--) {
+            if (!isLineDark(w * 0.2, w * 0.8, y, true, DARK_THRESHOLD)) {
+                bottom = y;
+                break;
+            }
+        }
+
+        // Scan from LEFT
+        for (let x = 0; x < w * 0.15; x++) {
+            if (!isLineDark(h * 0.2, h * 0.8, x, false, DARK_THRESHOLD)) {
+                left = x;
+                break;
+            }
+        }
+
+        // Scan from RIGHT
+        for (let x = w - 1; x > w * 0.85; x--) {
+            if (!isLineDark(h * 0.2, h * 0.8, x, false, DARK_THRESHOLD)) {
+                right = x;
+                break;
+            }
+        }
+
+        const cropW = right - left;
+        const cropH = bottom - top;
+
+        // Calculate actual margins
+        const marginLeft = left;
+        const marginRight = w - right - 1;
+        const marginTop = top;
+        const marginBottom = h - bottom - 1;
+        const minMargin = Math.min(marginLeft, marginRight, marginTop, marginBottom);
+
+        // Skip if margins are too small (less than 5%)
+        if (minMargin < w * MIN_MARGIN_PERCENT) {
+            console.log('autoCropToCard: No significant dark margins found, skipping');
+            return sourceCanvas;
+        }
+
+        // Validate aspect ratio (should be close to 2:3)
+        const cropRatio = cropW / cropH;
+        const targetRatio = 750 / 1050;
+        if (cropRatio < targetRatio * 0.7 || cropRatio > targetRatio * 1.3) {
+            console.log('autoCropToCard: Aspect ratio mismatch after crop, skipping');
+            return sourceCanvas;
+        }
+
+        console.log(`autoCropToCard: Trimming dark margins - L:${marginLeft} R:${marginRight} T:${marginTop} B:${marginBottom}`);
+
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = 750;
+        croppedCanvas.height = 1050;
+        const croppedCtx = croppedCanvas.getContext('2d');
+
+        croppedCtx.drawImage(
+            sourceCanvas,
+            left, top, cropW, cropH,
+            0, 0, 750, 1050
+        );
+
+        return croppedCanvas;
+    }
+
+
     sliceGrid(imagePath) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -264,6 +724,10 @@ export class BackgroundManager {
                             sx, sy, cropWidth, cropHeight, // Source Crop
                             0, 0, canvas.width, canvas.height // Destination (Scaled to fit)
                         );
+
+                        // NOTE: Auto-crop disabled - many backgrounds have intentional decorative elements
+                        // that would be incorrectly removed. Use original sliced canvas.
+                        // const croppedCanvas = this.autoCropToCard(canvas);
 
                         slices.push(canvas.toDataURL('image/jpeg', 0.9));
                     }

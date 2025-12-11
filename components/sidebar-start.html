@@ -232,9 +232,18 @@
                 </label>
             </div>
 
-            <button type="submit" id="generate-btn" class="btn-create" data-tooltip="צור חפץ קסום חדש!">
-                <span class="icon">✨</span> צור חפץ
-            </button>
+            <!-- Split Generation Buttons -->
+            <div class="generation-buttons" style="display: flex; gap: 0.5rem; width: 100%;">
+                <button type="submit" id="generate-simple-btn" class="btn-create" style="flex: 1; min-width: 0;"
+                    data-tooltip="חפץ עם פלוסים ונזק בסיסי">
+                    <span class="icon">⚔️</span> פשוט
+                </button>
+                <button type="submit" id="generate-creative-btn" class="btn-create"
+                    style="flex: 1; min-width: 0; background: linear-gradient(135deg, #9b59b6, #8e44ad); border-color: #8e44ad;"
+                    data-tooltip="חפץ עם מכניקה מיוחדת ומורכבת">
+                    <span class="icon">✨</span> יצירתי
+                </button>
+            </div>
 
             <div class="secondary-actions-grid">
                 <button type="button" id="surprise-btn" class="btn-surprise">

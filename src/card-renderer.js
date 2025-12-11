@@ -70,10 +70,11 @@ class CardRenderer {
             if (this.template.naturalWidth === 0) {
                 alert("CRITICAL: Template loaded but has 0 width. The file might be corrupted or empty.");
             } else {
-                // FIXED: Set canvas resolution to match template!
-                console.log(`CardRenderer: Setting canvas resolution to ${this.template.naturalWidth}x${this.template.naturalHeight}`);
-                this.canvas.width = this.template.naturalWidth;
-                this.canvas.height = this.template.naturalHeight;
+                // FIXED: Set canvas resolution to STANDARD size (750x1050)
+                // This ensures text and layout coordinates are always correct regardless of template size.
+                console.log(`CardRenderer: Enforcing standard canvas resolution 750x1050`);
+                this.canvas.width = 750;
+                this.canvas.height = 1050;
             }
 
             this.templateLoaded = true;
@@ -89,37 +90,163 @@ class CardRenderer {
             this.template.src = url;
             this.template.onload = () => {
                 console.log("CardRenderer: New template loaded");
+                this.templateLoaded = true;
+                // Enforce standard resolution
+                this.canvas.width = 750;
+                this.canvas.height = 1050;
                 resolve();
             };
             this.template.onerror = (e) => {
                 console.error("CardRenderer: Failed to load new template", e);
+                // Don't set templateLoaded = false here as we might fallback? 
+                // Actually if new template fails we might have a broken state.
+                // But for now let's just reject.
                 reject(e);
             };
         });
     }
 
-    async render(cardData, options = {}) {
-        console.log("CardRenderer: render called", { cardData, options });
+    async render(sourceData, options = {}, isFlipped = false) {
+        // --- V2 Data Normalization ---
+        const cardData = sourceData.front ? {
+            ...sourceData,
+            name: sourceData.front.title,
+            typeHe: sourceData.front.type,
+            rarityHe: sourceData.front.rarity,
+            gold: sourceData.front.gold,
+            imageUrl: sourceData.front.imageUrl,
+            quickStats: sourceData.front.quickStats || '', // NEW
+            abilityName: sourceData.back?.title || '',
+            abilityDesc: sourceData.back?.mechanics || '',
+            description: sourceData.back?.lore || ''
+        } : sourceData;
+
+        console.log(`CardRenderer: Rendering ${isFlipped ? 'BACK' : 'FRONT'}`);
+
+        if (isFlipped) {
+            await this.renderBack(cardData, options);
+        } else {
+            await this.renderFront(cardData, options);
+        }
+    }
+
+    // ===== BACK SIDE =====
+    async renderBack(cardData, options) {
+        console.log("CardRenderer: renderBack called", options);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Ensure template is loaded
+        await this.templateReady;
+
+        // Draw Template
+        if (this.templateLoaded) {
+            const bgScale = options.backgroundScale || 1.0;
+            const bgWidth = this.canvas.width * bgScale;
+            const bgHeight = this.canvas.height * bgScale;
+            const bgX = (this.canvas.width - bgWidth) / 2;
+            const bgY = (this.canvas.height - bgHeight) / 2;
+            this.ctx.drawImage(this.template, bgX, bgY, bgWidth, bgHeight);
+        } else {
+            this.ctx.fillStyle = '#e0cda8';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        const ctx = this.ctx;
+        const width = this.canvas.width;
+        const fontFamily = options.fontFamily || 'Heebo';
+        const sizes = options.fontSizes || { abilityNameSize: 36, mechSize: 24, loreSize: 20 };
+        const offsets = options;
+        const styles = options.fontStyles || {};
+
+        // Helper to construct font string
+        const getFont = (prefix, size) => {
+            const bold = styles[`${prefix}Bold`] ? 'bold ' : '';
+            const italic = styles[`${prefix}Italic`] ? 'italic ' : '';
+            return `${italic}${bold}${size}px "${fontFamily}"`;
+        };
+
+        ctx.textAlign = 'center';
+
+        // Ability Name (Title)
+        ctx.font = getFont('abilityName', sizes.abilityNameSize);
+        ctx.fillStyle = '#2c1810';
+        const abilityY = offsets.abilityName || 120;
+
+        // Render Glow for Title if enabled
+        if (styles.abilityNameGlow) {
+            ctx.save();
+            ctx.shadowColor = '#e2c47f'; // Softer, parchment-gold
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillStyle = '#e2c47f';
+            ctx.fillText(cardData.abilityName || '', width / 2, abilityY);
+            ctx.fillText(cardData.abilityName || '', width / 2, abilityY);
+            ctx.restore();
+        }
+        ctx.fillText(cardData.abilityName || '', width / 2, abilityY);
+
+        // Divider Line
+        ctx.beginPath();
+        ctx.moveTo(100, abilityY + 20);
+        ctx.lineTo(width - 100, abilityY + 20);
+        ctx.strokeStyle = '#4a0e0e';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Mechanics (Main Body)
+        ctx.font = getFont('mech', sizes.mechSize);
+        ctx.fillStyle = '#1a1a1a';
+        let currentY = offsets.mech || 180;
+        const mechWidth = offsets.mechWidth || 600;
+
+        if (cardData.abilityDesc) {
+            currentY = this.wrapTextCentered(
+                cardData.abilityDesc,
+                width / 2,
+                currentY,
+                mechWidth,
+                sizes.mechSize * 1.4,
+                { glow: styles.mechGlow }
+            );
+        }
+
+        // Lore (Bottom)
+        if (cardData.description) {
+            const loreY = Math.max(currentY + 40, offsets.lore || 600);
+            ctx.font = getFont('lore', sizes.loreSize);
+            ctx.fillStyle = '#5a4a3a';
+            const loreWidth = offsets.loreWidth || 550;
+            this.wrapTextCentered(
+                cardData.description,
+                width / 2,
+                loreY,
+                loreWidth,
+                sizes.loreSize * 1.3,
+                { glow: styles.loreGlow }
+            );
+        }
+    }
+
+    async renderFront(cardData, options = {}) {
 
         // DEBUG: Check if canvas is visible in DOM
         const rect = this.canvas.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) {
             console.error("CardRenderer: Canvas has 0 dimensions on screen!", rect);
-            // Don't alert here to avoid spam loop, but good to know
         }
 
         const imageYOffset = parseInt(options.imageYOffset) || 0;
 
-        // Granular offsets
+        // Granular offsets (FRONT SIDE ONLY)
         const nameOffset = parseInt(options.name) || 0;
         const typeOffset = parseInt(options.type) || 0;
         const rarityOffset = parseInt(options.rarity) || 0;
         const goldOffset = parseInt(options.gold) || 0;
-        const abilityY = parseInt(options.abilityY) || 530;
-        const fluffPadding = parseInt(options.fluffPadding) || 20;
+        const coreStatsOffset = parseInt(options.coreStats) || 680; // Damage/AC position
+        const statsOffset = parseInt(options.stats) || 780; // Quick stats position
 
         // Font settings
-        const fontSize = parseInt(options.fontSize) || 16;
         const fontFamily = options.fontFamily || 'Heebo';
 
         const offsets = {
@@ -128,9 +255,8 @@ class CardRenderer {
             type: typeOffset,
             rarity: rarityOffset,
             gold: goldOffset,
-            abilityY: abilityY,
-            fluffPadding: fluffPadding,
-            fontSize: fontSize,
+            coreStats: coreStatsOffset,
+            stats: statsOffset,
             fontFamily: fontFamily,
             fontSizes: options.fontSizes,
             fontStyles: options.fontStyles,
@@ -138,9 +264,17 @@ class CardRenderer {
             nameWidth: Number(options.nameWidth) || 500,
             typeWidth: Number(options.typeWidth) || 500,
             rarityWidth: Number(options.rarityWidth) || 500,
-            abilityWidth: Number(options.abilityWidth) || 500,
-            fluffWidth: Number(options.fluffWidth) || 500,
-            goldWidth: Number(options.goldWidth) || 500
+            coreStatsWidth: Number(options.coreStatsWidth) || 500,
+            statsWidth: Number(options.statsWidth) || 500,
+            goldWidth: Number(options.goldWidth) || 500,
+
+            // Text Effects (Passed to drawText)
+            textOutlineEnabled: options.textOutlineEnabled,
+            textOutlineWidth: options.textOutlineWidth,
+            textShadowEnabled: options.textShadowEnabled,
+            textShadowBlur: options.textShadowBlur,
+            textBackdropEnabled: options.textBackdropEnabled,
+            textBackdropOpacity: options.textBackdropOpacity
         };
 
         // Ensure template is loaded
@@ -486,20 +620,17 @@ class CardRenderer {
         return canvas;
     }
 
+    // ===== FRONT SIDE TEXT =====
     drawText(data, offsets) {
-        console.log("CardRenderer: drawText called", { data, offsets });
-        console.log(`DEBUG: Widths - Name: ${offsets.nameWidth}, Ability: ${offsets.abilityWidth}, Fluff: ${offsets.fluffWidth}`);
+        console.log("CardRenderer: drawText (FRONT) called", { data, offsets });
         const ctx = this.ctx;
         const width = this.canvas.width;
-        // const maxWidth = 500; // REMOVED: Now using per-element width
 
         const defaultSizes = {
             nameSize: 48,
             typeSize: 24,
             raritySize: 24,
-            abilityNameSize: 28,
-            abilityDescSize: 24,
-            descSize: 22,
+            statsSize: 28,
             goldSize: 24
         };
         const sizes = { ...defaultSizes, ...(offsets.fontSizes || {}) };
@@ -509,76 +640,234 @@ class CardRenderer {
             const styles = offsets.fontStyles || {};
             const bold = styles[`${prefix}Bold`] ? 'bold ' : '';
             const italic = styles[`${prefix}Italic`] ? 'italic ' : '';
-            // If neither, result is empty string, which is valid (defaults to normal)
             return `${italic}${bold}${size}px "${offsets.fontFamily}"`;
         };
 
-        // Name
-        ctx.font = getFont('name', sizes.nameSize);
+        // Text effects configuration (global)
+        const textEffects = {
+            outlineEnabled: offsets.textOutlineEnabled || false,
+            outlineWidth: offsets.textOutlineWidth || 2,
+            shadowBlur: offsets.textShadowBlur || 4
+        };
+
+        // Get per-element styles
+        const styles = offsets.fontStyles || {};
+
+        // Helper: Draw text with optional outline and per-element shadow
+        const drawStyledText = (text, x, y, maxWidth, elementName) => {
+            if (!text) return;
+
+            ctx.save();
+
+            // Check per-element shadow (e.g., nameShadow, rarityShadow)
+            const elementShadow = styles[`${elementName}Shadow`] || offsets.textShadowEnabled;
+            // Check per-element glow
+            const elementGlow = styles[`${elementName}Glow`];
+
+            // 1. Draw Glow (Halo) - BEHIND everything
+            if (elementGlow) {
+                ctx.save();
+                ctx.shadowColor = '#e2c47f'; // Softer, parchment-gold
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.fillStyle = '#e2c47f'; // Fill with same color to strengthen core
+                // Draw multiple times for stronger effect
+                ctx.fillText(text, x, y, maxWidth);
+                ctx.fillText(text, x, y, maxWidth);
+                ctx.restore();
+            }
+
+            // 2. Apply shadow if enabled for this element (and NOT Glow - usually mutually exclusive or stacked)
+            // If Glow is on, we might skip shadow or draw it on top? 
+            // Let's allow stacking: Glow is background, Shadow is drop-shadow.
+            if (elementShadow) {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+                ctx.shadowBlur = textEffects.shadowBlur;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 2;
+            }
+
+            // 3. Draw outline first (behind fill but above glow)
+            if (textEffects.outlineEnabled) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = textEffects.outlineWidth;
+                ctx.lineJoin = 'round';
+                ctx.strokeText(text, x, y, maxWidth);
+            }
+
+            // 4. Draw fill
+            ctx.fillText(text, x, y, maxWidth);
+
+            ctx.restore();
+        };
+
+        // ===== TEXT POSITIONS (Top to Bottom Order) =====
+        // Safe area inside frame: approximately Y=100 to Y=900
+
+        // 1. Rarity (TOP) - נדירות
+        ctx.font = getFont('rarity', sizes.raritySize);
         ctx.fillStyle = '#2c1810';
         ctx.textAlign = 'center';
-        ctx.fillText(data.name, width / 2, 160 + offsets.name, Number(offsets.nameWidth || 500));
+        const rarityY = 100 + offsets.rarity;
+        drawStyledText(data.rarityHe || '', width / 2, rarityY, offsets.rarityWidth, 'rarity');
 
-        // Type
+        // 2. Type (BELOW RARITY) - סוג הפריט
         ctx.font = getFont('type', sizes.typeSize);
-        let typeText = `${data.typeHe}`;
-        if (data.weaponDamage) typeText += ` • ${data.weaponDamage} ${data.damageType || ''}`;
-        if (data.armorClass) typeText += ` • AC ${data.armorClass}`;
-        ctx.fillText(typeText, width / 2, 105 + offsets.type, Number(offsets.typeWidth || 500));
+        let typeText = `${data.typeHe || ''}`;
+        const typeY = 140 + offsets.type;
+        drawStyledText(typeText, width / 2, typeY, Number(offsets.typeWidth || 500), 'type');
 
-        // Rarity
-        ctx.font = getFont('rarity', sizes.raritySize);
-        // Default rarityY is 135, plus slider offset
-        const rarityY = 135 + offsets.rarity;
-        ctx.fillText(data.rarityHe, width / 2, rarityY, offsets.rarityWidth);
+        // 3. Name (BELOW TYPE) - שם הפריט
+        ctx.font = getFont('name', sizes.nameSize);
+        ctx.fillStyle = '#2c1810';
+        const nameY = 200 + offsets.name;
+        drawStyledText(data.name, width / 2, nameY, Number(offsets.nameWidth || 500), 'name');
 
-        // Description Block
-        let currentY = offsets.abilityY; // Use passed offset
+        // --- QUICK STATS SECTION ---
 
-        // Ability Name
-        if (data.abilityName) {
-            ctx.font = getFont('abilityName', sizes.abilityNameSize);
-            ctx.fillText(`${data.abilityName}:`, width / 2, currentY, Number(offsets.abilityWidth || 500));
-            currentY += sizes.abilityNameSize * 1.2;
+        // Helper function to translate any remaining English damage types
+        const translateDamageTypes = (text) => {
+            if (!text) return text;
+            const translations = {
+                "slashing": "חותך", "piercing": "דוקר", "bludgeoning": "מוחץ",
+                "fire": "אש", "cold": "קור", "lightning": "ברק", "poison": "רעל",
+                "acid": "חומצה", "necrotic": "נמק", "radiant": "זוהר", "force": "כוח",
+                "psychic": "נפשי", "thunder": "רעם"
+            };
+            let result = text;
+            for (const [eng, heb] of Object.entries(translations)) {
+                result = result.replace(new RegExp(eng, 'gi'), heb);
+            }
+            // Remove duplicate Hebrew damage types
+            for (const heb of Object.values(translations)) {
+                result = result.replace(new RegExp(`${heb}\\s+${heb}`, 'g'), heb);
+            }
+            return result.replace(/\s{2,}/g, ' ').trim();
+        };
+
+        // 1. Core Stats Header (Damage / AC)
+        let coreStatsText = "";
+        if (data.weaponDamage && data.weaponDamage !== 'null' && data.weaponDamage !== null) {
+            // RTL reading order (right to left): base damage → versatile → damage type
+            // String order: baseDamage → versatile → damageType
+            const LTR = '\u200E';
+            const baseDamage = `${LTR}${data.weaponDamage}`;
+            const damageType = data.damageType || '';
+
+
+            if (data.versatileDamage) {
+                // Use RLM (Right-to-Left Mark) to force Hebrew reading order
+                // Display should be: baseDamage (right) → versatile (middle) → damageType (left)
+                const RLM = '\u200F';
+                coreStatsText = `${RLM}${baseDamage} (🤲${data.versatileDamage}) ${damageType}${RLM}`;
+            } else {
+                const RLM = '\u200F';
+                coreStatsText = `${RLM}${baseDamage} ${damageType}${RLM}`;
+            }
+
+            // Add weapon properties if available (excluding רב-שימושי since we show it with emoji)
+            if (data.weaponProperties && data.weaponProperties.length > 0) {
+                const propsWithoutVersatile = data.weaponProperties.filter(p => p !== 'רב-שימושי');
+                if (propsWithoutVersatile.length > 0) {
+                    coreStatsText += ` (${propsWithoutVersatile.join(', ')})`;
+                }
+            }
+        }
+        if (data.armorClass && data.armorClass !== 'null' && data.armorClass !== null) {
+            coreStatsText = `${data.armorClass} דרג"ש`;
         }
 
-        // Ability Description
-        if (data.abilityDesc) {
-            ctx.font = getFont('abilityDesc', sizes.abilityDescSize);
-            currentY = this.wrapTextCentered(data.abilityDesc, width / 2, currentY, Number(offsets.abilityWidth || 500), sizes.abilityDescSize * 1.2);
+        // Clean up any English damage types and remove 'null' text
+        coreStatsText = translateDamageTypes(coreStatsText);
+        coreStatsText = coreStatsText.replace(/null/gi, '').trim();
+
+        // ===== TEXT BACKDROP (Semi-transparent band for readability) =====
+        console.log('CardRenderer: Backdrop check:', {
+            enabled: offsets.textBackdropEnabled,
+            opacity: offsets.textBackdropOpacity
+        });
+
+        if (offsets.textBackdropEnabled) {
+            console.log('CardRenderer: Drawing backdrop...');
+            ctx.save();
+            const backdropOpacity = (offsets.textBackdropOpacity || 40) / 100;
+            const backdropY = (offsets.coreStats || 680) - 50; // Start above coreStats
+            const backdropHeight = this.canvas.height - backdropY; // Extend to bottom
+
+            console.log('CardRenderer: Backdrop params:', { backdropOpacity, backdropY, backdropHeight, canvasHeight: this.canvas.height });
+
+            ctx.fillStyle = `rgba(0, 0, 0, ${backdropOpacity})`;
+            ctx.fillRect(0, backdropY, width, backdropHeight);
+            ctx.restore();
         }
 
-        // Add Fluff Padding
-        currentY += Number(offsets.fluffPadding || 0);
+        if (coreStatsText) {
+            // Use dedicated size/offset if available, else fallback
+            const coreSize = sizes.coreStatsSize || (sizes.statsSize * 1.3);
+            const coreY = offsets.coreStats || (offsets.stats ? offsets.stats - 80 : 700);
 
-        // Fluff Description
-        if (data.description) {
-            ctx.font = getFont('desc', sizes.descSize);
-            ctx.fillStyle = '#5a4a3a';
-            this.wrapTextCentered(data.description, width / 2, currentY, Number(offsets.fluffWidth || 500), sizes.descSize * 1.2);
+            ctx.font = getFont('coreStats', coreSize);
+            ctx.fillStyle = '#1a1a1a';
+            const coreStatsWidth = Number(offsets.coreStatsWidth || 500);
+
+            // Draw text with optional effects
+            drawStyledText(coreStatsText, width / 2, coreY, coreStatsWidth, 'coreStats');
         }
 
-        // Footer - Gold value (Gold Coin Icon & Stroke)
-        const goldValue = data.gold || '400';
+        // 2. Quick Description (The AI generated text)
+        let statsText = data.quickStats;
+
+        // Filter out damage dice patterns (e.g., "1d8", "2d6+3") since they're already shown in core stats
+        if (statsText) {
+            // First translate any English damage types
+            statsText = translateDamageTypes(statsText);
+            // Then remove dice patterns
+            statsText = statsText.replace(/\d+d\d+(\s*[+\-]\s*\d+)?/gi, '').trim();
+            // Also remove common damage type words that would be redundant
+            statsText = statsText.replace(/(מוחץ|דוקר|חותך|נזק|damage)/gi, '').trim();
+            // Clean up any double spaces
+            statsText = statsText.replace(/\s{2,}/g, ' ').trim();
+        }
+
+        if (statsText) {
+            ctx.font = getFont('stats', sizes.statsSize);
+            ctx.fillStyle = '#1a1a1a';
+            const statsY = offsets.stats || 800;
+            drawStyledText(statsText, width / 2, statsY, Number(offsets.statsWidth || 500), 'stats');
+        }
+
+        // Footer - Gold value
+        const goldValue = data.gold || '-';
         const goldStyles = offsets.fontStyles || {};
         const goldBold = goldStyles.goldBold ? 'bold ' : '';
         const goldItalic = goldStyles.goldItalic ? 'italic ' : '';
-        ctx.font = `${goldItalic}${goldBold}${sizes.goldSize}px Cinzel`; // Cinzel is better for numbers
+        ctx.font = `${goldItalic}${goldBold}${sizes.goldSize}px Cinzel`;
 
-        // Measure text for centering
         const metrics = ctx.measureText(goldValue);
-        const iconSize = sizes.goldSize * 1.5; // Icon larger than text
+        const iconSize = sizes.goldSize * 1.5;
         const spacing = 10;
         const totalW = metrics.width + iconSize + spacing;
-
-        // Center Group
         const startX = (width - totalW) / 2;
-        const textX = startX + iconSize + spacing + (metrics.width / 2); // Text is usually center aligned in drawText
+        const textX = startX + iconSize + spacing + (metrics.width / 2);
 
-        const goldY = 780 + offsets.gold;
+        const goldY = 920 + offsets.gold;
 
         // Draw Icon
         this.drawGoldIcon(ctx, startX + iconSize / 2, goldY - (sizes.goldSize * 0.4), iconSize);
+
+        // Draw Dark Halo if enabled
+        if (goldStyles.goldGlow) {
+            ctx.save();
+            ctx.shadowColor = '#000000'; // Dark halo as requested
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillStyle = '#000000';
+            ctx.fillText(goldValue, textX, goldY);
+            ctx.fillText(goldValue, textX, goldY);
+            ctx.restore();
+        }
 
         // Draw Text with Stroke
         ctx.fillStyle = '#d4af37';
@@ -586,7 +875,6 @@ class CardRenderer {
         ctx.strokeStyle = '#000000';
         ctx.strokeText(goldValue, textX, goldY);
         ctx.fillText(goldValue, textX, goldY);
-        // Reset stroke styles
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'transparent';
     }
@@ -630,7 +918,7 @@ class CardRenderer {
         ctx.restore();
     }
 
-    wrapTextCentered(text, x, y, maxWidth, lineHeight) {
+    wrapTextCentered(text, x, y, maxWidth, lineHeight, options = {}) {
         const ctx = this.ctx;
 
         // Split by newlines first to respect manual line breaks
@@ -648,12 +936,34 @@ class CardRenderer {
                 const testWidth = metrics.width;
 
                 if (testWidth > maxWidth && n > 0) {
+                    if (options.glow) {
+                        ctx.save();
+                        ctx.shadowColor = '#e2c47f'; // Softer, parchment-gold
+                        ctx.shadowBlur = 15;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                        ctx.fillStyle = '#e2c47f';
+                        ctx.fillText(line, x, currentY);
+                        ctx.fillText(line, x, currentY);
+                        ctx.restore();
+                    }
                     ctx.fillText(line, x, currentY);
                     line = words[n] + ' ';
                     currentY += lineHeight;
                 } else {
                     line = testLine;
                 }
+            }
+            if (options.glow) {
+                ctx.save();
+                ctx.shadowColor = '#e2c47f'; // Softer, parchment-gold
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.fillStyle = '#e2c47f';
+                ctx.fillText(line, x, currentY);
+                ctx.fillText(line, x, currentY);
+                ctx.restore();
             }
             ctx.fillText(line, x, currentY);
             currentY += lineHeight;

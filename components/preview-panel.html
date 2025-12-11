@@ -4,6 +4,7 @@
 
     <div class="canvas-container">
         <canvas id="card-canvas" width="600" height="840"></canvas>
+        <canvas id="card-canvas-back" width="600" height="840" class="hidden"></canvas> <!-- Second Canvas -->
 
         <!-- Enhanced Loading Overlay with Progress Steps -->
         <div id="loading-overlay" class="hidden">
@@ -40,6 +41,16 @@
                 <button id="cancel-btn" class="cancel-btn">ביטול</button>
             </div>
         </div>
+    </div>
+
+    <!-- Flip Card Button - Below the card -->
+    <div class="preview-controls">
+        <button id="split-view-btn" class="btn-secondary" title="תצוגה מפוצלת">
+            📄|📄 פיצול
+        </button>
+        <button id="flip-card-btn" class="flip-card-btn" title="הפוך קלף">
+            ↻ הצג אחורה
+        </button>
     </div>
 </section>
 

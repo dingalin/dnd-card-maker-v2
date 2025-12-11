@@ -96,29 +96,60 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 2rem;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.75rem 2rem;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.7));
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), rgba(241, 196, 15, 0.8), rgba(212, 175, 55, 0.6), transparent) 1;
     width: 100%;
     box-sizing: border-box;
-    /* Ensure header sits above everything */
     position: relative;
     z-index: 50;
 }
 
+/* Subtle glow under header */
+.header-content::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 20%;
+    right: 20%;
+    height: 15px;
+    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.15), transparent);
+    pointer-events: none;
+}
+
 .logo-area h1 {
     font-family: var(--font-display);
-    color: var(--accent-color);
     margin: 0;
-    font-size: 2rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #f1c40f 0%, #d4af37 40%, #b8860b 70%, #d4af37 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: titleShimmer 4s ease-in-out infinite;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+@keyframes titleShimmer {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 .logo-area p {
-    color: #ccc;
+    color: #b0a090;
     margin: 0;
     font-size: 0.9rem;
-    opacity: 0.8;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
 }
 
 .main-nav {

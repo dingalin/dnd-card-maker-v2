@@ -42,11 +42,14 @@
         <!-- 1. Edit Content Section -->
         <div id="edit-content" class="scroll-section hidden">
             <h3>עריכת תוכן</h3>
-            <div id="content-editor" class="space-y-4">
 
-                <!-- Rarity -->
+            <!-- ===== FRONT SIDE CONTROLS ===== -->
+            <div id="front-controls" class="space-y-4">
+                <h4 class="text-amber-400 text-sm font-bold border-b border-amber-600 pb-1 mb-3">צד קדמי</h4>
+
+                <!-- 1. Rarity (Top) -->
                 <div class="control-group">
-                    <label for="edit-rarity" class="text-sm font-medium text-gray-300 mb-1 block">נדירות</label>
+                    <label for="edit-rarity" class="text-sm font-medium text-gray-300 mb-1 block">1. נדירות</label>
                     <div class="flex gap-2 items-center mb-2">
                         <input type="text" id="edit-rarity"
                             class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
@@ -64,18 +67,30 @@
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-rarity"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
                                 <input type="checkbox" id="style-italic-rarity"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-rarity"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-gray-400">S</span>
+                            </label>
                         </div>
                     </div>
-                    <label for="rarity-offset" class="text-xs text-gray-400">מיקום:</label>
-                    <input type="range" id="rarity-offset" min="-100" max="100" value="0" class="flex-1">
+                    <label for="rarity-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
+                    <input type="range" id="rarity-offset" min="-100" max="200" value="0" class="flex-1">
                 </div>
+
+                <!-- 2. Type -->
                 <div class="control-group">
-                    <label for="edit-type" class="text-sm font-medium text-gray-300 mb-1 block">סוג</label>
+                    <label for="edit-type" class="text-sm font-medium text-gray-300 mb-1 block">2. סוג</label>
                     <div class="flex gap-2 items-center mb-2">
                         <input type="text" id="edit-type"
                             class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
@@ -93,20 +108,34 @@
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-type"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
                                 <input type="checkbox" id="style-italic-type"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-type"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-gray-400">S</span>
+                            </label>
                         </div>
                     </div>
-                    <label for="type-offset" class="text-xs text-gray-400">מיקום:</label>
-                    <input type="range" id="type-offset" min="-100" max="100" value="0" class="flex-1">
+                    <label for="type-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
+                    <input type="range" id="type-offset" min="-100" max="200" value="0" class="flex-1">
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="type-width" class="text-xs text-gray-400">רוחב:</label>
+                        <input type="range" id="type-width" min="200" max="700" value="500" class="flex-1">
+                    </div>
                 </div>
 
-                <!-- Name -->
+                <!-- 3. Name -->
                 <div class="control-group">
-                    <label for="edit-name" class="text-sm font-medium text-gray-300 mb-1 block">שם החפץ</label>
+                    <label for="edit-name" class="text-sm font-medium text-gray-300 mb-1 block">3. שם החפץ</label>
                     <div class="flex gap-2 items-center mb-2">
                         <input type="text" id="edit-name"
                             class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
@@ -124,127 +153,126 @@
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-name"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
                                 <input type="checkbox" id="style-italic-name"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-name"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-gray-400">S</span>
+                            </label>
                         </div>
                     </div>
-                    <label for="name-offset" class="text-xs text-gray-400">מיקום:</label>
-                    <input type="range" id="name-offset" min="-100" max="100" value="0" class="flex-1">
-                </div>
-                <div class="flex items-center gap-2 mt-1">
-                    <label for="name-width" class="text-xs text-gray-400">רוחב:</label>
-                    <input type="range" id="name-width" min="100" max="800" value="500" class="flex-1">
+                    <label for="name-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
+                    <input type="range" id="name-offset" min="-100" max="200" value="0" class="flex-1">
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="name-width" class="text-xs text-gray-400">רוחב:</label>
+                        <input type="range" id="name-width" min="100" max="800" value="500" class="flex-1">
+                    </div>
                 </div>
 
-                <!-- Ability Name -->
+                <!-- 4. Core Stats (Damage / AC) -->
                 <div class="control-group">
-                    <label for="edit-ability-name" class="text-sm font-medium text-gray-300 mb-1 block">שם יכולת</label>
+                    <label for="edit-core-stats" class="text-sm font-bold text-amber-500 mb-1 block">4. נזק / דרג"ש
+                        (מודגש)</label>
                     <div class="flex gap-2 items-center mb-2">
-                        <input type="text" id="edit-ability-name"
+                        <input type="text" id="edit-core-stats" placeholder="לדוגמה: 1d8 משופר"
                             class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
                         <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0">
                             <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
-                                data-target="abilityNameSize">-</button>
+                                data-target="coreStatsSize">-</button>
                             <span class="font-value text-xs w-8 text-center text-white"
-                                id="abilityNameSize-display">28px</span>
+                                id="coreStatsSize-display">42px</span>
                             <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
-                                data-target="abilityNameSize">+</button>
+                                data-target="coreStatsSize">+</button>
                         </div>
                         <div class="flex flex-col gap-1 shrink-0">
                             <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
-                                <input type="checkbox" id="style-bold-abilityName"
+                                <input type="checkbox" id="style-bold-coreStats" checked
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-coreStats"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
-                                <input type="checkbox" id="style-italic-abilityName"
+                                <input type="checkbox" id="style-italic-coreStats"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-coreStats"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-gray-400">S</span>
+                            </label>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <label for="ability-offset" class="text-xs text-gray-400">מיקום:</label>
-                        <input type="range" id="ability-offset" min="-400" max="400" value="0" class="flex-1">
+                    <label for="coreStats-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
+                    <input type="range" id="coreStats-offset" min="400" max="900" value="680" class="flex-1">
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="coreStats-width" class="text-xs text-gray-400">רוחב:</label>
+                        <input type="range" id="coreStats-width" min="100" max="800" value="500" class="flex-1">
                     </div>
                 </div>
 
-                <!-- Ability Desc -->
+                <!-- 5. Quick Description (Bottom) -->
                 <div class="control-group">
-                    <label for="edit-ability-desc" class="text-sm font-medium text-gray-300 mb-1 block">תיאור
-                        יכולת</label>
-                    <div class="flex gap-2 items-start mb-2">
-                        <textarea id="edit-ability-desc" rows="3"
-                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white"></textarea>
-                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0 mt-1">
+                    <label for="edit-quick-stats" class="text-sm font-medium text-gray-300 mb-1 block">5. תיאור
+                        קצר</label>
+                    <div class="flex gap-2 items-center mb-2">
+                        <input type="text" id="edit-quick-stats" placeholder="לדוגמה: חרב זו זוהרת בחושך"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
+                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0">
                             <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
-                                data-target="abilityDescSize">-</button>
+                                data-target="statsSize">-</button>
                             <span class="font-value text-xs w-8 text-center text-white"
-                                id="abilityDescSize-display">24px</span>
+                                id="statsSize-display">36px</span>
                             <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
-                                data-target="abilityDescSize">+</button>
+                                data-target="statsSize">+</button>
                         </div>
-                        <div class="flex flex-col gap-1 shrink-0 mt-1">
+                        <div class="flex flex-col gap-1 shrink-0">
                             <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
-                                <input type="checkbox" id="style-bold-abilityDesc"
+                                <input type="checkbox" id="style-bold-stats" checked
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-stats"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
-                                <input type="checkbox" id="style-italic-abilityDesc"
+                                <input type="checkbox" id="style-italic-stats"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 mt-2">
-                        <label for="ability-width" class="text-xs text-gray-400">רוחב טקסט:</label>
-                        <input type="range" id="ability-width" min="100" max="800" value="500" class="flex-1">
-                    </div>
-                </div>
-
-                <!-- Fluff -->
-                <div class="control-group">
-                    <label for="edit-desc" class="text-sm font-medium text-gray-300 mb-1 block">תיאור כללי
-                        (פלאף)</label>
-                    <div class="flex gap-2 items-start mb-2">
-                        <textarea id="edit-desc" rows="3"
-                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white"></textarea>
-                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0 mt-1">
-                            <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
-                                data-target="descSize">-</button>
-                            <span class="font-value text-xs w-8 text-center text-white"
-                                id="descSize-display">22px</span>
-                            <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
-                                data-target="descSize">+</button>
-                        </div>
-                        <div class="flex flex-col gap-1 shrink-0 mt-1">
-                            <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
-                                <input type="checkbox" id="style-bold-desc"
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-stats"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
-                                <span class="text-xs font-bold text-gray-400">B</span>
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
-                                <input type="checkbox" id="style-italic-desc"
-                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
-                                <span class="text-xs italic text-gray-400">I</span>
+                                <span class="text-xs text-gray-400">S</span>
                             </label>
                         </div>
                     </div>
-                    <label for="fluff-offset" class="text-xs text-gray-400">מרווח:</label>
-                    <input type="range" id="fluff-offset" min="0" max="100" value="20" class="flex-1">
-                </div>
-                <div class="flex items-center gap-2 mt-1">
-                    <label for="fluff-width" class="text-xs text-gray-400">רוחב:</label>
-                    <input type="range" id="fluff-width" min="100" max="800" value="500" class="flex-1">
+                    <label for="stats-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
+                    <input type="range" id="stats-offset" min="400" max="900" value="600" class="flex-1">
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="stats-width" class="text-xs text-gray-400">רוחב:</label>
+                        <input type="range" id="stats-width" min="100" max="800" value="500" class="flex-1">
+                    </div>
                 </div>
 
-                <!-- Gold -->
+                <!-- 6. Gold -->
                 <div class="control-group">
-                    <label for="edit-gold" class="text-sm font-medium text-gray-300 mb-1 block">מחיר (זהב)</label>
+                    <label for="edit-gold" class="text-sm font-medium text-gray-300 mb-1 block">6. מחיר (זהב)</label>
                     <div class="flex gap-2 items-center mb-2">
                         <input type="text" id="edit-gold" value="400"
                             class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
@@ -262,15 +290,152 @@
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs font-bold text-gray-400">B</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-gold"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
                             <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
                                 <input type="checkbox" id="style-italic-gold"
                                     class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
                                 <span class="text-xs italic text-gray-400">I</span>
                             </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="צל">
+                                <input type="checkbox" id="style-shadow-gold"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-gray-400">S</span>
+                            </label>
                         </div>
                     </div>
-                    <label for="gold-offset" class="text-xs text-gray-400">מיקום:</label>
+                    <label for="gold-offset" class="text-xs text-gray-400">מיקום (גובה):</label>
                     <input type="range" id="gold-offset" min="-100" max="100" value="0" class="flex-1">
+                </div>
+            </div>
+
+            <!-- ===== BACK SIDE CONTROLS ===== -->
+            <div id="back-controls" class="space-y-4 hidden">
+                <h4 class="text-amber-400 text-sm font-bold border-b border-amber-600 pb-1 mb-3">צד אחורי</h4>
+
+                <!-- Ability Name -->
+                <div class="control-group">
+                    <label for="edit-ability-name" class="text-sm font-medium text-gray-300 mb-1 block">שם יכולת</label>
+                    <div class="flex gap-2 items-center mb-2">
+                        <input type="text" id="edit-ability-name"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white">
+                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0">
+                            <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
+                                data-target="abilityNameSize">-</button>
+                            <span class="font-value text-xs w-8 text-center text-white"
+                                id="abilityNameSize-display">36px</span>
+                            <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
+                                data-target="abilityNameSize">+</button>
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0">
+                            <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
+                                <input type="checkbox" id="style-bold-abilityName" checked
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs font-bold text-gray-400">B</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-abilityName"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
+                                <input type="checkbox" id="style-italic-abilityName"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs italic text-gray-400">I</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="ability-offset" class="text-xs text-gray-400">מיקום:</label>
+                        <input type="range" id="ability-offset" min="50" max="250" value="120" class="flex-1">
+                    </div>
+                </div>
+
+                <!-- Mechanics (Ability Desc) -->
+                <div class="control-group">
+                    <label for="edit-ability-desc" class="text-sm font-medium text-gray-300 mb-1 block">מכניקה</label>
+                    <div class="flex gap-2 items-start mb-2">
+                        <textarea id="edit-ability-desc" rows="3"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white"></textarea>
+                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0 mt-1">
+                            <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
+                                data-target="mechSize">-</button>
+                            <span class="font-value text-xs w-8 text-center text-white"
+                                id="mechSize-display">24px</span>
+                            <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
+                                data-target="mechSize">+</button>
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0 mt-1">
+                            <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
+                                <input type="checkbox" id="style-bold-mech"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs font-bold text-gray-400">B</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-mech"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
+                                <input type="checkbox" id="style-italic-mech"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs italic text-gray-400">I</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="mech-offset" class="text-xs text-gray-400">מיקום:</label>
+                        <input type="range" id="mech-offset" min="100" max="400" value="180" class="flex-1">
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <label for="ability-width" class="text-xs text-gray-400">רוחב טקסט:</label>
+                        <input type="range" id="ability-width" min="100" max="800" value="600" class="flex-1">
+                    </div>
+                </div>
+
+                <!-- Lore (Fluff) -->
+                <div class="control-group">
+                    <label for="edit-desc" class="text-sm font-medium text-gray-300 mb-1 block">רקע וסיפור (לור)</label>
+                    <div class="flex gap-2 items-start mb-2">
+                        <textarea id="edit-desc" rows="3"
+                            class="flex-1 bg-gray-700 border border-gray-600 rounded p-2 text-white"></textarea>
+                        <div class="flex items-center gap-1 bg-gray-800 rounded px-2 py-0.5 shrink-0 mt-1">
+                            <button type="button" class="font-btn font-decrease text-gray-400 hover:text-white"
+                                data-target="loreSize">-</button>
+                            <span class="font-value text-xs w-8 text-center text-white"
+                                id="loreSize-display">20px</span>
+                            <button type="button" class="font-btn font-increase text-gray-400 hover:text-white"
+                                data-target="loreSize">+</button>
+                        </div>
+                        <div class="flex flex-col gap-1 shrink-0 mt-1">
+                            <label class="flex items-center gap-1 cursor-pointer" title="מודגש">
+                                <input type="checkbox" id="style-bold-lore"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs font-bold text-gray-400">B</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="הילה">
+                                <input type="checkbox" id="style-glow-lore"
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs text-yellow-400" style="text-shadow: 0 0 2px #fcd34d;">H</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer" title="נטוי">
+                                <input type="checkbox" id="style-italic-lore" checked
+                                    class="accent-amber-500 w-4 h-4 rounded-sm bg-gray-700 border-gray-600">
+                                <span class="text-xs italic text-gray-400">I</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="lore-offset" class="text-xs text-gray-400">מיקום:</label>
+                        <input type="range" id="lore-offset" min="400" max="1100" value="600" class="flex-1">
+                    </div>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="lore-width" class="text-xs text-gray-400">רוחב:</label>
+                        <input type="range" id="lore-width" min="100" max="800" value="550" class="flex-1">
+                    </div>
                 </div>
             </div>
         </div>
@@ -287,11 +452,55 @@
                     <option value="Assistant">Assistant (נקי)</option>
                 </select>
             </div>
+
+
         </div>
 
         <!-- 3. Image Tuning Section -->
         <div id="image-tuning" class="scroll-section hidden">
             <h3>כיוונון תמונה</h3>
+
+            <!-- Global Margin Controls -->
+            <div class="control-group bg-gray-800 p-3 rounded-lg border border-amber-600 mb-4">
+                <label class="block text-sm font-bold mb-3" style="color: #fbbf24;">
+                    🎯 כיווץ/הרחבה גלובלי
+                </label>
+
+                <!-- Lock checkbox -->
+                <div class="flex items-center gap-2 mb-3">
+                    <input type="checkbox" id="global-margin-lock" checked class="accent-amber-500 w-4 h-4">
+                    <label for="global-margin-lock" class="text-xs text-gray-300 cursor-pointer">
+                        🔗 נעילת יחס
+                    </label>
+                </div>
+
+                <!-- Height (Vertical) Slider -->
+                <div class="mb-3">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>↕️ כיווץ אנכי</span>
+                        <span id="global-margin-y-val">0</span>
+                    </div>
+                    <input type="range" id="global-margin-y" min="-100" max="100" value="0" class="w-full">
+                </div>
+
+                <!-- Width (Horizontal) Slider -->
+                <div>
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>↔️ כיווץ אופקי</span>
+                        <span id="global-margin-x-val">0</span>
+                    </div>
+                    <input type="range" id="global-margin-x" min="-100" max="100" value="0" class="w-full">
+                </div>
+            </div>
+
+            <!-- Auto Layout Button -->
+            <div class="mb-4">
+                <button id="auto-layout-btn" class="btn-primary w-full"
+                    style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border-color: #7c3aed;">
+                    ✨ כיוונון אוטומטי
+                </button>
+            </div>
+
             <div class="layout-controls space-y-4">
                 <!-- Image Offset -->
                 <div class="control-group bg-gray-800 p-3 rounded-lg border border-gray-700">

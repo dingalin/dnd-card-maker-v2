@@ -8,52 +8,82 @@ class StateManager {
     constructor() {
         this.state = {
             cardData: null,
+            isFlipped: false, // Track which side is displayed
             settings: {
-                fontSizes: {
-                    nameSize: 48,
-                    typeSize: 24,
-                    raritySize: 24,
-                    abilityNameSize: 28,
-                    abilityDescSize: 24,
-                    descSize: 22,
-                    goldSize: 24
+                // ===== FRONT SIDE SETTINGS =====
+                front: {
+                    fontSizes: {
+                        nameSize: 64, // Large title
+                        typeSize: 24,
+                        raritySize: 24,
+                        statsSize: 32,
+                        coreStatsSize: 42, // NEW: Dedicated size for Damage/AC
+                        goldSize: 32 // Large gold text
+                    },
+                    offsets: {
+                        name: -10, // ~Y=250
+                        type: -50, // ~Y=170
+                        rarity: -110, // ~Y=130 (Top)
+                        stats: 780, // Description ~Y=780
+                        coreStats: 680, // Damage/AC ~Y=680 (Separate from description)
+                        gold: 15, // ~Y=935
+                        imageYOffset: 0,
+                        imageScale: 1.0,
+                        imageRotation: 0,
+                        imageFade: 0,
+                        imageShadow: 0,
+                        backgroundScale: 1.0,
+                        nameWidth: 543,
+                        typeWidth: 500,
+                        rarityWidth: 500,
+                        coreStatsWidth: 500,
+                        statsWidth: 500,
+                        goldWidth: 500
+                    },
+                    fontStyles: {
+                        nameBold: true, nameItalic: false,
+                        typeBold: false, typeItalic: false,
+                        rarityBold: false, rarityItalic: false,
+                        statsBold: true, statsItalic: false,
+                        coreStatsBold: true, coreStatsItalic: false,
+                        goldBold: true, goldItalic: false
+                    }
                 },
-                offsets: {
-                    name: 50,
-                    type: 27,
-                    rarity: -59,
-                    abilityY: 578,
-                    fluffPadding: 20,
-                    gold: 0,
-                    imageYOffset: 0,
-                    imageScale: 1.0,
-                    imageRotation: 0,
-                    imageFade: 0,
-                    imageShadow: 0,
-                    backgroundScale: 1.0,
-                    nameWidth: 500,
-                    typeWidth: 500,
-                    rarityWidth: 500,
-                    abilityWidth: 500,
-                    fluffWidth: 500,
-                    goldWidth: 500
+                // ===== BACK SIDE SETTINGS =====
+                back: {
+                    fontSizes: {
+                        abilityNameSize: 52, // Large header
+                        mechSize: 32, // Readable body
+                        loreSize: 24
+                    },
+                    offsets: {
+                        abilityName: 140, // Y position (High)
+                        mech: 220, // Start of body
+                        lore: 880, // Bottom fade area
+                        mechWidth: 600,
+                        loreWidth: 550
+                    },
+                    fontStyles: {
+                        abilityNameBold: true, abilityNameItalic: false,
+                        mechBold: false, mechItalic: false,
+                        loreBold: false, loreItalic: true
+                    }
                 },
+                // ===== SHARED SETTINGS =====
                 style: {
                     fontFamily: 'Heebo',
                     imageStyle: 'natural',
-                    imageColor: '#ffffff'
-                },
-                fontStyles: {
-                    nameBold: true, nameItalic: false,
-                    typeBold: false, typeItalic: false,
-                    rarityBold: false, rarityItalic: false,
-                    abilityNameBold: true, abilityNameItalic: false,
-                    abilityDescBold: false, abilityDescItalic: false,
-                    descBold: false, descItalic: true, // Fluff default italic
-                    goldBold: true, goldItalic: false
+                    imageColor: '#ffffff',
+                    // Text effects
+                    textOutlineEnabled: false,
+                    textOutlineWidth: 2,
+                    textShadowEnabled: false,
+                    textShadowBlur: 4,
+                    textBackdropEnabled: false,
+                    textBackdropOpacity: 40
                 }
             },
-            lastContext: null // Store the last selected image/background URL
+            lastContext: null
         };
 
         this.listeners = [];
@@ -78,6 +108,10 @@ class StateManager {
      * Notify all listeners of state changes
      * @param {string} changedKey - The key that changed (e.g., 'cardData', 'settings.offsets')
      */
+    /**
+     * Notify all listeners of state changes
+     * @param {string} changedKey - The key that changed (e.g., 'cardData', 'settings.offsets')
+     */
     notify(changedKey) {
         this.listeners.forEach(listener => listener(this.state, changedKey));
 
@@ -88,12 +122,56 @@ class StateManager {
     }
 
     /**
+     * Ensure data follows V2 structure (Front/Back)
+     * @param {Object} data - Raw card data
+     * @returns {Object} V2 Compliant Data
+     */
+    migrateToV2(data) {
+        if (data.front && data.back) {
+            return data; // Already V2
+        }
+
+        console.log("📦 Migrating Card Data to V2 (Double-Sided)...");
+
+        // V1 -> V2 Migration
+        return {
+            id: data.id || Date.now(),
+            timestamp: data.timestamp || Date.now(),
+            front: {
+                title: data.name || '',
+                type: data.type || data.typeHe || '',
+                rarity: data.rarity || data.rarityHe || '',
+                imageUrl: data.imageUrl || null,
+                imageStyle: data.imageStyle || 'natural',
+                quickStats: data.quickStats || '', // NEW: Quick stats for front side
+                gold: data.gold || '',
+                badges: data.gold ? [data.gold] : []
+            },
+            back: {
+                title: data.abilityName || '',
+                mechanics: data.abilityDesc || '',
+                lore: data.description || '' // Fluff maps to Lore
+            },
+            // Preserve weapon/armor stats at root for renderer access
+            weaponDamage: data.weaponDamage || '',
+            damageType: data.damageType || '',
+            armorClass: data.armorClass || '',
+            versatileDamage: data.versatileDamage || null,
+            weaponProperties: data.weaponProperties || [],
+            // Keep specific legacy fields if needed for direct access before full UI update
+            // But ideally we rely on the new structure
+            legacy: true
+        };
+    }
+
+    /**
      * Set the entire card data
      * @param {Object} data - New card data
      */
     setCardData(data) {
-        this.state.cardData = { ...data };
-        // Merge existing font sizes/offsets if present in data, otherwise keep current defaults
+        this.state.cardData = this.migrateToV2(data);
+
+        // Merge existing font sizes/offsets if present in data
         if (data.fontSizes) {
             this.state.settings.fontSizes = { ...this.state.settings.fontSizes, ...data.fontSizes };
         }
@@ -105,13 +183,46 @@ class StateManager {
 
     /**
      * Update a specific field in card data
-     * @param {string} field - Field name
+     * Supports dot notation: 'front.title', 'back.mechanics'
+     * @param {string} path - Field path
      * @param {any} value - New value
      */
-    updateCardField(field, value) {
+    updateCardField(path, value) {
         if (!this.state.cardData) return;
-        this.state.cardData[field] = value;
-        this.notify(`cardData.${field}`);
+
+        // Handle Dot Notation for nested updates
+        if (path.includes('.')) {
+            const keys = path.split('.');
+            let current = this.state.cardData;
+
+            // Traverse to parent
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (!current[keys[i]]) current[keys[i]] = {}; // Create if missing
+                current = current[keys[i]];
+            }
+
+            // Set value
+            current[keys[keys.length - 1]] = value;
+        } else {
+            // Fallback for flat keys (should be avoided in V2)
+            this.state.cardData[path] = value;
+        }
+
+        this.notify(`cardData.${path}`);
+    }
+
+    /**
+     * Determine which side (front/back) an offset key belongs to
+     * @param {string} key - Offset key
+     * @returns {string} - 'front' or 'back'
+     */
+    _getSideForKey(key) {
+        // Back-side specific keys
+        const backKeys = ['abilityName', 'mech', 'lore', 'mechWidth', 'loreWidth'];
+        if (backKeys.includes(key)) return 'back';
+
+        // Front-side keys (default)
+        return 'front';
     }
 
     /**
@@ -120,8 +231,35 @@ class StateManager {
      * @param {number} value - New value
      */
     updateOffset(key, value) {
-        this.state.settings.offsets[key] = value;
-        this.notify(`settings.offsets.${key}`);
+        const side = this._getSideForKey(key);
+        if (!this.state.settings[side]) this.state.settings[side] = {};
+        if (!this.state.settings[side].offsets) this.state.settings[side].offsets = {};
+
+        this.state.settings[side].offsets[key] = value;
+        this.notify(`settings.${side}.offsets.${key}`);
+    }
+
+    /**
+     * Get a specific offset value
+     * @param {string} key - Offset key
+     * @returns {number|undefined} - Current offset value
+     */
+    getOffset(key) {
+        const side = this._getSideForKey(key);
+        return this.state.settings[side]?.offsets?.[key];
+    }
+
+    /**
+     * Determine which side a font size key belongs to
+     * @param {string} key - Font size key
+     * @returns {string} - 'front' or 'back'
+     */
+    _getSideForFontSizeKey(key) {
+        // Back-side specific font sizes
+        const backKeys = ['abilityNameSize', 'mechSize', 'loreSize'];
+        if (backKeys.includes(key)) return 'back';
+
+        return 'front';
     }
 
     /**
@@ -130,9 +268,13 @@ class StateManager {
      * @param {number} change - Amount to change (e.g., +2, -2)
      */
     updateFontSize(key, change) {
-        const current = this.state.settings.fontSizes[key] || 24;
-        this.state.settings.fontSizes[key] = current + (change * 2);
-        this.notify(`settings.fontSizes.${key}`);
+        const side = this._getSideForFontSizeKey(key);
+        if (!this.state.settings[side]) this.state.settings[side] = {};
+        if (!this.state.settings[side].fontSizes) this.state.settings[side].fontSizes = {};
+
+        const current = this.state.settings[side].fontSizes[key] || 24;
+        this.state.settings[side].fontSizes[key] = current + (change * 2);
+        this.notify(`settings.${side}.fontSizes.${key}`);
     }
 
     /**
@@ -141,8 +283,28 @@ class StateManager {
      * @param {any} value - New value
      */
     updateStyle(key, value) {
+        // Ensure style object exists
+        if (!this.state.settings.style) {
+            this.state.settings.style = {};
+        }
+        console.log('StateManager.updateStyle:', key, value, 'before:', this.state.settings.style[key]);
         this.state.settings.style[key] = value;
+        console.log('StateManager.updateStyle:', key, 'after:', this.state.settings.style[key]);
         this.notify(`settings.style.${key}`);
+    }
+
+    /**
+     * Determine which side a font style key belongs to
+     * @param {string} key - Font style key (e.g., 'nameBold', 'mechItalic')
+     * @returns {string} - 'front' or 'back'
+     */
+    _getSideForFontStyleKey(key) {
+        // Back-side specific font styles (prefix-based)
+        const backPrefixes = ['abilityName', 'mech', 'lore'];
+        for (const prefix of backPrefixes) {
+            if (key.startsWith(prefix)) return 'back';
+        }
+        return 'front';
     }
 
     /**
@@ -151,9 +313,12 @@ class StateManager {
      * @param {boolean} value 
      */
     updateFontStyle(key, value) {
-        if (!this.state.settings.fontStyles) this.state.settings.fontStyles = {};
-        this.state.settings.fontStyles[key] = value;
-        this.notify(`settings.fontStyles.${key}`);
+        const side = this._getSideForFontStyleKey(key);
+        if (!this.state.settings[side]) this.state.settings[side] = {};
+        if (!this.state.settings[side].fontStyles) this.state.settings[side].fontStyles = {};
+
+        this.state.settings[side].fontStyles[key] = value;
+        this.notify(`settings.${side}.fontStyles.${key}`);
     }
 
     /**
@@ -208,7 +373,9 @@ class StateManager {
                     data.cardData.imageUrl = null;
                 }
 
-                this.state.cardData = data.cardData;
+                // Ensure data is V2 compliant (Migrate on load)
+                this.state.cardData = this.migrateToV2(data.cardData);
+
                 if (data.settings) {
                     this.state.settings = { ...this.state.settings, ...data.settings };
                 }
