@@ -18,6 +18,10 @@ class I18nService {
     async init() {
         console.log('[i18n] Starting initialization...');
 
+        // Get base URL from Vite (handles GitHub Pages subpath)
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        console.log('[i18n] Base URL:', baseUrl);
+
         // Load saved preference or default to Hebrew
         this.currentLocale = localStorage.getItem('dnd-card-locale') || 'en';
         console.log('[i18n] Saved locale:', this.currentLocale);
@@ -25,7 +29,7 @@ class I18nService {
         // Load fallback (Hebrew) first
         try {
             console.log('[i18n] Fetching Hebrew translations from /locales/he.json...');
-            const heResponse = await fetch('./locales/he.json');
+            const heResponse = await fetch(`${baseUrl}locales/he.json`);
             console.log('[i18n] Hebrew fetch response status:', heResponse.status);
             if (!heResponse.ok) {
                 throw new Error(`HTTP ${heResponse.status}: ${heResponse.statusText}`);
@@ -56,7 +60,8 @@ class I18nService {
      */
     async loadLocale(locale, updateDOM = true) {
         try {
-            const response = await fetch(`./locales/${locale}.json`);
+            const baseUrl = import.meta.env.BASE_URL || '/';
+            const response = await fetch(`${baseUrl}locales/${locale}.json`);
             if (!response.ok) throw new Error(`Failed to load locale: ${locale}`);
 
             this.translations = await response.json();
