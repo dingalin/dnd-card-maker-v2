@@ -579,7 +579,7 @@ export class GeneratorController {
         const btn = document.getElementById('generate-bg-btn');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'מייצר...';
+            btn.textContent = window.i18n?.t('generator.calculating') || 'Processing...';
         }
 
         try {
@@ -608,7 +608,7 @@ export class GeneratorController {
         } finally {
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = 'צור רקע';
+                btn.textContent = window.i18n?.t('cardBackground.generate') || 'Create Background';
             }
         }
     }
@@ -691,18 +691,20 @@ export class GeneratorController {
                 console.log("🎨 Attempting Imagen 3 generation...");
                 return await this.gemini.generateImageImagen3(prompt, style, styleOption, color);
             } catch (imagenError) {
-                console.warn("⚠️ Imagen 3 failed, falling back to GetImg:", imagenError.message);
+                console.warn("⚠️ Imagen 3 failed, trying fallbacks:", imagenError.message);
 
-                // Fallback to GetImg if available
+                // Fallback 1: GetImg if available
                 const fallbackKey = document.getElementById('getimg-api-key')?.value.trim()
                     || localStorage.getItem('getimg_api_key');
 
                 if (fallbackKey) {
                     console.log("🔄 Using GetImg as fallback...");
                     return await this.gemini.generateImageGetImg(prompt, 'getimg-flux', style, fallbackKey, styleOption, color);
-                } else {
-                    throw imagenError; // No fallback available
                 }
+
+                // Fallback 2: Pollinations (free, no API key needed)
+                console.log("🔄 Using Pollinations as free fallback...");
+                return await this.gemini.generateItemImage(prompt, 'flux', style, styleOption, color);
             }
         }
 
@@ -726,14 +728,14 @@ export class GeneratorController {
     async onAutoLayout() {
         const currentState = this.state.getState();
         if (!currentState.cardData) {
-            this.ui.showToast('אין קלף להתאמה', 'warning');
+            this.ui.showToast(window.i18n?.t('generator.noCardForLayout') || 'No card to adjust', 'warning');
             return;
         }
 
         const btn = document.getElementById('auto-layout-btn');
         if (btn) {
             btn.disabled = true;
-            btn.textContent = '🔍 מזהה שטח...';
+            btn.textContent = window.i18n?.t('generator.detectingArea') || 'Detecting area...';
         }
 
         try {
@@ -745,7 +747,7 @@ export class GeneratorController {
             const canvas = document.getElementById('card-canvas');
             if (!canvas) throw new Error('Canvas not found');
 
-            if (btn) btn.textContent = '🔍 מזהה מסגרת...';
+            if (btn) btn.textContent = window.i18n?.t('generator.detectingFrame') || 'Detecting frame...';
 
             // Use smart fixed defaults based on standard 750x1050 card
             // These values work for most card templates with decorative frames
@@ -760,7 +762,7 @@ export class GeneratorController {
 
             console.log('Using standard safe area for 750x1050 card:', safeArea);
 
-            if (btn) btn.textContent = '✨ מחשב...';
+            if (btn) btn.textContent = window.i18n?.t('generator.calculating') || 'Calculating...';
 
             // Step 2: Get card data
             const cardData = currentState.cardData;

@@ -453,7 +453,7 @@ export class RenderController {
             container.classList.add('split-view');
             backCanvas.classList.remove('hidden');
             if (splitBtn) {
-                splitBtn.textContent = '📄 פיצול (פעיל)';
+                splitBtn.textContent = window.i18n?.t('preview.splitViewActive') || '📄 Split (Active)';
                 splitBtn.classList.add('active');
             }
             if (flipBtn) flipBtn.classList.add('hidden');
@@ -463,7 +463,7 @@ export class RenderController {
             container.classList.remove('split-view');
             backCanvas.classList.add('hidden');
             if (splitBtn) {
-                splitBtn.textContent = '📄|📄 פיצול';
+                splitBtn.textContent = window.i18n?.t('preview.splitView') || '📄|📄 Split';
                 splitBtn.classList.remove('active');
             }
             if (flipBtn) flipBtn.classList.remove('hidden');

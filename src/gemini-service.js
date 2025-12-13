@@ -153,8 +153,8 @@ class GeminiService {
         "name": "STRICT RULES: 1-3 Hebrew words MAX. FORBIDDEN WORDS (never use these in name): חרב, גרזן, רומח, קשת, מגל, פטיש, פגיון, מגן, שריון, טבעת, שרביט, מטה, שיקוי. Use ONLY creative nicknames like: להב הרעם, עוקץ הצל, שן הדרקון, קול הקרח, נשימת האש, עין הנשר.",
         "typeHe": "Hebrew Type (e.g. נשק, שריון, שיקוי, טבעת)",
         "rarityHe": "Hebrew Rarity - Use these exact translations: Common=נפוץ, Uncommon=לא נפוץ, Rare=נדיר, Very Rare=נדיר מאוד, Legendary=אגדי, Artifact=ארטיפקט",
-        "abilityName": "Hebrew Ability Name",
-        "abilityDesc": "COMPLETE Hebrew mechanical description (max 50 words) with ALL game rules: include saving throw type and DC (e.g. 'DC 14 חכמה'), duration (e.g. 'דקה אחת', 'שעה אחת', 'עד המנוחה הארוכה הבאה'), number of uses (e.g. 'פעם ביום', '3 פעמים בלילה'), mechanical effects (e.g. 'חסרון בהתקפות', 'מהירות מופחתת ב-10'). Be specific and playable!",
+        "abilityName": "ENGLISH Ability Name (always in English, e.g. 'Resonant Transmutation', 'Shadow Strike', 'Elemental Fury')",
+        "abilityDesc": "COMPLETE ENGLISH mechanical description (max 50 words) with ALL game rules: include saving throw type and DC (e.g. 'DC 14 Wisdom'), duration (e.g. '1 minute', '1 hour', 'until next long rest'), number of uses (e.g. 'once per day', '3 times per night'), mechanical effects (e.g. 'disadvantage on attacks', 'speed reduced by 10'). ALWAYS IN ENGLISH. Be specific and playable!",
         "description": "Hebrew Fluff Description (max 20 words)",
         "gold": "Estimated price in GP (number only, e.g. 500)",
         "weaponDamage": "Full damage string including dice and type in HEBREW (e.g. '1d8 + 1d6 אש' or '2d6 חותך'). Use Hebrew damage types: slashing=חותך, piercing=דוקר, bludgeoning=מוחץ, fire=אש, cold=קור, lightning=ברק, poison=רעל, acid=חומצה, necrotic=נמק, radiant=זוהר, force=כוח, psychic=נפשי, thunder=רעם.",
@@ -589,13 +589,14 @@ class GeminiService {
         const finalPrompt = `${styleKeywords}, ${visualPrompt}, ${backgroundPrompt}, high quality, 8k resolution`;
         console.log(`🎨 Imagen 3: Generating image with prompt: "${finalPrompt.substring(0, 100)}..."`);
 
+        // Use predict endpoint (correct method for Imagen 3)
         const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict';
 
         const requestBody = {
             instances: [{ prompt: finalPrompt }],
             parameters: {
                 sampleCount: 1,
-                aspectRatio: "3:4", // Card aspect ratio
+                aspectRatio: "3:4",
                 safetyFilterLevel: "BLOCK_MEDIUM_AND_ABOVE",
                 personGeneration: "ALLOW_ADULT"
             }
@@ -636,12 +637,20 @@ class GeminiService {
 
                 const data = await response.json();
 
-                // Extract base64 image from response
-                if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-                    const base64Image = data.predictions[0].bytesBase64Encoded;
+                // Extract base64 image from response (new format uses generatedImages)
+                if (data.generatedImages && data.generatedImages[0] && data.generatedImages[0].image) {
+                    const base64Image = data.generatedImages[0].image.imageBytes;
                     const imageUrl = `data:image/png;base64,${base64Image}`;
                     const blob = await (await fetch(imageUrl)).blob();
                     console.log("✅ Imagen 3: Image generated successfully");
+                    return URL.createObjectURL(blob);
+                }
+                // Fallback to old format
+                else if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+                    const base64Image = data.predictions[0].bytesBase64Encoded;
+                    const imageUrl = `data:image/png;base64,${base64Image}`;
+                    const blob = await (await fetch(imageUrl)).blob();
+                    console.log("✅ Imagen 3: Image generated successfully (legacy format)");
                     return URL.createObjectURL(blob);
                 } else {
                     throw new Error("Imagen 3 returned no image data");

@@ -438,9 +438,42 @@ class StateManager {
     async saveToHistory(thumbnail = null) {
         if (!this.state.cardData) return;
 
+        // Get base name from card data - check V2 format (front.title) first, then legacy name, then type
+        let baseName = this.state.cardData.front?.title ||
+            this.state.cardData.name ||
+            this.state.cardData.type ||
+            this.state.cardData.front?.rarity ||
+            (window.i18n?.t('toasts.unnamed') || 'Unnamed Item');
+
+        // Remove any existing number suffix for the base comparison
+        baseName = baseName.replace(/\s*\d+$/, '').trim();
+
+        // Get all existing cards to find duplicates
+        const existingCards = await window.storageManager.getAllCards();
+
+        // Find cards with the same base name
+        let maxNumber = 0;
+        existingCards.forEach(card => {
+            if (card.name) {
+                // Extract base name and number from existing card names
+                const match = card.name.match(/^(.+?)\s*(\d+)?$/);
+                if (match) {
+                    const existingBase = match[1].trim();
+                    const existingNum = parseInt(match[2]) || 1;
+
+                    if (existingBase === baseName) {
+                        maxNumber = Math.max(maxNumber, existingNum);
+                    }
+                }
+            }
+        });
+
+        // Create unique name with incremented counter
+        const uniqueName = `${baseName} ${maxNumber + 1}`;
+
         const historyItem = {
             id: Date.now(),
-            name: this.state.cardData.name || 'חפץ ללא שם',
+            name: uniqueName,
             cardData: this.state.cardData,
             settings: this.state.settings,
             thumbnail: thumbnail,
@@ -451,7 +484,7 @@ class StateManager {
         // We no longer maintain a local array, we notify listeners that 'history' changed
         // Consumers should call getHistory() which is now async or return a promise
         this.notify('historyUpdated');
-        console.log('📚 Card saved to DB');
+        console.log(`📚 Card saved to DB as "${uniqueName}"`);
     }
 
     /**

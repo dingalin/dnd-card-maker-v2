@@ -128,7 +128,7 @@ function initWindowManager() {
     const windows = document.querySelectorAll('.floating-window');
     const toolbarBtns = document.querySelectorAll('.toolbar-btn[data-target]');
     const closeBtns = document.querySelectorAll('.window-close-btn');
-    let maxZIndex = 100;
+    let maxZIndex = 700; // Start above nav (500) and scroll menus (600)
 
     // Open Window
     toolbarBtns.forEach(btn => {
@@ -160,61 +160,12 @@ function initWindowManager() {
         });
     });
 
-    // Drag Logic
+    // Drag Logic - DISABLED per user request
+    // Windows are now fixed in center and cannot be dragged
     windows.forEach(win => {
         const header = win.querySelector('.window-header');
-        if (!header) return;
-
-        // Bring to front on click
-        win.addEventListener('mousedown', () => {
-            maxZIndex++;
-            win.style.zIndex = maxZIndex;
-        });
-
-        let isDragging = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
-        let xOffset = 0;
-        let yOffset = 0;
-
-        header.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-
-        function dragStart(e) {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-
-            if (e.target === header || header.contains(e.target)) {
-                // Ignore close button
-                if (e.target.closest('.window-close-btn')) return;
-                isDragging = true;
-            }
-        }
-
-        function drag(e) {
-            if (isDragging) {
-                e.preventDefault();
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-
-                xOffset = currentX;
-                yOffset = currentY;
-
-                setTranslate(currentX, currentY, win);
-            }
-        }
-
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
-        }
-
-        function dragEnd(e) {
-            initialX = currentX;
-            initialY = currentY;
-            isDragging = false;
+        if (header) {
+            header.style.cursor = 'default'; // Remove grab cursor
         }
     });
 }

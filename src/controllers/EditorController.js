@@ -245,7 +245,9 @@ export class EditorController {
         const btn = document.getElementById('flip-card-btn');
         if (btn) {
             btn.classList.toggle('active', this.isFlipped);
-            btn.innerHTML = this.isFlipped ? '↺ הצג קדימה' : '↻ הצג אחורה';
+            btn.innerHTML = this.isFlipped
+                ? (window.i18n?.t('preview.flip') || '↺ Show Front')
+                : (window.i18n?.t('preview.flipBack') || '↻ Show Back');
         }
 
         // Toggle Visibility of Edit Sections based on Card Face

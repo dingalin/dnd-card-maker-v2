@@ -34,8 +34,12 @@ export class BackgroundManager {
     }
 
     init() {
+        console.log('[BGManager] Init - openBtn:', this.openBtn, 'modal:', this.modal);
         if (this.openBtn) {
             this.openBtn.addEventListener('click', () => this.openModal());
+            console.log('[BGManager] ✅ Ready-Made button listener attached');
+        } else {
+            console.warn('[BGManager] ⚠️ ready-made-bg-btn not found!');
         }
         if (this.closeBtn) {
             this.closeBtn.addEventListener('click', () => this.closeModal());
@@ -394,9 +398,15 @@ export class BackgroundManager {
     }
 
     async openModal() {
-        if (!this.modal) return;
+        console.log('[BGManager] openModal called, modal:', this.modal);
+        if (!this.modal) {
+            console.error('[BGManager] ❌ Modal not found! Cannot open.');
+            return;
+        }
 
+        console.log('[BGManager] Opening modal...');
         this.updateModalPosition();
+        this.modal.style.zIndex = '750'; // Above scroll-container (600), below modals (800)
         this.modal.classList.remove('hidden');
 
         // Load images if not already loaded
@@ -409,19 +419,28 @@ export class BackgroundManager {
         const sidebar = document.querySelector('.sidebar-end');
         if (sidebar && this.modal) {
             const rect = sidebar.getBoundingClientRect();
+            const isRTL = document.body.classList.contains('rtl');
 
             // Apply sidebar dimensions and position to the modal
             this.modal.style.top = `${rect.top}px`;
-            this.modal.style.left = `${rect.left}px`;
-
-            // Expand width significantly to allow 3 columns (approx 900px or wider)
-            // We clamp it to not overflow the window width too aggressively
-            const expandedWidth = Math.min(950, window.innerWidth - rect.left - 20);
-            this.modal.style.width = `${expandedWidth}px`;
-
             this.modal.style.height = `${rect.height}px`;
 
-            // Match the sidebar's border radius if possible/needed, though CSS handles it
+            // Expand width significantly to allow 3 columns (approx 900px or wider)
+            const expandedWidth = Math.min(950, window.innerWidth * 0.7);
+            this.modal.style.width = `${expandedWidth}px`;
+
+            if (isRTL) {
+                // RTL: Modal expands to the left of sidebar
+                this.modal.style.left = `${rect.left}px`;
+                this.modal.style.right = 'auto';
+            } else {
+                // LTR: Modal expands to the left from the sidebar's right edge
+                const rightEdge = window.innerWidth - rect.right;
+                this.modal.style.right = `${rightEdge}px`;
+                this.modal.style.left = 'auto';
+            }
+
+            console.log(`[BGManager] Modal positioned - isRTL: ${isRTL}, rect:`, rect);
         }
     }
 

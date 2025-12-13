@@ -240,7 +240,7 @@ textarea:focus {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1.8);
-  z-index: 99999;
+  z-index: 1000;
   box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.95);
   cursor: zoom-out;
   max-height: 90vh;
@@ -821,7 +821,7 @@ body::after {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 1000;
+  z-index: 500;
 }
 
 .nav-tab {
@@ -1006,7 +1006,7 @@ body::before {
   height: 100%;
   background: var(--panel-bg);
   backdrop-filter: blur(10px);
-  z-index: 9999;
+  z-index: 800;
   /* Ensure it's on top of everything */
   display: flex;
   flex-direction: column;
@@ -1129,7 +1129,7 @@ body::before {
   border-radius: 2px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   padding: 1.5rem;
-  z-index: 2000;
+  z-index: 600;
   display: none;
   color: #2c1810;
   direction: rtl;
@@ -1144,7 +1144,7 @@ body::before {
   /* Ensure clickable/scrollable */
   scrollbar-width: thin;
   scrollbar-color: #8b4513 transparent;
-  z-index: 2100;
+  z-index: 600;
 }
 
 /* Custom Scrollbar for Webkit */
@@ -1660,7 +1660,7 @@ body::before {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.95);
-  z-index: 10000;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;

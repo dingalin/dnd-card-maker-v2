@@ -9,7 +9,7 @@
     background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    z-index: 9999;
+    z-index: 950;
     opacity: 0;
     transition: opacity 0.3s ease;
     cursor: pointer;
@@ -67,7 +67,7 @@
 /* Actions Bar */
 .card-viewer-actions {
     position: fixed;
-    z-index: 10001;
+    z-index: 975;
     display: flex;
     gap: 0.8rem;
     justify-content: center;

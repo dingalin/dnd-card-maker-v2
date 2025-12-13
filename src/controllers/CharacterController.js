@@ -1,4 +1,5 @@
 import { GetImgService } from '../services/GetImgService.js';
+import i18n from '../i18n.js';
 
 export class CharacterController {
     constructor() {
@@ -10,21 +11,32 @@ export class CharacterController {
         console.log("CharacterController: Initializing...");
         this.populateOptions();
         this.setupListeners();
+
+        // Listen for locale changes to update dropdowns
+        i18n.onLocaleChange(() => this.populateOptions());
     }
 
     populateOptions() {
         const options = window.CHARACTER_OPTIONS;
         if (!options) return;
 
-        this.populateSelect('char-gender', options.genders);
-        this.populateSelect('char-race', options.races);
-        this.populateSelect('char-class', options.classes);
-        this.populateSelect('char-background', options.backgrounds);
-        this.populateSelect('char-art-style', options.artStyles);
-        this.populateSelect('char-pose', options.poses);
+        const isEnglish = i18n.getLocale() === 'en';
+
+        this.populateSelect('char-gender', options.genders, isEnglish);
+        this.populateSelect('char-race', options.races, isEnglish);
+        this.populateSelect('char-class', options.classes, isEnglish);
+        this.populateSelect('char-background', options.backgrounds, isEnglish);
+        this.populateSelect('char-art-style', options.artStyles, isEnglish);
+        this.populateSelect('char-pose', options.poses, isEnglish);
+
+        // Also update the portrait style dropdown
+        this.populateSelect('char-style', [
+            { value: 'portrait', label: 'תמונה: פנים (Portrait)', labelEn: 'Portrait (Face)' },
+            { value: 'full_body', label: 'תמונה: גוף מלא (Full Body)', labelEn: 'Full Body' }
+        ], isEnglish);
     }
 
-    populateSelect(elementId, items) {
+    populateSelect(elementId, items, isEnglish) {
         const select = document.getElementById(elementId);
         if (!select) return;
 
@@ -32,7 +44,8 @@ export class CharacterController {
         items.forEach(item => {
             const option = document.createElement('option');
             option.value = item.value;
-            option.textContent = item.label;
+            // Use English label if available and locale is English, otherwise use Hebrew
+            option.textContent = (isEnglish && item.labelEn) ? item.labelEn : item.label;
             select.appendChild(option);
         });
     }
@@ -141,7 +154,7 @@ export class CharacterController {
         }
 
         if (window.uiManager) {
-            window.uiManager.showToast(`יוצר חפץ חדש עבור: ${config.label}`, 'info');
+            window.uiManager.showToast(i18n.t('character.creatingItemFor', { label: config.label }), 'info');
         }
     }
 
@@ -202,7 +215,7 @@ export class CharacterController {
         const tabBtn = document.querySelector('.nav-tab[data-tab="character-sheet"]');
         if (tabBtn) tabBtn.click();
 
-        if (window.uiManager) window.uiManager.showToast('החפץ הוסף בהצלחה!', 'success');
+        if (window.uiManager) window.uiManager.showToast(i18n.t('character.successEquipped'), 'success');
     }
 
     handleEquipRequest(data) {
@@ -221,13 +234,13 @@ export class CharacterController {
         // Check if item is ALREADY equipped anywhere
         const existingItem = document.querySelector(`.slot-content img[data-item-name="${CSS.escape(cardName)}"]`);
         if (existingItem) {
-            if (window.uiManager) window.uiManager.showToast(`החפץ "${cardName}" כבר מצויד!`, 'warning');
+            if (window.uiManager) window.uiManager.showToast(i18n.t('character.alreadyEquipped', { name: cardName }), 'warning');
             return;
         }
 
         const result = this.getTargetSlots(cardData);
         if (!result) {
-            if (window.uiManager) window.uiManager.showToast('לא נמצא מקום מתאים לחפץ זה.', 'error');
+            if (window.uiManager) window.uiManager.showToast(i18n.t('character.noSlotFound'), 'error');
             return;
         }
 
@@ -402,7 +415,7 @@ export class CharacterController {
         }
 
         const msg = modal.querySelector('.modal-message');
-        if (msg) msg.textContent = `המקום מיועד ל-${itemLabel} תפוס. האם להחליף את החפץ הקיים?`;
+        if (msg) msg.textContent = i18n.t('character.conflictConfirm', { label: itemLabel });
 
         modal.classList.remove('hidden');
 
@@ -447,7 +460,7 @@ export class CharacterController {
     async generateCharacter() {
         const apiKey = this.getApiKey();
         if (!apiKey) {
-            alert("נדרש מפתח API לביצוע הפעולה.");
+            alert(i18n.t('character.apiKeyRequired'));
             return;
         }
 
@@ -498,9 +511,9 @@ export class CharacterController {
             // If the error suggests an invalid key, clear it so the user can try again
             if (error.message.includes('401') || error.message.includes('auth') || error.message.includes('key')) {
                 localStorage.removeItem('getimg_api_key');
-                alert("המפתח שהוזן שגוי ונמחק. נסה שוב עם המפתח הנכון של GetImg.");
+                alert(i18n.t('character.checkApiKey'));
             } else {
-                alert(`שגיאה ביצירת התמונה: ${error.message}`);
+                alert(i18n.t('character.generationError', { error: error.message }));
             }
         } finally {
             this.setLoading(false);
@@ -517,7 +530,7 @@ export class CharacterController {
             const tabBtn = document.querySelector('.nav-tab[data-tab="character-sheet"]');
             if (tabBtn) tabBtn.click();
 
-            if (window.uiManager) window.uiManager.showToast('דיוקן דמות עודכן!', 'success');
+            if (window.uiManager) window.uiManager.showToast(i18n.t('character.portraitUpdated'), 'success');
         }
     }
 

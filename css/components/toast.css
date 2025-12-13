@@ -7,8 +7,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    z-index: 10000;
-    /* High z-index to ensure visibility */
+    z-index: 900;
+    /* Toast messages - above modals but below fullscreen */
     pointer-events: none;
 }
 

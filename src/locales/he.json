@@ -7,7 +7,8 @@
         "gallery": "גלריה",
         "about": "אודות",
         "cardCreator": "יוצר קלפים",
-        "characterSheet": "דף דמות"
+        "characterSheet": "דף דמות",
+        "toggleLang": "החלף שפה (EN/HE)"
     },
     "modal": {
         "confirmTitle": "אישור פעולה",
@@ -21,7 +22,10 @@
         "level": "רמה",
         "typeAndDetails": "סוג ופרטים",
         "abilityTheme": "יכולת / נושא",
-        "visualsStyle": "מראה וסגנון"
+        "visualsStyle": "מראה וסגנון",
+        "geminiFreeKey": "👉 קבל מפתח בחינם מ-Google AI Studio",
+        "exampleDamage": "לדוגמה: 1d8",
+        "exampleAC": "לדוגמה: 15"
     },
     "apiSection": {
         "title": "הגדרות חיבור",
@@ -205,6 +209,7 @@
         "cancel": "ביטול",
         "equipCharacter": "🗡️ צייד דמות",
         "splitView": "📄|📄 פיצול",
+        "splitViewActive": "📄 פיצול (פעיל)",
         "flip": "↻ הצג אחורה"
     },
     "gallery": {
@@ -271,7 +276,11 @@
         "cardsPerPage": "קלפים בדף:",
         "totalPages": "סה\"כ דפים:",
         "maximum": "מקסימום",
-        "printNow": "🖨️ הדפס עכשיו"
+        "printNow": "🖨️ הדפס עכשיו",
+        "paperSizes": {
+            "a4": "A4 (210x297 מ\"מ)",
+            "letter": "Letter (8.5x11 אינץ')"
+        }
     },
     "toasts": {
         "loadingError": "שגיאה בטעינת הקנבס",
@@ -286,7 +295,17 @@
         "cardDeleted": "הקלף נמחק בהצלחה",
         "deleteError": "שגיאה במחיקה",
         "noBackSide": "אין צד אחורי",
-        "unnamed": "חפץ ללא שם"
+        "unnamed": "חפץ ללא שם",
+        "enterApiKey": "אנא הזן מפתח API",
+        "noPromptSaved": "לא נשמר תיאור לתמונה",
+        "newImageCreated": "נוצרה תמונה חדשה!",
+        "errorCreatingImage": "שגיאה ביצירת תמונה",
+        "newStatsCreated": "נוצרו תכונות חדשות!",
+        "errorCreatingStats": "שגיאה ביצירת תכונות",
+        "newBackgroundCreated": "נוצר רקע חדש!",
+        "errorCreatingBackground": "שגיאה ביצירת רקע",
+        "selectingRandomBg": "בוחר רקע אקראי...",
+        "surpriseRolling": "מגריל חפץ בהפתעה..."
     },
     "cardViewer": {
         "edit": "ערוך ✏️",
@@ -309,5 +328,29 @@
         "portraitFullBody": "תמונה: גוף מלא (Full Body)",
         "createButton": "צור דמות",
         "generatingStatus": "מייצר דמות..."
+    },
+    "scrollMenu": {
+        "galleryTitle": "הגלריה העתיקה",
+        "galleryBuilding": "כאן יוצגו הקלפים שיצרתם (בקרוב...)",
+        "aboutTitle": "אודות המחולל",
+        "aboutText1": "מחולל זה נוצר כדי לעזור לשליטי מבוך ליצור חפצים קסומים במהירות ובקלות.",
+        "aboutText2": "השתמשו בכוחה של הבינה המלאכותית כדי להפיח חיים בעולם שלכם."
+    },
+    "character": {
+        "successEquipped": "החפץ הוסף בהצלחה!",
+        "alreadyEquipped": "החפץ \"{{name}}\" כבר מצויד!",
+        "noSlotFound": "לא נמצא מקום מתאים לחפץ זה.",
+        "conflictConfirm": "המקום מיועד ל-{{label}} תפוס. האם להחליף ת'קיים?",
+        "apiKeyRequired": "נדרש מפתח API לביצוע הפעולה.",
+        "checkApiKey": "המפתח שהוזן שגוי. נסה שוב עם המפתח הנכון של GetImg.",
+        "generationError": "שגיאה ביצירת התמונה: {{error}}",
+        "portraitUpdated": "דיוקן דמות עודכן!",
+        "creatingItemFor": "יוצר חפץ חדש עבור: {{label}}"
+    },
+    "generator": {
+        "noCardForLayout": "אין קלף להתאמה",
+        "detectingArea": "🔍 מזהה שטח...",
+        "detectingFrame": "🔍 מזהה מסגרת...",
+        "calculating": "✨ מחשב..."
     }
 }

@@ -100,6 +100,7 @@ async function handleGetImgGenerate(data, apiKey) {
 async function handleImagenGenerate(data, apiKey) {
     const { prompt, aspectRatio } = data;
 
+    // Use predict endpoint (correct method for Imagen 3)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
 
     const response = await fetch(url, {
@@ -118,8 +119,12 @@ async function handleImagenGenerate(data, apiKey) {
 
     const result = await response.json();
 
-    // Extract the base64 image from the response
-    if (result.predictions && result.predictions[0] && result.predictions[0].bytesBase64Encoded) {
+    // Extract the base64 image from the new format (generatedImages)
+    if (result.generatedImages && result.generatedImages[0] && result.generatedImages[0].image) {
+        return jsonResponse({ image: result.generatedImages[0].image.imageBytes });
+    }
+    // Fallback to old format (predictions)
+    else if (result.predictions && result.predictions[0] && result.predictions[0].bytesBase64Encoded) {
         return jsonResponse({ image: result.predictions[0].bytesBase64Encoded });
     } else if (result.error) {
         return jsonResponse({ error: result.error.message || 'Imagen generation failed' }, response.status);
