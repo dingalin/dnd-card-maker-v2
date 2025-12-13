@@ -55,16 +55,20 @@
             <div id="api-content" class="scroll-section hidden">
                 <h3 data-i18n="apiSection.title">הגדרות חיבור</h3>
                 <div class="api-key-section">
-                    <label for="api-key" data-i18n="apiSection.geminiLabel">מפתח API (Google Gemini)</label>
+                    <label for="api-key" data-i18n="apiSection.geminiLabel">🔑 Gemini API Key (Required)</label>
                     <input type="password" id="api-key" data-i18n-placeholder="apiSection.geminiPlaceholder"
-                        placeholder="הדבק מפתח כאן..." />
-                    <p class="help-text" data-i18n="apiSection.geminiHelp">נדרש כדי ליצור תוכן.</p>
+                        placeholder="Paste your API key here..." />
+                    <p class="help-text">
+                        <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #fbbf24;">
+                            👉 Get FREE API Key from Google AI Studio
+                        </a>
+                    </p>
                 </div>
                 <div class="api-key-section" style="margin-top: 1rem;">
-                    <label for="getimg-api-key" data-i18n="apiSection.getimgLabel">מפתח API / סיסמה (Getimg.ai)</label>
+                    <label for="getimg-api-key" data-i18n="apiSection.getimgLabel">GetImg API Key (Optional)</label>
                     <input type="password" id="getimg-api-key" data-i18n-placeholder="apiSection.getimgPlaceholder"
-                        placeholder="הדבק מפתח או סיסמה..." />
-                    <p class="help-text" data-i18n="apiSection.getimgHelp">אופציונלי: עבור מודלים איכותיים יותר.</p>
+                        placeholder="Optional: For FLUX model..." />
+                    <p class="help-text" data-i18n="apiSection.getimgHelp">Only needed if using GetImg model.</p>
                 </div>
             </div>
 
@@ -177,7 +181,8 @@
                 <div class="form-group">
                     <label for="image-model" data-i18n="visualsSection.imageModelLabel">מודל תמונה</label>
                     <select id="image-model">
-                        <option value="getimg-flux" selected>Getimg: FLUX Schnell</option>
+                        <option value="imagen3" selected>🌟 Gemini Imagen 3 (Recommended)</option>
+                        <option value="getimg-flux">GetImg: FLUX Schnell</option>
                     </select>
                 </div>
 
