@@ -178,18 +178,42 @@ function initFormHeaderUpdates() {
     const updates = [
         {
             input: 'item-level',
-            display: 'level-display',
+            display: 'level-display-btn', // Fixed: was 'level-display'
             format: (val) => {
                 const el = document.getElementById('item-level');
-                return el ? el.options[el.selectedIndex].text : val;
+                if (el && el.selectedIndex >= 0) {
+                    const text = el.options[el.selectedIndex].text;
+                    // For mundane option, take text before parenthesis
+                    // For level ranges (1-4, 5-10, etc.), take first word
+                    if (val === 'mundane') {
+                        return text.split('(')[0].trim() || text;
+                    }
+                    return text.split(' ')[0] || val;
+                }
+                return val;
             }
         },
         {
             input: 'item-type',
-            display: 'type-display',
+            display: 'type-display-btn', // Fixed: was 'type-display'
             format: (val) => {
                 const el = document.getElementById('item-type');
                 // Take only Hebrew part (before parenthesis)
+                return el ? el.options[el.selectedIndex].text.split('(')[0].trim() : val;
+            }
+        },
+        {
+            input: 'image-style',
+            display: 'style-display-btn',
+            format: (val) => {
+                // Use i18n to get proper translation
+                const key = `imageStyles.${val}`;
+                const translated = window.i18n?.t(key);
+                // Return translated value, or extract Hebrew from option if i18n not ready
+                if (translated && translated !== key) {
+                    return translated.split('(')[0].trim();
+                }
+                const el = document.getElementById('image-style');
                 return el ? el.options[el.selectedIndex].text.split('(')[0].trim() : val;
             }
         },
@@ -201,7 +225,7 @@ function initFormHeaderUpdates() {
         {
             input: 'api-key',
             display: 'api-key-display',
-            format: (val) => val ? '????? ?' : '?? ?????'
+            format: (val) => val ? '✓ הוזן' : 'לא הוזן'
         }
     ];
 
@@ -238,4 +262,4 @@ function initFormHeaderUpdates() {
 
 // Auto-init on componentsLoaded
 
-export { initUI, showToast, initWindowManager };
+export { initUI, showToast, initWindowManager, initFormHeaderUpdates };

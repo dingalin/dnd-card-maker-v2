@@ -70,6 +70,12 @@ export class TabManager {
             this.characterSheetLoaded = true;
             console.log("TabManager: Character Sheet & Sidebar Loaded.");
 
+            // CRITICAL: Update i18n translations for dynamically loaded elements
+            if (window.i18n && window.i18n.updateDOM) {
+                window.i18n.updateDOM();
+                console.log("TabManager: i18n DOM updated for character sheet components.");
+            }
+
             // Initialize Controller for Character Sheet
             // Reuse global instance if it exists (created by main.js)
             if (window.characterController) {

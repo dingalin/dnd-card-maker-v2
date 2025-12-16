@@ -39,6 +39,7 @@
     "levelSection": {
         "title": "Item Level",
         "selectLabel": "Select Level:",
+        "mundane": "Mundane (No Magic)",
         "level1_4": "1-4 (Common)",
         "level5_10": "5-10 (Uncommon)",
         "level11_16": "11-16 (Rare)",
@@ -156,10 +157,7 @@
         "abilityName": "Ability Name",
         "mechanics": "Mechanics",
         "lore": "Background & Story (Lore)",
-        "textWidth": "Text Width:",
-        "quickDesc": "Quick Description",
-        "price": "Price",
-        "positionLabel": "Position:"
+        "textWidth": "Text Width:"
     },
     "textDesign": {
         "title": "Text Design",
@@ -187,7 +185,6 @@
     "cardBackground": {
         "title": "Card Background",
         "themeLabel": "Background Theme",
-        "styleLabel": "Card Style",
         "themes": {
             "fire": "Fire",
             "nature": "Nature",
@@ -203,8 +200,7 @@
         "reset": "Reset to Default",
         "readyMade": "🖼️ Ready-Made Backgrounds",
         "scale": "Background Scale",
-        "selectTitle": "Select Ready-Made Background",
-        "readyMadeLabel": "Ready-Made Backgrounds:"
+        "selectTitle": "Select Ready-Made Background"
     },
     "footer": {
         "saveToGallery": "💾 Save to Gallery",
@@ -344,7 +340,20 @@
         "portraitFace": "Portrait: Face",
         "portraitFullBody": "Portrait: Full Body",
         "createButton": "Create Character",
-        "generatingStatus": "Generating character..."
+        "generatingStatus": "Generating character...",
+        "autoEquipTitle": "🎲 Auto-Equip All Items",
+        "autoEquipSelectLevel": "Select item level:",
+        "autoEquipButton": "Equip All",
+        "autoEquipProgress": "Creating: {{slot}}",
+        "autoEquipComplete": "All items created successfully!",
+        "autoEquipNoEmpty": "No empty slots!",
+        "autoEquipSelectComplexity": "Item Style:",
+        "complexitySimple": "⚔️ Simple (Basic Bonuses)",
+        "complexityCreative": "✨ Creative (Unique Abilities)",
+        "exportAllButton": "Export All to Gallery",
+        "exportingItem": "Exporting: {{name}}",
+        "exportComplete": "{{count}} items exported to gallery!",
+        "exportNoItems": "No items equipped to export"
     },
     "scrollMenu": {
         "galleryTitle": "The Ancient Gallery",

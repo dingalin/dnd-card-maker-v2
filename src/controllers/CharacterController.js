@@ -89,6 +89,12 @@ export class CharacterController {
             btn.addEventListener('click', () => this.generateCharacter());
         }
 
+        // Auto-Equip Button
+        const autoEquipBtn = document.getElementById('auto-equip-btn');
+        if (autoEquipBtn) {
+            autoEquipBtn.addEventListener('click', () => this.autoEquipAllSlots());
+        }
+
         // Listen for Equip Request (from RenderController)
         document.addEventListener('request-character-equip-item', (e) => {
             this.handleEquipRequest(e.detail);
@@ -98,6 +104,241 @@ export class CharacterController {
         const grid = document.querySelector('.equipment-grid');
         if (grid) {
             grid.addEventListener('click', (e) => this.handleSlotClick(e));
+        }
+
+        // Export All to Gallery Button
+        const exportBtn = document.getElementById('export-all-gallery-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportAllToGallery());
+        }
+    }
+
+    /**
+     * Get list of all empty equipment slots
+     */
+    getEmptySlots() {
+        const allSlots = ['helmet', 'armor', 'mainhand', 'offhand', 'ranged', 'ring1', 'ring2', 'necklace', 'cape', 'boots', 'belt', 'ammo'];
+        const emptySlots = [];
+
+        allSlots.forEach(slotId => {
+            const slotEl = document.querySelector(`.slot[data-slot="${slotId}"] .slot-content`);
+            if (slotEl && !slotEl.querySelector('img')) {
+                emptySlots.push(slotId);
+            }
+        });
+
+        return emptySlots;
+    }
+
+    /**
+     * Show progress indicator for auto-equip
+     */
+    showAutoEquipProgress(message) {
+        const status = document.getElementById('auto-equip-status');
+        const text = document.getElementById('auto-equip-progress-text');
+        const btn = document.getElementById('auto-equip-btn');
+
+        if (status) status.classList.remove('hidden');
+        if (text) text.textContent = message;
+        if (btn) btn.disabled = true;
+    }
+
+    /**
+     * Hide progress indicator for auto-equip
+     */
+    hideAutoEquipProgress() {
+        const status = document.getElementById('auto-equip-status');
+        const btn = document.getElementById('auto-equip-btn');
+
+        if (status) status.classList.add('hidden');
+        if (btn) btn.disabled = false;
+    }
+
+    /**
+     * Auto-generate and equip items for all empty slots
+     */
+    async autoEquipAllSlots() {
+        const emptySlots = this.getEmptySlots();
+
+        if (emptySlots.length === 0) {
+            if (window.uiManager) {
+                window.uiManager.showToast(i18n.t('characterSidebar.autoEquipNoEmpty'), 'info');
+            }
+            return;
+        }
+
+        // Get selected level
+        const levelSelect = document.getElementById('auto-equip-level');
+        const level = levelSelect ? levelSelect.value : '1-4';
+
+        // Get selected complexity mode (only applies to magical items)
+        const complexitySelect = document.getElementById('auto-equip-complexity');
+        const complexityMode = complexitySelect ? complexitySelect.value : 'simple';
+
+        console.log(`🎲 Auto-equip starting: ${emptySlots.length} empty slots, level: ${level}, complexity: ${complexityMode}`);
+
+        // Dispatch event to trigger generation for each slot
+        // The GeneratorController will handle the actual generation
+        for (let i = 0; i < emptySlots.length; i++) {
+            const slotId = emptySlots[i];
+            const slotMapping = this.getSlotMapping();
+            const config = slotMapping[slotId];
+
+            if (!config) continue;
+
+            const slotLabel = i18n.t(`characterSheet.${slotId.replace(/\d/g, '')}`) || config.label;
+            this.showAutoEquipProgress(i18n.t('characterSidebar.autoEquipProgress', { slot: slotLabel }));
+
+            try {
+                // Dispatch custom event for generation
+                const event = new CustomEvent('auto-equip-generate-item', {
+                    detail: {
+                        slotId,
+                        level,
+                        complexityMode, // Pass user's choice
+                        type: config.type,
+                        subtype: config.subtype || '',
+                        label: slotLabel
+                    }
+                });
+                document.dispatchEvent(event);
+
+                // Wait for generation to complete (listen for response)
+                await this.waitForItemGeneration(slotId);
+
+            } catch (error) {
+                console.error(`Error generating item for ${slotId}:`, error);
+            }
+        }
+
+        this.hideAutoEquipProgress();
+        if (window.uiManager) {
+            window.uiManager.showToast(i18n.t('characterSidebar.autoEquipComplete'), 'success');
+        }
+    }
+
+    /**
+     * Get mapping from slot ID to item type/subtype
+     */
+    getSlotMapping() {
+        return {
+            'helmet': { type: 'wondrous', subtype: 'Helmet', label: 'קסדה' },
+            'armor': { type: 'armor', subtype: 'Armor', label: 'שריון' },
+            'mainhand': { type: 'weapon', label: 'נשק' },
+            'offhand': { type: 'armor', subtype: 'Shield', label: 'מגן' },
+            'ranged': { type: 'weapon', subtype: 'Longbow (קשת ארוכה)', label: 'קשת' },
+            'ring1': { type: 'ring', label: 'טבעת' },
+            'ring2': { type: 'ring', label: 'טבעת' },
+            'necklace': { type: 'wondrous', subtype: 'Amulet', label: 'שרשרת' },
+            'cape': { type: 'wondrous', subtype: 'Cloak', label: 'גלימה' },
+            'boots': { type: 'wondrous', subtype: 'Boots', label: 'מגפיים' },
+            'belt': { type: 'wondrous', subtype: 'Belt', label: 'חגורה' },
+            'ammo': { type: 'wondrous', subtype: 'Quiver', label: 'תחמושת' }
+        };
+    }
+
+    /**
+     * Wait for an item to be generated and equipped to a slot
+     */
+    waitForItemGeneration(slotId) {
+        return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                const slotEl = document.querySelector(`.slot[data-slot="${slotId}"] .slot-content`);
+                if (slotEl && slotEl.querySelector('img')) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 500);
+
+            // Timeout after 60 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                resolve();
+            }, 60000);
+        });
+    }
+
+    /**
+     * Export all equipped items to gallery
+     */
+    async exportAllToGallery() {
+        const allSlots = ['helmet', 'armor', 'mainhand', 'offhand', 'ranged', 'ring1', 'ring2', 'necklace', 'cape', 'boots', 'belt', 'ammo'];
+        const exportedItems = [];
+        const statusEl = document.getElementById('export-status');
+        const statusText = document.getElementById('export-status-text');
+        const btn = document.getElementById('export-all-gallery-btn');
+
+        // Show progress
+        if (statusEl) statusEl.classList.remove('hidden');
+        if (btn) btn.disabled = true;
+
+        try {
+            for (const slotId of allSlots) {
+                const slotEl = document.querySelector(`.slot[data-slot="${slotId}"] .slot-content`);
+                const img = slotEl ? slotEl.querySelector('img') : null;
+
+                if (img && img.dataset.uniqueId) {
+                    const uniqueId = img.dataset.uniqueId;
+                    const cardData = this.itemRegistry.get(uniqueId);
+
+                    if (cardData) {
+                        // Get the front image from the slot
+                        const frontImage = img.src;
+                        const backImage = cardData.capturedBackImage || null;
+
+                        // Create save data
+                        const saveData = {
+                            id: Date.now() + Math.random() * 1000, // Unique ID
+                            cardData: { ...cardData },
+                            thumbnail: frontImage,
+                            name: cardData.name || cardData.front?.title || i18n.t('toasts.unnamed'),
+                            savedAt: new Date().toISOString()
+                        };
+
+                        // Save to gallery
+                        if (window.storageManager) {
+                            await window.storageManager.saveCard(saveData);
+                            exportedItems.push(saveData.name);
+
+                            if (statusText) {
+                                statusText.textContent = i18n.t('characterSidebar.exportingItem', { name: saveData.name });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Show success message
+            if (exportedItems.length > 0) {
+                if (window.uiManager) {
+                    window.uiManager.showToast(
+                        i18n.t('characterSidebar.exportComplete', { count: exportedItems.length }),
+                        'success'
+                    );
+                }
+                // Refresh gallery if open
+                if (window.historyController) {
+                    window.historyController.renderGrid();
+                }
+                // Also notify state manager
+                if (window.stateManager) {
+                    window.stateManager.notify('historyUpdated');
+                }
+            } else {
+                if (window.uiManager) {
+                    window.uiManager.showToast(i18n.t('characterSidebar.exportNoItems'), 'warning');
+                }
+            }
+
+        } catch (error) {
+            console.error('Export failed:', error);
+            if (window.uiManager) {
+                window.uiManager.showToast(i18n.t('toasts.saveError'), 'error');
+            }
+        } finally {
+            // Hide progress
+            if (statusEl) statusEl.classList.add('hidden');
+            if (btn) btn.disabled = false;
         }
     }
 

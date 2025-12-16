@@ -38,6 +38,158 @@ export class GeneratorController {
         if (surpriseBtn) surpriseBtn.addEventListener('click', this.onSurprise);
         if (autoLayoutBtn) autoLayoutBtn.addEventListener('click', this.onAutoLayout);
         if (lassoBtn) lassoBtn.addEventListener('click', this.onLassoTool);
+
+        // Listen for auto-equip generation requests from CharacterController
+        document.addEventListener('auto-equip-generate-item', async (e) => {
+            await this.onAutoEquipGenerateItem(e.detail);
+        });
+    }
+
+    /**
+     * Handle auto-equip generation request for a single slot
+     * Called by CharacterController when batch-generating items for all empty slots
+     */
+    async onAutoEquipGenerateItem(detail) {
+        const { slotId, level, complexityMode: userComplexityMode, type, subtype, label } = detail;
+
+        console.log(`🎲 Auto-equip generating item for slot: ${slotId}, level: ${level}, complexity: ${userComplexityMode}, type: ${type}`);
+
+        // Get API key silently (don't show toast)
+        const apiKeyInput = document.getElementById('api-key');
+        const apiKey = apiKeyInput?.value.trim() || localStorage.getItem('gemini_api_key');
+
+        if (!apiKey) {
+            console.error('No API key available for auto-equip generation');
+            return;
+        }
+
+        try {
+            this.gemini = new GeminiService(apiKey);
+
+            // Determine rarity and complexity mode based on level
+            let rarity, complexityMode;
+            if (level === 'mundane') {
+                rarity = 'common';
+                complexityMode = 'mundane'; // Special mode for non-magical items (overrides user choice)
+            } else {
+                rarity = getRarityFromLevel(level);
+                complexityMode = userComplexityMode || 'simple'; // Use user's choice for magical items
+            }
+
+            const locale = window.i18n?.getLocale() || 'he';
+
+            // Generate item details
+            const itemDetails = await this.gemini.generateItemDetails(
+                level === 'mundane' ? '1-4' : level, // Use low level for mundane
+                type,
+                subtype,
+                rarity,
+                '', // No specific ability
+                null, // No context image
+                complexityMode,
+                locale
+            );
+
+            // Enrich with official stats
+            this.enrichItemDetails(itemDetails, type, subtype, locale);
+
+            // Generate image
+            const finalVisualPrompt = itemDetails.visualPrompt || `${type} ${subtype || ''}`;
+            const imageUrl = await this.generateImage(finalVisualPrompt);
+
+            // Convert to Base64 for persistence
+            let persistentImageUrl = imageUrl;
+            if (imageUrl.startsWith('blob:')) {
+                persistentImageUrl = await blobToBase64(imageUrl);
+            }
+
+            // Create card data
+            const cardData = {
+                ...itemDetails,
+                gold: itemDetails.gold || '100',
+                imageUrl: persistentImageUrl,
+                visualPrompt: finalVisualPrompt,
+                originalParams: { level, type, subtype, rarity }
+            };
+
+            // === RENDER FULL CARD (Front and Back) ===
+            // Use the main canvas to render a complete card with stats/text
+            const canvas = document.getElementById('card-canvas');
+            const backCanvas = document.getElementById('card-canvas-back');
+
+            if (canvas && window.cardRenderer) {
+                try {
+                    console.log('🎴 Rendering full card for auto-equip...');
+
+                    // Save current state before rendering
+                    const currentState = this.state.getState();
+                    const savedCardData = currentState.cardData;
+
+                    // Temporarily use the new card data
+                    const renderOptions = {
+                        imageScale: 1.0,
+                        backgroundScale: 1.0,
+                        fontFamily: 'Heebo',
+                        fontSizes: { nameSize: 48, typeSize: 24, raritySize: 24, statsSize: 28, goldSize: 24 }
+                    };
+
+                    // Render front
+                    await window.cardRenderer.render(cardData, renderOptions, false);
+                    const frontImageUrl = canvas.toDataURL('image/png', 1.0);
+                    console.log('📸 Captured front card image');
+
+                    // Render back (if we have back content)
+                    let backImageUrl = null;
+                    if (backCanvas && window.backRenderer && (cardData.abilityName || cardData.abilityDesc)) {
+                        await window.backRenderer.render(cardData, {
+                            ...renderOptions,
+                            fontSizes: { abilityNameSize: 36, mechSize: 24, loreSize: 20 }
+                        }, true);
+                        backImageUrl = backCanvas.toDataURL('image/png', 1.0);
+                        console.log('📸 Captured back card image');
+                    }
+
+                    // Restore previous state
+                    if (savedCardData) {
+                        await window.cardRenderer.render(savedCardData, renderOptions, false);
+                    }
+
+                    // Dispatch equip request with FULL card images
+                    document.dispatchEvent(new CustomEvent('request-character-equip-item', {
+                        detail: {
+                            cardData: { ...cardData, capturedBackImage: backImageUrl },
+                            imageUrl: frontImageUrl,
+                            backImageUrl: backImageUrl
+                        }
+                    }));
+
+                    console.log(`✅ Auto-equip full card rendered for slot: ${slotId}`);
+
+                } catch (renderError) {
+                    console.error('Failed to render full card, falling back to image only:', renderError);
+                    // Fallback: Send just the item image
+                    document.dispatchEvent(new CustomEvent('request-character-equip-item', {
+                        detail: {
+                            cardData,
+                            imageUrl: persistentImageUrl
+                        }
+                    }));
+                }
+            } else {
+                // Canvas not available, fallback to image only
+                document.dispatchEvent(new CustomEvent('request-character-equip-item', {
+                    detail: {
+                        cardData,
+                        imageUrl: persistentImageUrl
+                    }
+                }));
+            }
+
+            console.log(`✅ Auto-equip item generated for slot: ${slotId}`);
+
+        } catch (error) {
+            console.error(`❌ Error generating item for ${slotId}:`, error);
+        }
     }
 
     getApiKey() {
@@ -55,11 +207,6 @@ export class GeneratorController {
         e.preventDefault();
         const apiKey = this.getApiKey();
         if (!apiKey) return;
-
-        // Determine Complexity Mode
-        const submitterId = e.submitter ? e.submitter.id : 'generate-creative-btn';
-        const complexityMode = (submitterId === 'generate-simple-btn') ? 'simple' : 'creative';
-        console.log(`Generator: Starting generation in ${complexityMode} mode.`);
 
         this.gemini = new GeminiService(apiKey);
         this.ui.showLoading();
@@ -83,7 +230,18 @@ export class GeneratorController {
             if (subtype) finalType = `${type} - ${subtype}`;
             if (type === 'armor' && !finalType.toLowerCase().includes('armor')) finalType += ' Armor';
 
-            const rarity = getRarityFromLevel(level);
+            // Determine rarity and complexity mode based on level
+            let rarity, complexityMode;
+            if (level === 'mundane') {
+                rarity = 'common';
+                complexityMode = 'mundane'; // Force mundane mode for non-magical items
+            } else {
+                rarity = getRarityFromLevel(level);
+                // Use button-determined mode for magical items
+                const submitterId = e.submitter ? e.submitter.id : 'generate-creative-btn';
+                complexityMode = (submitterId === 'generate-simple-btn') ? 'simple' : 'creative';
+            }
+            console.log(`Generator: Level=${level}, Rarity=${rarity}, Mode=${complexityMode}`);
 
             // 1. Context
             const useVisualContext = document.getElementById('use-visual-context')?.checked;

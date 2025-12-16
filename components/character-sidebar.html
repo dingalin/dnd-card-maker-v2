@@ -66,4 +66,63 @@
             <span data-i18n="characterSidebar.generatingStatus">מייצר דמות...</span>
         </div>
     </form>
+
+    <!-- Divider -->
+    <div class="divider my-3" style="border-color: rgba(212, 175, 55, 0.3);"></div>
+
+    <!-- Auto-Equip Section -->
+    <div class="auto-equip-section">
+        <h3 data-i18n="characterSidebar.autoEquipTitle"
+            style="color: #fbbf24; font-size: 1rem; margin-bottom: 0.75rem;">🎲 צייד את כל החפצים</h3>
+
+        <!-- Level Selector -->
+        <div class="form-group mb-2">
+            <label for="auto-equip-level" class="text-sm" data-i18n="characterSidebar.autoEquipSelectLevel">בחר רמת
+                חפצים:</label>
+            <select id="auto-equip-level" class="glass-input">
+                <option value="mundane" data-i18n="levelSection.mundane">רגיל (ללא כוח)</option>
+                <option value="1-4" data-i18n="levelSection.level1_4">1-4 (נפוץ)</option>
+                <option value="5-10" data-i18n="levelSection.level5_10">5-10 (לא נפוץ)</option>
+                <option value="11-16" data-i18n="levelSection.level11_16">11-16 (נדיר)</option>
+                <option value="17+" data-i18n="levelSection.level17">17+ (אגדי)</option>
+            </select>
+        </div>
+
+        <!-- Complexity Mode Selector (only for magical items) -->
+        <div class="form-group mb-2" id="auto-equip-complexity-container">
+            <label for="auto-equip-complexity" class="text-sm"
+                data-i18n="characterSidebar.autoEquipSelectComplexity">סגנון חפצים:</label>
+            <select id="auto-equip-complexity" class="glass-input">
+                <option value="simple" data-i18n="characterSidebar.complexitySimple">⚔️ פשוט (בונוסים בסיסיים)</option>
+                <option value="creative" data-i18n="characterSidebar.complexityCreative">✨ יצירתי (יכולות ייחודיות)
+                </option>
+            </select>
+        </div>
+
+        <!-- Auto-Equip Button -->
+        <button type="button" id="auto-equip-btn" class="btn-primary btn-shine"
+            style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
+            <span class="icon">📦</span> <span data-i18n="characterSidebar.autoEquipButton">צייד הכל</span>
+        </button>
+
+        <!-- Progress Status -->
+        <div id="auto-equip-status" class="status-message hidden" style="margin-top: 0.5rem;">
+            <div class="spinner-small"></div>
+            <span id="auto-equip-progress-text">יוצר חפץ...</span>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider my-2" style="border-color: rgba(212, 175, 55, 0.3);"></div>
+
+        <!-- Export All to Gallery Button -->
+        <button type="button" id="export-all-gallery-btn" class="btn-primary btn-shine"
+            style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #6d28d9); margin-top: 0.5rem;">
+            <span class="icon">💾</span> <span data-i18n="characterSidebar.exportAllButton">ייבא הכל לגלריה</span>
+        </button>
+
+        <!-- Export Status -->
+        <div id="export-status" class="status-message hidden" style="margin-top: 0.5rem;">
+            <span id="export-status-text"></span>
+        </div>
+    </div>
 </div>

@@ -23,7 +23,7 @@ import { CardViewerService } from './services/CardViewerService.js';
 import i18n from './i18n.js';
 
 // Legacy Init (for floating windows, bubbles)
-import { initUI, showToast, initWindowManager } from './ui-helpers.js';
+import { initUI, showToast, initWindowManager, initFormHeaderUpdates } from './ui-helpers.js';
 
 // Global error handlers
 window.onerror = function (msg, url, line, col, error) {
@@ -153,6 +153,7 @@ async function initApp() {
     // 5. Legacy & Helper Initialization
     initUI(); // Slider bubbles, toasts
     initWindowManager(); // Floating windows
+    initFormHeaderUpdates(); // Sync dropdown changes with stone menu buttons
 
     // 6. Restore Session
     const loadedSavedCard = stateManager.loadCurrentCard();

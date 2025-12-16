@@ -39,6 +39,7 @@
     "levelSection": {
         "title": "רמת החפץ",
         "selectLabel": "בחר רמה:",
+        "mundane": "רגיל (ללא כוח)",
         "level1_4": "1-4 (נפוץ)",
         "level5_10": "5-10 (לא נפוץ)",
         "level11_16": "11-16 (נדיר)",
@@ -156,10 +157,7 @@
         "abilityName": "שם יכולת",
         "mechanics": "מכניקה",
         "lore": "רקע וסיפור (לור)",
-        "textWidth": "רוחב טקסט:",
-        "quickDesc": "תיאור מהיר",
-        "price": "מחיר",
-        "positionLabel": "מיקום:"
+        "textWidth": "רוחב טקסט:"
     },
     "textDesign": {
         "title": "עיצוב טקסט",
@@ -187,7 +185,6 @@
     "cardBackground": {
         "title": "רקע הקלף",
         "themeLabel": "נושא הרקע",
-        "styleLabel": "סגנון הקלף",
         "themes": {
             "fire": "אש (Fire)",
             "nature": "טבע (Nature)",
@@ -203,8 +200,7 @@
         "reset": "חזור לברירת מחדל",
         "readyMade": "🖼️ רקעים מוכנים",
         "scale": "גודל רקע (Scale)",
-        "selectTitle": "בחר רקע מוכן",
-        "readyMadeLabel": "רקעים מוכנים:"
+        "selectTitle": "בחר רקע מוכן"
     },
     "footer": {
         "saveToGallery": "💾 שמור לגלריה",
@@ -344,7 +340,20 @@
         "portraitFace": "תמונה: פנים (Portrait)",
         "portraitFullBody": "תמונה: גוף מלא (Full Body)",
         "createButton": "צור דמות",
-        "generatingStatus": "מייצר דמות..."
+        "generatingStatus": "מייצר דמות...",
+        "autoEquipTitle": "🎲 צייד את כל החפצים",
+        "autoEquipSelectLevel": "בחר רמת חפצים:",
+        "autoEquipButton": "צייד הכל",
+        "autoEquipProgress": "יוצר: {{slot}}",
+        "autoEquipComplete": "כל החפצים נוצרו בהצלחה!",
+        "autoEquipNoEmpty": "אין משבצות ריקות!",
+        "autoEquipSelectComplexity": "סגנון חפצים:",
+        "complexitySimple": "⚔️ פשוט (בונוסים בסיסיים)",
+        "complexityCreative": "✨ יצירתי (יכולות ייחודיות)",
+        "exportAllButton": "ייבא הכל לגלריה",
+        "exportingItem": "מייבא: {{name}}",
+        "exportComplete": "{{count}} חפצים יובאו לגלריה בהצלחה!",
+        "exportNoItems": "אין חפצים מצוידים לייבוא"
     },
     "scrollMenu": {
         "galleryTitle": "הגלריה העתיקה",

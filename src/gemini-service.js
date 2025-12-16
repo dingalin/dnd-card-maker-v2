@@ -68,7 +68,34 @@ class GeminiService {
 
         let modeInstruction = "";
 
-        if (complexityMode === 'simple') {
+        // Mundane mode - non-magical basic items
+        if (complexityMode === 'mundane') {
+            modeInstruction = isHebrew ? `
+            MODE: MUNDANE (Non-Magical)
+            - CRITICAL: This item is NOT magical. It is a standard, non-magical piece of equipment.
+            - NO magical abilities, NO special powers, NO enchantments.
+            - The item is made of normal materials (steel, leather, wood, etc.)
+            - For weapons: Use standard damage dice with NO bonuses.
+            - For armor: Use standard AC values with NO bonuses.
+            - Rarity MUST be: נפוץ (Common)
+            - abilityName and abilityDesc should describe the CRAFTSMANSHIP, not magic.
+            - Example abilityName: "עבודת יד מקצועית", "ייצור איכותי", "עיצוב קלאסי"
+            - Example abilityDesc: "חרב זו עשויה מפלדה מחושלת היטב עם ידית עור נוחה. מתוחזקת היטב ומאוזנת."
+            - quickStats should be ONLY the damage dice or AC value.
+            ` : `
+            MODE: MUNDANE (Non-Magical)
+            - CRITICAL: This item is NOT magical. It is a standard, non-magical piece of equipment.
+            - NO magical abilities, NO special powers, NO enchantments.
+            - The item is made of normal materials (steel, leather, wood, etc.)
+            - For weapons: Use standard damage dice with NO bonuses.
+            - For armor: Use standard AC values with NO bonuses.
+            - Rarity MUST be: Common
+            - abilityName and abilityDesc should describe the CRAFTSMANSHIP, not magic.
+            - Example abilityName: "Professional Craftsmanship", "Quality Make", "Classic Design"
+            - Example abilityDesc: "This sword is made of well-tempered steel with a comfortable leather grip. Well-maintained and balanced."
+            - quickStats should be ONLY the damage dice or AC value.
+            `;
+        } else if (complexityMode === 'simple') {
             modeInstruction = isHebrew ? `
             MODE: EXTREMELY SIMPLE (Stats Only)
             - STRICT PROHIBITION: Do NOT create summoning spells, complex active abilities, transformations, or multi-turn effects.
@@ -106,15 +133,20 @@ class GeminiService {
             `;
         }
 
+        // Conditional prompt based on whether item is mundane or magical
+        const itemDescription = complexityMode === 'mundane'
+            ? `a standard, non-magical ${type}`
+            : `a unique magic item`;
+
         let prompt = `
-      You are a D&D 5e Dungeon Master. Create a unique magic item in ${outputLanguage}.
+      You are a D&D 5e Dungeon Master. Create ${itemDescription} in ${outputLanguage}.
       
       Parameters:
       - Level/Power: ${level}
       - Main Type: ${subtype ? subtype : type} (Priority: ${subtype ? 'Strictly follow this subtype' : 'Follow Main Type'})
       - Category: ${type}
       - Rarity: ${rarity}
-      - Special Theme/Ability: ${ability || 'Random cool theme'}
+      - Special Theme/Ability: ${complexityMode === 'mundane' ? 'None - this is a plain, standard item' : (ability || 'Random cool theme')}
       
       ${modeInstruction}
       `;
@@ -434,11 +466,12 @@ class GeminiService {
             backgroundPrompt = 'atmospheric fantasy environment background, mystical ambiance, complementary lighting';
         }
 
-        // === NEGATIVE PROMPTS (what to avoid) ===
-        const negativeElements = 'NO hands holding the item, NO people, NO watermarks, NO text, NO cropped edges, NO blurry, NO low quality';
+        // === POSITIVE REINFORCEMENT (FLUX works better with positive descriptions) ===
+        // Instead of "NO hands, NO people" - describe what we WANT to see
+        const positiveReinforcement = 'isolated single item displayed alone, clean professional product render, pristine high quality, complete item fully visible, sharp crisp details';
 
         // === BUILD FINAL OPTIMIZED PROMPT ===
-        // Structure: [Composition] [Style Prefix] [Subject/Item] [Type Enhancement] [Visual Prompt] [Quality] [Background] [Style Suffix] [Negatives]
+        // Structure: [Composition] [Style Prefix] [Subject/Item] [Type Enhancement] [Visual Prompt] [Quality] [Background] [Style Suffix] [Positive]
         const finalPrompt = [
             compositionGuide,
             styleConfig.prefix,
@@ -447,7 +480,7 @@ class GeminiService {
             styleConfig.quality,
             backgroundPrompt,
             styleConfig.suffix,
-            negativeElements
+            positiveReinforcement
         ].filter(Boolean).join(', ');
 
         console.log(`🎨 GeminiService (GetImg/FLUX): Style=${style}, Option=${styleOption}`);
