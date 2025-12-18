@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./css/components/modal.css">
   <link rel="stylesheet" href="./css/components/character-sheet.css">
   <link rel="stylesheet" href="./css/components/card-viewer.css">
+  <link rel="stylesheet" href="./css/components/treasure-generator.css">
 
 </head>
 
@@ -54,6 +55,9 @@
       <button class="nav-tab" data-tab="character-sheet">
         <span class="icon">👤</span> <span data-i18n="nav.characterSheet">דף דמות</span>
       </button>
+      <button class="nav-tab" data-tab="treasure-generator">
+        <span class="icon">🏆</span> <span data-i18n="nav.treasureGenerator">מחולל אוצרות</span>
+      </button>
     </nav>
 
     <!-- Tab 1: Card Creator -->
@@ -80,6 +84,9 @@
         <div id="character-sheet-placeholder"></div>
       </main>
     </div>
+
+    <!-- Tab 3: Treasure Generator -->
+    <div id="treasure-generator-placeholder"></div>
 
     <!-- Custom Confirmation Modal -->
     <div id="confirmation-modal" class="modal-overlay hidden">

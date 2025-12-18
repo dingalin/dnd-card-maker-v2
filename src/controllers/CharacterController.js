@@ -1,11 +1,16 @@
 import { GetImgService } from '../services/GetImgService.js';
 import i18n from '../i18n.js';
+import CardRenderer from '../card-renderer.js';
+// Note: stateManager is now passed as constructor parameter (like TreasureController)
+
 
 export class CharacterController {
-    constructor() {
+    constructor(stateManager) {
         this.itemRegistry = new Map(); // Stores cardData by UUID
+        this.state = stateManager;     // Reference to global state (passed from main.js)
         this.init();
     }
+
 
     init() {
         console.log("CharacterController: Initializing...");
@@ -110,6 +115,46 @@ export class CharacterController {
         const exportBtn = document.getElementById('export-all-gallery-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportAllToGallery());
+        }
+
+        // --- Synchronization with Card Creator ---
+        this.setupSyncListeners();
+    }
+
+    /**
+     * Synchronize Level and Complexity settings with the Card Creator tab
+     */
+    setupSyncListeners() {
+        const creatorLevel = document.getElementById('item-level');
+        const charLevel = document.getElementById('auto-equip-level');
+        const charComplexity = document.getElementById('auto-equip-complexity');
+
+        // Sync Level: Creator -> Character
+        if (creatorLevel && charLevel) {
+            creatorLevel.addEventListener('change', () => {
+                if (charLevel.value !== creatorLevel.value) {
+                    charLevel.value = creatorLevel.value;
+                    console.log('🔄 Sync (Creator -> Char): Level set to', charLevel.value);
+                }
+            });
+
+            // Sync Level: Character -> Creator
+            charLevel.addEventListener('change', () => {
+                if (creatorLevel.value !== charLevel.value) {
+                    creatorLevel.value = charLevel.value;
+                    // Trigger change on creator to update sticky note etc.
+                    creatorLevel.dispatchEvent(new Event('change'));
+                    console.log('🔄 Sync (Char -> Creator): Level set to', creatorLevel.value);
+                }
+            });
+        }
+
+        // Complexity Syncing
+        // Note: Creator tab doesn't have a complexity dropdown, but we can sync 
+        // the Character's complexity choice to a global hint if needed.
+        // For now, let's just ensure they are initialized from each other if one exists.
+        if (creatorLevel && charLevel) {
+            charLevel.value = creatorLevel.value;
         }
     }
 
@@ -343,29 +388,71 @@ export class CharacterController {
     }
 
     handleSlotClick(e) {
-        console.log('🖱️ handleSlotClick called', e.target);
-
         // Stop propagation to prevent double triggers
         e.stopPropagation();
 
         const slotEl = e.target.closest('.slot');
         if (!slotEl) return;
 
+        const slotId = slotEl.dataset.slot;
         const slotContent = slotEl.querySelector('.slot-content');
         const img = slotContent ? slotContent.querySelector('img') : null;
 
-        // CASE 1: Occupied Slot -> Show Viewer
-        if (img) {
-            console.log('🖱️ Found img, calling showCardViewer');
-            this.showCardViewer(img);
+        // 1. Check for Quick Action Buttons
+        const autoGenBtn = e.target.closest('.auto-gen-btn');
+
+        if (autoGenBtn) {
+            console.log('🖱️ Auto-gen button clicked for slot:', slotId);
+            this.handleAutoGenerateSlot(slotId);
             return;
         }
 
-        // CASE 2: Empty Slot -> Navigate to Creator
-        const slotId = slotEl.dataset.slot;
-        console.log('🖱️ Empty slot clicked:', slotId);
+        // 2. Default behavior (Clicking the slot center or image)
+        if (img) {
+            console.log('🖱️ Occupied slot clicked - showing viewer');
+            this.showCardViewer(img);
+        } else {
+            console.log('🖱️ Empty slot clicked - navigating to creator');
+            this.navigateToCreatorForSlot(slotId);
+        }
+    }
 
-        this.navigateToCreatorForSlot(slotId);
+    /**
+     * Trigger auto-generation for a single slot
+     */
+    async handleAutoGenerateSlot(slotId) {
+        const slotMapping = this.getSlotMapping();
+        const config = slotMapping[slotId];
+        if (!config) return;
+
+        // Get selected level and complexity from global UI if available
+        const levelSelect = document.getElementById('auto-equip-level');
+        const level = levelSelect ? levelSelect.value : '1-4';
+        const complexitySelect = document.getElementById('auto-equip-complexity');
+        const complexityMode = complexitySelect ? complexitySelect.value : 'simple';
+
+        const slotLabel = i18n.t(`characterSheet.${slotId.replace(/\d/g, '')}`) || config.label;
+
+        if (window.uiManager) {
+            window.uiManager.showToast(i18n.t('characterSidebar.autoEquipProgress', { slot: slotLabel }), 'info');
+        }
+
+        try {
+            // Dispatch custom event for generation
+            const event = new CustomEvent('auto-equip-generate-item', {
+                detail: {
+                    slotId,
+                    level,
+                    complexityMode,
+                    type: config.type,
+                    subtype: config.subtype || '',
+                    label: slotLabel
+                }
+            });
+            document.dispatchEvent(event);
+        } catch (error) {
+            console.error(`Error triggering single auto-gen for ${slotId}:`, error);
+        }
     }
 
     navigateToCreatorForSlot(slotId) {
@@ -456,27 +543,54 @@ export class CharacterController {
 
     // ... promptConflict ...
 
-    equipToSlots(slots, imageUrl, cardName, cardData) {
+    async equipToSlots(slots, imageUrl, cardName, cardData, isRenderedCard = false) {
         // Special case: Alternate slots (Main -> Off, Ring1 -> Ring2)
         // If we are here, it means we either had NO conflicts, or User Confirmed overwrite.
+
+        // Generate full card thumbnail if we have enough data and it's not already rendered
+        let displayImage = imageUrl;
+        if (cardData && !isRenderedCard) {
+            // If it's just the raw image, render the full card (both sides)
+            console.log('🎨 CharacterController: Generating full card thumbnail (Front & Back)...');
+            const thumbnails = await this.renderCardThumbnail(cardData, imageUrl);
+            if (thumbnails) {
+                displayImage = thumbnails.front;
+                // Store back image in cardData for the viewer
+                cardData.capturedBackImage = thumbnails.back;
+            }
+        }
 
         // Generate unique ID for this instance
         const uniqueId = 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
         // Store data if provided
         if (cardData) {
-            console.log('💾 Saving to itemRegistry:', uniqueId, 'capturedBackImage:', !!cardData.capturedBackImage);
-            this.itemRegistry.set(uniqueId, cardData);
-        } else {
-            // Try to find from recent equip request?
-            // Actually, equipToSlots is called FROM handleEquipRequest which has cardData.
-            // We need to pass cardData into this function.
+            // Snapshot current settings to ensure the card looks the same when re-loaded for editing
+            const currentSettings = JSON.parse(JSON.stringify(this.state.getState().settings || {}));
+
+            const registryEntry = {
+                ...cardData,
+                settings: currentSettings,
+                equippedAt: new Date().toISOString()
+            };
+
+            console.log('💾 Saving to itemRegistry:', uniqueId, 'with settings snapshot');
+            this.itemRegistry.set(uniqueId, registryEntry);
         }
 
         slots.forEach(slotKey => {
             const slot = document.querySelector(`.slot[data-slot="${slotKey}"] .slot-content`);
             if (slot) {
-                slot.innerHTML = `<img src="${imageUrl}" data-item-name="${cardName ? cardName.replace(/"/g, '&quot;') : ''}" data-unique-id="${uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                // PRUNE itemRegistry: If there's an existing item, remove its data to prevent memory leak
+                const existingImg = slot.querySelector('img');
+                if (existingImg && existingImg.dataset.uniqueId) {
+                    const oldId = existingImg.dataset.uniqueId;
+                    console.log('🧹 CharacterController: Pruning old item data from registry:', oldId);
+                    this.itemRegistry.delete(oldId);
+                }
+
+                // Use displayImage (either the full card thumbnail or the original image)
+                slot.innerHTML = `<img src="${displayImage}" data-item-name="${cardName ? cardName.replace(/"/g, '&quot;') : ''}" data-unique-id="${uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
             }
         });
 
@@ -487,6 +601,155 @@ export class CharacterController {
         if (window.uiManager) window.uiManager.showToast(i18n.t('character.successEquipped'), 'success');
     }
 
+    /**
+     * Render full card thumbnails (Front & Back) to an off-screen canvas
+     * Returns { front, back } dataURLs
+     * Uses the SAME render logic as TreasureController for consistency
+     */
+    async renderCardThumbnail(cardData, imageUrl) {
+        try {
+            // Create off-screen canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 750;
+            canvas.height = 1050;
+            canvas.id = 'temp-char-canvas-' + Date.now();
+            canvas.style.display = 'none';
+            document.body.appendChild(canvas);
+
+            // Create temporary CardRenderer
+            const tempRenderer = new CardRenderer(canvas.id);
+            await tempRenderer.templateReady;
+
+            // Build render data (CardRenderer expects specific format)
+            const renderData = {
+                name: cardData.name || cardData.front?.title || 'חפץ',
+                typeHe: cardData.typeHe || cardData.front?.type || '',
+                rarityHe: cardData.rarityHe || cardData.front?.rarity || '',
+                // Stats fields - CardRenderer reads these to build coreStatsText
+                weaponDamage: cardData.weaponDamage,
+                damageType: cardData.damageType,
+                armorClass: cardData.armorClass,
+                versatileDamage: cardData.versatileDamage,
+                weaponProperties: cardData.weaponProperties,
+                // Quick description
+                quickStats: cardData.quickStats || cardData.front?.quickStats || '',
+                gold: cardData.gold || cardData.front?.gold || '-',
+                imageUrl: imageUrl,
+                // Back side data
+                abilityName: cardData.abilityName || cardData.back?.title || '',
+                abilityDesc: cardData.abilityDesc || cardData.back?.mechanics || '',
+                description: cardData.description || cardData.back?.lore || ''
+            };
+
+            // Get current settings from stateManager (same settings used in Card Creator)
+            const currentState = this.state.getState();
+            const frontSettings = currentState.settings?.front || {};
+            const backSettings = currentState.settings?.back || {};
+            const styleSettings = currentState.settings?.style || {};
+            const fo = frontSettings.offsets || {};
+            const fs = frontSettings.fontSizes || {};
+
+            // Use stateManager's current settings - SAME AS TreasureController!
+            const renderOptions = {
+                // Font sizes from stateManager
+                fontSizes: {
+                    nameSize: fs.nameSize ?? 64,
+                    typeSize: fs.typeSize ?? 24,
+                    raritySize: fs.raritySize ?? 24,
+                    statsSize: fs.statsSize ?? 32,
+                    coreStatsSize: fs.coreStatsSize ?? 42,
+                    goldSize: fs.goldSize ?? 32
+                },
+                // Offsets from stateManager (explicit, not spread)
+                name: fo.name ?? 0,
+                type: fo.type ?? 0,
+                rarity: fo.rarity ?? 0,
+                stats: fo.stats ?? 780,
+                coreStats: fo.coreStats ?? 680,
+                gold: fo.gold ?? 0,
+                // Image settings from stateManager
+                imageYOffset: fo.imageYOffset ?? 0,
+                imageScale: fo.imageScale ?? 1.0,
+                imageRotation: fo.imageRotation ?? 0,
+                imageFade: fo.imageFade ?? 0,
+                imageShadow: fo.imageShadow ?? 0,
+                imageStyle: styleSettings.imageStyle || 'natural',
+                imageColor: styleSettings.imageColor || '#ffffff',
+                // Widths from stateManager
+                nameWidth: fo.nameWidth ?? 543,
+                typeWidth: fo.typeWidth ?? 500,
+                rarityWidth: fo.rarityWidth ?? 500,
+                coreStatsWidth: fo.coreStatsWidth ?? 500,
+                statsWidth: fo.statsWidth ?? 500,
+                goldWidth: fo.goldWidth ?? 500,
+                // Background
+                backgroundScale: fo.backgroundScale ?? 1.0,
+                centerFade: fo.centerFade ?? 0,
+                // Font family and styles
+                fontFamily: styleSettings.fontFamily || 'Heebo',
+                fontStyles: frontSettings.fontStyles || {},
+                // Text effects
+                textOutlineEnabled: styleSettings.textOutlineEnabled || false,
+                textOutlineWidth: styleSettings.textOutlineWidth ?? 2,
+                textShadowEnabled: styleSettings.textShadowEnabled || false,
+                textShadowBlur: styleSettings.textShadowBlur ?? 4,
+                textBackdropEnabled: styleSettings.textBackdropEnabled || false,
+                textBackdropOpacity: styleSettings.textBackdropOpacity ?? 40
+            };
+
+            console.log('CharacterController: Rendering with stateManager settings (like TreasureController)');
+            console.log('  → imageScale:', fo.imageScale, 'nameSize:', fs.nameSize);
+
+            // 1. Render FRONT
+            await tempRenderer.render(renderData, renderOptions, false);
+            const frontThumb = canvas.toDataURL('image/jpeg', 0.85);
+
+            // 2. Render BACK (if has content)
+            let backThumb = null;
+            if (renderData.abilityName || renderData.abilityDesc || renderData.description) {
+                const bo = backSettings.offsets || {};
+                const bs = backSettings.fontSizes || {};
+
+                const backRenderOptions = {
+                    fontSizes: {
+                        abilityNameSize: bs.abilityNameSize ?? 52,
+                        mechSize: bs.mechSize ?? 32,
+                        loreSize: bs.loreSize ?? 24
+                    },
+                    abilityName: bo.abilityName ?? 140,
+                    mech: bo.mech ?? 220,
+                    lore: bo.lore ?? 880,
+                    mechWidth: bo.mechWidth ?? 600,
+                    loreWidth: bo.loreWidth ?? 550,
+                    backgroundScale: fo.backgroundScale ?? 1.0,
+                    fontFamily: styleSettings.fontFamily || 'Heebo',
+                    fontStyles: backSettings.fontStyles || {},
+                    textOutlineEnabled: styleSettings.textOutlineEnabled || false,
+                    textOutlineWidth: styleSettings.textOutlineWidth ?? 2,
+                    textShadowEnabled: styleSettings.textShadowEnabled || false,
+                    textShadowBlur: styleSettings.textShadowBlur ?? 4,
+                    textBackdropEnabled: styleSettings.textBackdropEnabled || false,
+                    textBackdropOpacity: styleSettings.textBackdropOpacity ?? 40
+                };
+
+                await tempRenderer.render(renderData, backRenderOptions, true);
+                backThumb = canvas.toDataURL('image/jpeg', 0.85);
+            }
+
+            // Cleanup
+            document.body.removeChild(canvas);
+            canvas.width = 0;
+            canvas.height = 0;
+
+            console.log('🎨 CharacterController: Card thumbnails generated');
+            return { front: frontThumb, back: backThumb };
+        } catch (error) {
+            console.error('Failed to render enhanced character card thumbnail:', error);
+            return { front: imageUrl, back: null };
+        }
+    }
+
+
     handleEquipRequest(data) {
         if (this.isProcessing) return;
         this.isProcessing = true;
@@ -494,7 +757,7 @@ export class CharacterController {
         // Reset processing flag after a short delay (debounce)
         setTimeout(() => this.isProcessing = false, 500);
 
-        const { cardData, imageUrl } = data;
+        const { cardData, imageUrl, isRenderedCard } = data;
         if (!cardData) return;
 
         // Extract Name (Handle V1 flattened vs V2 nested structure)
@@ -528,9 +791,9 @@ export class CharacterController {
         }
 
         if (conflicts.length > 0) {
-            this.promptConflict(conflicts, slots, imageUrl, itemLabel, cardName, cardData);
+            this.promptConflict(conflicts, slots, imageUrl, itemLabel, cardName, cardData, isRenderedCard);
         } else {
-            this.equipToSlots(slots, imageUrl, cardName, cardData);
+            this.equipToSlots(slots, imageUrl, cardName, cardData, isRenderedCard);
         }
     }
 
@@ -673,12 +936,12 @@ export class CharacterController {
         return conflicts;
     }
 
-    promptConflict(conflicts, slots, imageUrl, itemLabel, cardName, cardData) {
+    promptConflict(conflicts, slots, imageUrl, itemLabel, cardName, cardData, isRenderedCard) {
         const modal = document.getElementById('confirmation-modal');
         if (!modal) {
             // Fallback if modal missing
             if (confirm(`המיקום תפוס על ידי חפץ אחר. האם להחליף?`)) {
-                this.equipToSlots(slots, imageUrl, cardName, cardData);
+                this.equipToSlots(slots, imageUrl, cardName, cardData, isRenderedCard);
             }
             return;
         }
@@ -709,11 +972,10 @@ export class CharacterController {
         });
 
         newOk.addEventListener('click', () => {
-            this.equipToSlots(slots, imageUrl, cardName, cardData);
+            this.equipToSlots(slots, imageUrl, cardName, cardData, isRenderedCard);
             cleanup();
         });
     }
-
     // Note: equipToSlots is defined earlier in the class with cardData parameter
     getApiKey() {
         let key = localStorage.getItem('getimg_api_key');

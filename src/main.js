@@ -17,6 +17,7 @@ import { RenderController } from './controllers/RenderController.js';
 import { HistoryController } from './controllers/HistoryController.js';
 import { TabManager } from './controllers/TabManager.js';
 import { CharacterController } from './controllers/CharacterController.js';
+import TreasureController from './controllers/TreasureController.js';
 import { CardViewerService } from './services/CardViewerService.js';
 
 // i18n (Internationalization)
@@ -144,8 +145,12 @@ async function initApp() {
 
     // Character: Handles Character Sheet
     // Created early so it can receive equip events even before tab is visited
-    const characterController = new CharacterController();
+    const characterController = new CharacterController(stateManager);
     window.characterController = characterController; // Expose globally for TabManager
+
+    // Treasure: Handles Treasure Generator
+    const treasureController = new TreasureController(stateManager, uiManager, generatorController);
+    window.treasureController = treasureController; // Expose globally
 
     // 4. Initialize Background Manager
     window.backgroundManager = new BackgroundManager(renderer);

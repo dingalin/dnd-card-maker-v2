@@ -256,6 +256,8 @@ export class RenderController {
             setSlider('image-fade', fo.imageFade);
             setSlider('image-shadow', fo.imageShadow);
             setSlider('bg-scale', fo.backgroundScale);
+            setSlider('center-fade', fo.centerFade);
+            setDisplay('center-fade-val', fo.centerFade || 0);
             setSlider('image-offset', fo.imageYOffset);
             setSlider('rarity-offset', fo.rarity);
             setSlider('type-offset', fo.type);
@@ -625,7 +627,8 @@ export class RenderController {
                             detail: {
                                 cardData: { ...cardData, capturedBackImage: backImageUrl },
                                 imageUrl: frontImageUrl,
-                                backImageUrl: backImageUrl
+                                backImageUrl: backImageUrl,
+                                isRenderedCard: true
                             }
                         }));
 

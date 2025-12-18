@@ -58,7 +58,8 @@ class ComponentLoader {
             { id: 'sidebar-end-placeholder', path: 'components/sidebar-end.html' },
             { id: 'character-sidebar-placeholder', path: 'components/character-sidebar.html' },
             { id: 'character-sheet-placeholder', path: 'components/character-sheet.html' },
-            { id: 'equip-modal-placeholder', path: 'components/equip-modal.html' }
+            { id: 'equip-modal-placeholder', path: 'components/equip-modal.html' },
+            { id: 'treasure-generator-placeholder', path: 'components/treasure-generator.html' }
         ];
 
         try {

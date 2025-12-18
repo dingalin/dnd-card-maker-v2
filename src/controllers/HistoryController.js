@@ -405,7 +405,12 @@ export class HistoryController {
                 return;
             }
 
-            cards.forEach(item => {
+            // OPTIMIZATION: If history is huge, don't render everything at once
+            // This prevents DOM bloat and memory pressure
+            const renderLimit = 30;
+            const itemsToRender = cards.slice(0, renderLimit);
+
+            itemsToRender.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'gallery-card-item';
 
@@ -497,6 +502,13 @@ export class HistoryController {
 
                 grid.appendChild(card);
             });
+
+            if (cards.length > renderLimit) {
+                const moreMsg = document.createElement('div');
+                moreMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 1rem; color: #888; font-size: 0.9rem;';
+                moreMsg.textContent = `מציג 30 מתוך ${cards.length} חפצים. השתמש בתיקיות לניהול יעיל יותר.`;
+                grid.appendChild(moreMsg);
+            }
 
             this.updateToolbar();
 

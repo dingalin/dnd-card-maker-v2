@@ -375,6 +375,60 @@ class GeminiService {
         };
         const colorName = getColorName(userColor);
 
+        // === ELEMENTAL/THEMATIC ENHANCEMENT ===
+        // Add visual keywords based on item's elemental theme (detected from visualPrompt)
+        const getElementalEnhancement = (prompt) => {
+            const p = prompt.toLowerCase();
+            if (p.includes('fire') || p.includes('flame') || p.includes('אש') || p.includes('להב')) {
+                return 'fiery embers, molten orange glow, burning runes, flickering flames, warm red-orange lighting';
+            }
+            if (p.includes('ice') || p.includes('frost') || p.includes('קרח') || p.includes('קפוא')) {
+                return 'frost crystals, icy blue shimmer, frozen patterns, glacial surface, cold blue lighting';
+            }
+            if (p.includes('lightning') || p.includes('thunder') || p.includes('ברק') || p.includes('רעם')) {
+                return 'crackling electricity, electric blue arcs, storm energy, charged atmosphere';
+            }
+            if (p.includes('nature') || p.includes('wood') || p.includes('leaf') || p.includes('עץ') || p.includes('טבע')) {
+                return 'vine wrapped details, leaf motifs, natural wood grain, druidic symbols, organic texture';
+            }
+            if (p.includes('holy') || p.includes('divine') || p.includes('קדוש') || p.includes('אלוהי')) {
+                return 'holy radiance, golden halo effect, angelic motifs, blessed white light, sacred glow';
+            }
+            if (p.includes('dark') || p.includes('shadow') || p.includes('necro') || p.includes('אפל') || p.includes('צל')) {
+                return 'dark energy wisps, shadowy aura, skull motifs, bone accents, eerie purple-black glow';
+            }
+            if (p.includes('poison') || p.includes('acid') || p.includes('רעל') || p.includes('חומצ')) {
+                return 'toxic green glow, dripping venom, bubbling acid, sickly yellow-green vapor';
+            }
+            if (p.includes('arcane') || p.includes('magic') || p.includes('קסם') || p.includes('כישוף')) {
+                return 'glowing arcane runes, magical aura, mystical energy particles, ethereal purple wisps';
+            }
+            return ''; // No elemental theme detected
+        };
+
+        // === RARITY-BASED QUALITY ===
+        // Make legendary items look more prestigious than common ones
+        const getRarityQuality = (prompt) => {
+            const p = prompt.toLowerCase();
+            if (p.includes('legendary') || p.includes('אגדי') || p.includes('artifact') || p.includes('ארטיפקט')) {
+                return 'divine masterwork craftsmanship, blinding ethereal brilliance, celestial materials, legendary aura, museum quality artifact';
+            }
+            if (p.includes('very rare') || p.includes('נדיר מאוד')) {
+                return 'exquisite masterwork, radiant magical aura, precious metals and gems, exceptional quality';
+            }
+            if (p.includes('rare') || p.includes('נדיר')) {
+                return 'ornate intricate details, embedded gemstones, magical shimmer, fine engravings, quality craftsmanship';
+            }
+            if (p.includes('uncommon') || p.includes('לא נפוץ')) {
+                return 'quality craftsmanship, subtle magical glow, decorative accents, polished finish';
+            }
+            // Common or default
+            return 'practical design, well-maintained, clean craftsmanship';
+        };
+
+        const elementalEnhancement = getElementalEnhancement(visualPrompt);
+        const rarityQuality = getRarityQuality(visualPrompt);
+
         // === ITEM TYPE DETECTION & SPECIALIZED PROMPTS ===
         // Detect item type from visualPrompt and apply type-specific enhancements
         const promptLower = visualPrompt.toLowerCase();
@@ -403,13 +457,22 @@ class GeminiService {
         } else if (promptLower.includes('hammer') || promptLower.includes('mace') || promptLower.includes('פטיש')) {
             itemTypeEnhancement = 'heavy war hammer, reinforced striking head, powerful design';
             compositionGuide = 'showing the weight and impact potential of the head';
-        } else if (promptLower.includes('crossbow') || promptLower.includes('arbalet')) {
+        } else if (promptLower.includes('sickle') || promptLower.includes('מגל')) {
+            itemTypeEnhancement = 'curved harvesting sickle, sharp crescent blade, wooden handle, druidic tool';
+            compositionGuide = 'showing the curved blade arc and edge';
+        } else if (promptLower.includes('אלה') || promptLower.includes('club')) {
+            itemTypeEnhancement = 'spiked war mace, heavy metal head, crushing weapon design';
+            compositionGuide = 'showing the impact head with spikes or flanges';
+        } else if (promptLower.includes('crossbow') || promptLower.includes('arbalet') || promptLower.includes('קשתון')) {
             itemTypeEnhancement = 'mechanical crossbow, intricate trigger mechanism, loaded bolt';
             compositionGuide = 'three-quarter view showing mechanism detail';
         }
 
         // ARMOR - Enhanced for detailed armor renders
-        else if (promptLower.includes('armor') || promptLower.includes('plate') || promptLower.includes('שריון')) {
+        else if (promptLower.includes('leather') || promptLower.includes('עור')) {
+            itemTypeEnhancement = 'supple leather armor, stitched panels, reinforced shoulders, adventurer gear';
+            compositionGuide = 'front view showing leather texture and straps';
+        } else if (promptLower.includes('armor') || promptLower.includes('plate') || promptLower.includes('שריון') || promptLower.includes('צלחות')) {
             itemTypeEnhancement = 'ornate plate armor piece, polished metal surface, functional battle design, riveted construction';
             compositionGuide = 'front view showing craftsmanship details';
         } else if (promptLower.includes('shield') || promptLower.includes('מגן')) {
@@ -468,14 +531,18 @@ class GeminiService {
 
         // === POSITIVE REINFORCEMENT (FLUX works better with positive descriptions) ===
         // Instead of "NO hands, NO people" - describe what we WANT to see
-        const positiveReinforcement = 'isolated single item displayed alone, clean professional product render, pristine high quality, complete item fully visible, sharp crisp details';
+        // Note: FLUX ignores generic quality keywords like "masterpiece", "8k" etc.
+        // Focus on specific descriptive details instead.
+        const positiveReinforcement = 'isolated single item displayed alone, clean professional product render, complete item fully visible, sharp focus, centered composition';
 
         // === BUILD FINAL OPTIMIZED PROMPT ===
-        // Structure: [Composition] [Style Prefix] [Subject/Item] [Type Enhancement] [Visual Prompt] [Quality] [Background] [Style Suffix] [Positive]
+        // Structure: [Composition] [Style Prefix] [Subject/Item] [Type Enhancement] [Elemental] [Rarity] [Visual Prompt] [Quality] [Background] [Style Suffix] [Positive]
         const finalPrompt = [
             compositionGuide,
             styleConfig.prefix,
             itemTypeEnhancement,
+            elementalEnhancement,
+            rarityQuality,
             visualPrompt,
             styleConfig.quality,
             backgroundPrompt,
@@ -554,23 +621,159 @@ class GeminiService {
         }
     }
 
-    // Background generation using GetImg/FLUX
-    async generateCardBackground(theme, getImgApiKey = '') {
-        const themeColors = {
-            'Fire': 'light orange',
-            'Nature': 'light green',
-            'Arcane': 'light purple',
-            'Divine': 'light gold',
-            'Necrotic': 'pale necrotic green',
-            'Industrial': 'light metallic grey',
-            'Iron': 'light rust',
-            'Old Scroll': 'aged parchment',
-            'Elemental': 'prismatic'
+    // Background generation using GetImg/FLUX - ENHANCED
+    async generateCardBackground(theme, style = 'watercolor', getImgApiKey = '') {
+        // Rich theme-specific descriptions optimized for FLUX natural language
+        const themeConfigs = {
+            'Fire': {
+                colors: 'warm orange, deep red, molten gold',
+                elements: 'flickering ember particles, smoldering edges, heat distortion waves, volcanic cracks with glowing lava',
+                atmosphere: 'intense warmth radiating from fiery core, smoke wisps curling upward',
+                texture: 'charred parchment with burnt edges, ash-stained surface'
+            },
+            'Nature': {
+                colors: 'forest green, earthy brown, spring leaf gold',
+                elements: 'twisting vine borders, delicate leaf patterns, blooming flowers, wooden bark texture',
+                atmosphere: 'dappled sunlight through forest canopy, morning dew sparkles',
+                texture: 'aged bark paper, pressed flower petals embedded, natural fiber weave'
+            },
+            'Arcane': {
+                colors: 'mystical purple, ethereal blue, shimmering silver',
+                elements: 'glowing arcane runes, swirling magical energy, constellation patterns, floating spell symbols',
+                atmosphere: 'mysterious otherworldly glow, magical particles drifting',
+                texture: 'ancient spellbook page, ink that shimmers with starlight'
+            },
+            'Divine': {
+                colors: 'radiant gold, pure white, celestial cream',
+                elements: 'angelic feather motifs, holy sunburst rays, sacred geometric patterns, blessed sigils',
+                atmosphere: 'heavenly light beaming down, peaceful divine radiance',
+                texture: 'illuminated manuscript, gold leaf accents, pristine vellum'
+            },
+            'Necrotic': {
+                colors: 'sickly green, bone white, shadow purple, decay brown',
+                elements: 'skull ornaments, skeletal hands reaching from edges, ghostly wisps, cracked tombstone texture',
+                atmosphere: 'eerie fog rolling, haunting darkness creeping',
+                texture: 'rotting parchment, dried blood stains, grave dirt smudges'
+            },
+            'Industrial': {
+                colors: 'steel grey, copper bronze, iron black',
+                elements: 'gear mechanisms, steam pipes, rivet patterns, cogwheel borders, mechanical components',
+                atmosphere: 'steam clouds, industrial smoke, metallic gleam',
+                texture: 'hammered metal plate, blueprint grid lines, oil-stained surface'
+            },
+            'Iron': {
+                colors: 'dark iron, rust orange, forge red',
+                elements: 'chain mail pattern, sword emblems, shield motifs, battle-worn scratches',
+                atmosphere: 'forge fire glow, warrior spirit, battle-hardened',
+                texture: 'weathered iron plate, sword nicks, chainmail imprint'
+            },
+            'Old Scroll': {
+                colors: 'aged parchment tan, sepia brown, faded ink black',
+                elements: 'torn edges, wax seal remnants, quill ink splatters, coffee ring stains',
+                atmosphere: 'dusty library ambiance, ancient wisdom',
+                texture: 'crinkled old paper, yellowed with age, handwritten notes in margins'
+            },
+            'Elemental': {
+                colors: 'prismatic rainbow, shifting iridescent, cosmic multicolor',
+                elements: 'swirling elemental chaos, fire ice lightning earth symbols, primal energy spirals',
+                atmosphere: 'reality-warping energy, primordial power surge',
+                texture: 'crystalline surface, merged elemental patterns'
+            },
+            // NEW THEMES
+            'Ice': {
+                colors: 'icy blue, frost white, glacial cyan, frozen silver',
+                elements: 'frost crystals forming, ice shards, frozen patterns, snowflake decorations',
+                atmosphere: 'freezing cold emanating, arctic chill, winter breath visible',
+                texture: 'frosted glass surface, ice crystal patterns, frozen condensation'
+            },
+            'Lightning': {
+                colors: 'electric blue, storm purple, crackling white, thunder yellow',
+                elements: 'lightning bolts arcing, electric sparks, storm clouds, charged particles',
+                atmosphere: 'electrified air, static charge buzzing, storm energy',
+                texture: 'charged metallic surface, electric current patterns, plasma veins'
+            },
+            'Ocean': {
+                colors: 'deep sea blue, turquoise, coral pink, pearl white',
+                elements: 'waves and currents, seashell decorations, coral motifs, bubble patterns',
+                atmosphere: 'underwater depth, oceanic serenity, marine mystique',
+                texture: 'flowing water patterns, sea foam edges, wet surface reflections'
+            },
+            'Shadow': {
+                colors: 'deep black, dark purple, midnight blue, void grey',
+                elements: 'creeping shadows, dark tendrils, eclipse motifs, smoke wisps',
+                atmosphere: 'consuming darkness, eerie void, shadowy presence',
+                texture: 'dark velvet, smoke-stained, shadowy gradients'
+            },
+            'Celestial': {
+                colors: 'cosmic purple, starlight silver, nebula pink, galaxy blue',
+                elements: 'stars and constellations, moon phases, cosmic swirls, nebula patterns',
+                atmosphere: 'infinite cosmos, celestial wonder, astral realm',
+                texture: 'starfield background, cosmic dust, ethereal shimmer'
+            },
+            'Blood': {
+                colors: 'deep crimson, dark red, blood orange, black',
+                elements: 'blood splatter patterns, thorny vines, dripping edges, heart motifs',
+                atmosphere: 'violent passion, dark sacrifice, primal power',
+                texture: 'wet blood surface, dried stains, leather-bound'
+            }
         };
-        const color = themeColors[theme] || 'light';
-        const prompt = `watercolor style, ${color} colored ornate ${theme} style decorated old parchment paper texture, vintage card background, no white`;
 
-        console.log(`GeminiService: Generating background for theme "${theme}" with GetImg/FLUX`);
+        // Style-specific rendering approaches
+        const styleConfigs = {
+            'watercolor': 'soft watercolor painting style, flowing pigments, wet-on-wet technique, artistic brush strokes',
+            'realistic': 'photorealistic texture, detailed material rendering, professional photography lighting',
+            'oil': 'rich oil painting, thick brushwork, Renaissance master style, dramatic chiaroscuro',
+            'dark_fantasy': 'dark gothic illustration, ominous atmosphere, Elden Ring aesthetic, gritty details',
+            'sketch': 'detailed pencil sketch, graphite shading, technical illustration style',
+            'woodcut': 'medieval woodcut print, black ink lines, vintage engraving style',
+            // NEW STYLES
+            'anime': 'anime style illustration, vibrant colors, clean lines, Studio Ghibli inspired, cel shading',
+            'stained_glass': 'stained glass window art, vibrant colored glass panels, lead lines, cathedral style, luminous',
+            'pixel': '16-bit pixel art style, retro video game aesthetic, limited color palette, clean pixels',
+            'handdrawn': 'hand-drawn illustration, artist sketches, pencil and ink, personal artistic style'
+        };
+
+        const themeConfig = themeConfigs[theme] || themeConfigs['Old Scroll'];
+        const styleDescription = styleConfigs[style] || styleConfigs['watercolor'];
+
+        // Build prompt that matches the STRUCTURE of our ready-made backgrounds:
+        // - Decorative ornate frame/border around edges
+        // - Thematic corner pieces and edge decorations  
+        // - Clear lighter center area (parchment/cream) for content
+        // - Trading card proportions (2:3 vertical)
+        const prompt = [
+            // Art style first
+            styleDescription,
+
+            // CRITICAL STRUCTURE - Framed trading card design
+            'FRAMED CARD DESIGN: ornate decorative border frame surrounding empty center',
+            'fantasy trading card background with elaborate picture frame border',
+            'thick ornamental frame edges with intricate carved details',
+
+            // Corner flourishes (key visual element from gallery)
+            'elaborate corner flourishes with symmetrical ornamental designs',
+            'decorative corner pieces extending inward with filigree patterns',
+
+            // CENTER - Bright and clean (most important for readability)
+            'LARGE BRIGHT CENTER: cream colored or light parchment middle area',
+            'center area is clean, empty, soft, and very light for text overlay',
+            'vignette gradient effect from bright cream center to richly decorated dark edges',
+
+            // THEME-specific decorations ONLY at frame edges
+            `${theme} themed ornamental elements built INTO the frame border`,
+            `${themeConfig.colors} color palette for the decorative frame`,
+            themeConfig.elements + ' as frame decorations around edges only',
+            themeConfig.atmosphere + ' emanating from frame',
+            themeConfig.texture + ' texture on frame surface',
+
+            // Technical specs
+            'vertical portrait orientation, 2:3 aspect ratio, trading card proportions',
+            'absolutely no text, no letters, no characters, no creatures, no faces',
+            'center must remain completely empty and bright for content overlay'
+        ].join(', ');
+
+        console.log(`🎨 GeminiService: Generating ${theme} background in ${style} style`);
+        console.log(`📝 Background Prompt: "${prompt.substring(0, 100)}..."`);
 
         // Use GetImg/FLUX via Worker proxy
         try {

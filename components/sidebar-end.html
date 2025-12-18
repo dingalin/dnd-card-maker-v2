@@ -597,29 +597,49 @@
                 <label for="bg-theme-select" data-i18n="cardBackground.themeLabel">נושא הרקע</label>
                 <select id="bg-theme-select"
                     class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white mb-3">
-                    <option value="Fire" data-i18n="cardBackground.themes.fire">Fire</option>
-                    <option value="Nature" data-i18n="cardBackground.themes.nature">Nature</option>
-                    <option value="Arcane" data-i18n="cardBackground.themes.arcane">Arcane</option>
-                    <option value="Divine" data-i18n="cardBackground.themes.divine">Divine</option>
-                    <option value="Necrotic" data-i18n="cardBackground.themes.necrotic">Necrotic</option>
-                    <option value="Industrial" data-i18n="cardBackground.themes.industrial">Industrial</option>
-                    <option value="Iron" data-i18n="cardBackground.themes.iron">Iron</option>
-                    <option value="Old Scroll" data-i18n="cardBackground.themes.scroll">Scroll</option>
-                    <option value="Elemental" data-i18n="cardBackground.themes.elemental">Elemental</option>
+                    <optgroup label="יסודות קלאסיים">
+                        <option value="Fire">🔥 אש (Fire)</option>
+                        <option value="Ice">❄️ קרח (Ice)</option>
+                        <option value="Lightning">⚡ ברק (Lightning)</option>
+                        <option value="Nature">🌿 טבע (Nature)</option>
+                        <option value="Ocean">🌊 ים (Ocean)</option>
+                    </optgroup>
+                    <optgroup label="קסם ורוחניות">
+                        <option value="Arcane">✨ קסם (Arcane)</option>
+                        <option value="Divine">👼 קדושה (Divine)</option>
+                        <option value="Necrotic">💀 מוות (Necrotic)</option>
+                        <option value="Shadow">🌑 צל (Shadow)</option>
+                        <option value="Celestial">🌟 שמימי (Celestial)</option>
+                    </optgroup>
+                    <optgroup label="חומרים וסגנונות">
+                        <option value="Industrial">⚙️ תעשייתי (Industrial)</option>
+                        <option value="Iron">🗡️ ברזל (Iron)</option>
+                        <option value="Blood">🩸 דם (Blood)</option>
+                        <option value="Old Scroll">📜 מגילה (Scroll)</option>
+                        <option value="Elemental">🌈 יסודות (Elemental)</option>
+                    </optgroup>
                 </select>
 
                 <!-- Card Style Select (same styles as image generation) -->
                 <label for="bg-style-select" data-i18n="cardBackground.styleLabel">סגנון הקלף</label>
                 <select id="bg-style-select"
                     class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white mb-3">
-                    <option value="watercolor" data-i18n="imageStyles.watercolor">צבעי מים (Watercolor)</option>
-                    <option value="realistic" data-i18n="imageStyles.realistic">ריאליסטי (Realistic)</option>
-                    <option value="oil" data-i18n="imageStyles.oil">ציור שמן (Oil Painting)</option>
-                    <option value="sketch" data-i18n="imageStyles.sketch">רישום עיפרון (Pencil Sketch)</option>
-                    <option value="dark_fantasy" data-i18n="imageStyles.dark_fantasy">פנטזיה אפלה (Dark Fantasy)
-                    </option>
-                    <option value="woodcut" data-i18n="imageStyles.woodcut">תחריט עץ (Woodcut)</option>
-                    <option value="handdrawn" data-i18n="imageStyles.handdrawn">רישום ביד (Hand-drawn)</option>
+                    <optgroup label="רציני וקלאסי">
+                        <option value="watercolor">🎨 צבעי מים (Watercolor)</option>
+                        <option value="oil">🖼️ ציור שמן (Oil Painting)</option>
+                        <option value="realistic">📷 ריאליסטי (Realistic)</option>
+                    </optgroup>
+                    <optgroup label="פנטזיה ואומנות">
+                        <option value="dark_fantasy">🏰 פנטזיה אפלה (Dark Fantasy)</option>
+                        <option value="anime">🎌 אנימה (Anime)</option>
+                        <option value="stained_glass">🪟 ויטראז' (Stained Glass)</option>
+                    </optgroup>
+                    <optgroup label="מסורתי ורטרו">
+                        <option value="woodcut">🪵 תחריט עץ (Woodcut)</option>
+                        <option value="sketch">✏️ רישום עיפרון (Sketch)</option>
+                        <option value="pixel">👾 פיקסל ארט (Pixel Art)</option>
+                        <option value="handdrawn">✍️ רישום ביד (Hand-drawn)</option>
+                    </optgroup>
                 </select>
 
                 <button id="generate-bg-btn" class="btn-primary w-full mb-2" data-i18n="cardBackground.generate">צור
@@ -642,6 +662,18 @@
                     <span id="bg-scale-val">1.0</span>
                 </label>
                 <input type="range" id="bg-scale" min="1.0" max="2.0" step="0.1" value="1.0" class="w-full">
+            </div>
+
+            <!-- Center Fade Controls -->
+            <div class="control-group bg-gray-800 p-3 rounded-lg border border-gray-700 mt-2">
+                <label for="center-fade" class="block text-sm font-bold mb-2"
+                    style="color: #fbbf24; display: flex; justify-content: space-between;">
+                    <span data-i18n="cardBackground.centerFade">הבהרת מרכז</span>
+                    <span id="center-fade-val">0</span>
+                </label>
+                <input type="range" id="center-fade" min="0" max="100" step="5" value="0" class="w-full">
+                <p class="text-xs text-gray-400 mt-1" data-i18n="cardBackground.centerFadeHint">פייד שמנת מהמרכז לשיפור
+                    קריאות</p>
             </div>
         </div>
     </div>

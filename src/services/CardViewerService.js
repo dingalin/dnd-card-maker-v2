@@ -298,9 +298,40 @@ class CardViewerServiceClass {
         if (!this.currentCard.cardData) return;
 
         if (window.stateManager) {
-            const state = window.stateManager.getState();
-            state.cardData = this.currentCard.cardData;
-            window.stateManager.notify('cardData');
+            const cardData = this.currentCard.cardData;
+
+            // Restore data using stateManager.setCardData
+            // This method handles V2 migration and notifies listeners
+            window.stateManager.setCardData(cardData);
+
+            // Restore settings if they were captured
+            if (cardData.settings) {
+                console.log('📸 Restoring custom settings for edit...');
+                // Deep merge settings into state
+                const currentState = window.stateManager.getState();
+                currentState.settings = {
+                    ...currentState.settings,
+                    ...cardData.settings,
+                    front: {
+                        ...currentState.settings.front,
+                        ...(cardData.settings.front || {}),
+                        offsets: { ...currentState.settings.front.offsets, ...(cardData.settings.front?.offsets || {}) },
+                        fontSizes: { ...currentState.settings.front.fontSizes, ...(cardData.settings.front?.fontSizes || {}) },
+                        fontStyles: { ...currentState.settings.front.fontStyles, ...(cardData.settings.front?.fontStyles || {}) }
+                    },
+                    back: {
+                        ...currentState.settings.back,
+                        ...(cardData.settings.back || {}),
+                        offsets: { ...currentState.settings.back.offsets, ...(cardData.settings.back?.offsets || {}) },
+                        fontSizes: { ...currentState.settings.back.fontSizes, ...(cardData.settings.back?.fontSizes || {}) },
+                        fontStyles: { ...currentState.settings.back.fontStyles, ...(cardData.settings.back?.fontStyles || {}) }
+                    },
+                    style: {
+                        ...currentState.settings.style,
+                        ...(cardData.settings.style || {})
+                    }
+                };
+            }
 
             // Switch to card creator tab
             const tabBtn = document.querySelector('.nav-tab[data-tab="card-creator"]');

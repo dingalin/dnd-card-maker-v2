@@ -247,16 +247,31 @@ function initFormHeaderUpdates() {
     const modelInput = document.getElementById('image-model');
     const styleInput = document.getElementById('image-style');
     const visualsDisplay = document.getElementById('visuals-display');
+    const styleOptionInput = document.getElementById('image-style-option');
 
     if (modelInput && styleInput && visualsDisplay) {
         const updateVisuals = () => {
             const model = modelInput.options[modelInput.selectedIndex].text.split('(')[0].trim();
             const style = styleInput.options[styleInput.selectedIndex].text.split('(')[0].trim();
             visualsDisplay.textContent = `${model} / ${style}`;
+
+            // Save style preference to localStorage for Treasure Generator to use
+            localStorage.setItem('preferred_image_style', styleInput.value);
         };
         modelInput.addEventListener('change', updateVisuals);
         styleInput.addEventListener('change', updateVisuals);
         updateVisuals();
+    }
+
+    // Save style option to localStorage when it changes
+    if (styleOptionInput) {
+        styleOptionInput.addEventListener('change', () => {
+            localStorage.setItem('preferred_style_option', styleOptionInput.value);
+        });
+        // Initialize with current value
+        if (styleOptionInput.value) {
+            localStorage.setItem('preferred_style_option', styleOptionInput.value);
+        }
     }
 }
 

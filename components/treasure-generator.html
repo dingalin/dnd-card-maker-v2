@@ -1,0 +1,204 @@
+<div id="tab-treasure-generator" class="tab-content hidden">
+    <main class="treasure-layout">
+        <!-- Right Sidebar: Treasure Generator Controls -->
+        <aside class="sidebar-start glass-panel">
+            <h2 data-i18n="treasureGenerator.title">🏆 מחולל אוצרות</h2>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="auto" id="treasure-mode-auto">
+                    <span class="icon">🎲</span>
+                    <span data-i18n="treasureGenerator.autoMode">אוטומטי</span>
+                </button>
+                <button class="mode-btn" data-mode="manual" id="treasure-mode-manual">
+                    <span class="icon">✏️</span>
+                    <span data-i18n="treasureGenerator.manualMode">ידני</span>
+                </button>
+            </div>
+
+            <!-- Auto Mode Section -->
+            <div id="treasure-auto-section" class="treasure-section">
+                <h3 data-i18n="treasureGenerator.battleDetails">פרטי הקרב</h3>
+
+                <!-- CR Selection -->
+                <div class="form-group">
+                    <label for="treasure-cr" data-i18n="treasureGenerator.challengeRating">🎯 דרגת אתגר (CR)</label>
+                    <select id="treasure-cr" class="glass-input">
+                        <option value="0-4">CR 0-4 (רגיל/נפוץ)</option>
+                        <option value="5-10" selected>CR 5-10 (לא נפוץ)</option>
+                        <option value="11-16">CR 11-16 (נדיר)</option>
+                        <option value="17-20">CR 17-20 (נדיר מאוד)</option>
+                        <option value="21+">CR 21+ (אגדי)</option>
+                    </select>
+                </div>
+
+                <!-- Enemy Type -->
+                <div class="form-group">
+                    <label for="treasure-enemy-type" data-i18n="treasureGenerator.enemyType">🐲 סוג אויב</label>
+                    <select id="treasure-enemy-type" class="glass-input">
+                        <option value="dragon">🐉 דרקון (Dragon)</option>
+                        <option value="undead">💀 לא-מת (Undead)</option>
+                        <option value="fiend">👹 שד (Fiend/Demon)</option>
+                        <option value="fey">🧝 פֵיי (Fey)</option>
+                        <option value="humanoid" selected>🗡️ הומנואיד (Humanoid)</option>
+                        <option value="giant">🏔️ ענק (Giant)</option>
+                        <option value="celestial">🌟 שמימי (Celestial)</option>
+                        <option value="aberration">🦑 מפלצת (Aberration)</option>
+                        <option value="construct">🤖 מבנה (Construct)</option>
+                        <option value="elemental">🌀 יסודי (Elemental)</option>
+                    </select>
+                </div>
+
+                <!-- Item Count -->
+                <div class="form-group">
+                    <label data-i18n="treasureGenerator.itemCount">📦 כמות חפצים</label>
+                    <div class="counter-control">
+                        <button type="button" class="counter-btn" id="item-count-decrease">−</button>
+                        <span class="counter-value" id="item-count-display">3</span>
+                        <button type="button" class="counter-btn" id="item-count-increase">+</button>
+                    </div>
+                    <input type="hidden" id="treasure-item-count" value="3">
+                </div>
+
+                <!-- Include Gold -->
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="treasure-include-gold" checked>
+                    <label for="treasure-include-gold" data-i18n="treasureGenerator.includeGold">💰 כלול מטבעות</label>
+                </div>
+
+                <!-- Surprise Mode -->
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="treasure-surprise">
+                    <label for="treasure-surprise" data-i18n="treasureGenerator.surpriseMode">🎁 הפתעה (חפץ מרמה גבוהה
+                        יותר)</label>
+                </div>
+
+                <!-- Generate Button -->
+                <button type="button" id="generate-treasure-btn" class="btn-create treasure-btn">
+                    <span class="icon">🎲</span>
+                    <span data-i18n="treasureGenerator.generateTreasure">יצירת אוצר</span>
+                </button>
+            </div>
+
+            <!-- Manual Mode Section -->
+            <div id="treasure-manual-section" class="treasure-section hidden">
+                <h3 data-i18n="treasureGenerator.addItem">הוסף חפץ</h3>
+
+                <!-- Rarity -->
+                <div class="form-group">
+                    <label for="manual-rarity" data-i18n="treasureGenerator.rarity">נדירות</label>
+                    <select id="manual-rarity" class="glass-input">
+                        <option value="mundane" data-i18n="levelSection.mundane">רגיל (ללא כוח)</option>
+                        <option value="1-4" data-i18n="levelSection.level1_4">נפוץ (1-4)</option>
+                        <option value="5-10" data-i18n="levelSection.level5_10" selected>לא נפוץ (5-10)</option>
+                        <option value="11-16" data-i18n="levelSection.level11_16">נדיר (11-16)</option>
+                        <option value="17+" data-i18n="levelSection.level17">אגדי (17+)</option>
+                    </select>
+                </div>
+
+                <!-- Item Type -->
+                <div class="form-group">
+                    <label for="manual-item-type" data-i18n="treasureGenerator.itemType">סוג חפץ</label>
+                    <select id="manual-item-type" class="glass-input">
+                        <option value="weapon" data-i18n="typeSection.weapon">נשק (Weapon)</option>
+                        <option value="armor" data-i18n="typeSection.armor">שריון (Armor)</option>
+                        <option value="wondrous" data-i18n="typeSection.wondrous">חפץ פלא (Wondrous Item)</option>
+                        <option value="potion" data-i18n="typeSection.potion">שיקוי (Potion)</option>
+                        <option value="ring" data-i18n="typeSection.ring">טבעת (Ring)</option>
+                        <option value="scroll" data-i18n="typeSection.scroll">מגילה (Scroll)</option>
+                        <option value="staff" data-i18n="typeSection.staff">מטה (Staff)</option>
+                        <option value="wand" data-i18n="typeSection.wand">שרביט (Wand)</option>
+                    </select>
+                </div>
+
+                <!-- Subtype (Dynamic) -->
+                <div class="form-group" id="manual-subtype-container">
+                    <label for="manual-subtype" data-i18n="typeSection.subtypeLabel">חפץ ספציפי</label>
+                    <select id="manual-subtype" class="glass-input">
+                        <option value="" data-i18n="typeSection.subtypePlaceholder">-- בחר חפץ --</option>
+                    </select>
+                </div>
+
+                <!-- Theme/Ability (Optional) -->
+                <div class="form-group">
+                    <label for="manual-theme" data-i18n="treasureGenerator.theme">נושא/יכולת (אופציונלי)</label>
+                    <input type="text" id="manual-theme" class="glass-input"
+                        data-i18n-placeholder="abilitySection.placeholder"
+                        placeholder="לדוגמה: להב אש, טבעת היעלמות...">
+                </div>
+
+                <!-- Add to List Button -->
+                <button type="button" id="add-item-to-list-btn" class="btn-secondary add-item-btn">
+                    <span class="icon">➕</span>
+                    <span data-i18n="treasureGenerator.addToList">הוסף לרשימה</span>
+                </button>
+
+                <hr class="divider">
+
+                <!-- Treasure List -->
+                <div class="treasure-list-section">
+                    <h3 data-i18n="treasureGenerator.treasureList">רשימת שלל</h3>
+                    <span class="item-count-badge" id="list-count">0</span>
+
+                    <div id="treasure-list" class="treasure-list">
+                        <!-- Items will be added here dynamically -->
+                        <div class="empty-list-message" data-i18n="treasureGenerator.emptyList">
+                            הרשימה ריקה. הוסף חפצים למעלה.
+                        </div>
+                    </div>
+
+                    <!-- Gold Amount -->
+                    <div class="form-group gold-input-group">
+                        <label for="manual-gold" data-i18n="treasureGenerator.goldAmount">💰 מטבעות זהב</label>
+                        <input type="number" id="manual-gold" class="glass-input" value="0" min="0">
+                    </div>
+
+                    <!-- Generate All Button -->
+                    <button type="button" id="generate-all-cards-btn" class="btn-create treasure-btn" disabled>
+                        <span class="icon">✨</span>
+                        <span data-i18n="treasureGenerator.generateAllCards">צור את כל הקלפים</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Generation Status -->
+            <div id="treasure-generation-status" class="status-message hidden">
+                <div class="spinner-small"></div>
+                <span id="treasure-status-text">יוצר חפץ...</span>
+            </div>
+        </aside>
+
+        <!-- Center: Treasure Preview -->
+        <section class="treasure-preview-area glass-panel">
+            <h3 data-i18n="treasureGenerator.preview">תצוגה מקדימה</h3>
+
+            <!-- Gold Display -->
+            <div id="treasure-gold-display" class="gold-display hidden">
+                <span class="gold-icon">💰</span>
+                <span class="gold-amount" id="generated-gold-amount">0</span>
+                <span class="gold-label" data-i18n="treasureGenerator.goldCoins">מטבעות זהב</span>
+            </div>
+
+            <!-- Cards Grid -->
+            <div id="treasure-cards-grid" class="treasure-cards-grid">
+                <!-- Generated cards will appear here -->
+                <div class="empty-treasure-message">
+                    <span class="icon">🎲</span>
+                    <p data-i18n="treasureGenerator.noTreasureYet">לחץ על "יצירת אוצר" כדי להתחיל</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="treasure-actions hidden" id="treasure-actions">
+                <button type="button" id="save-all-to-gallery-btn" class="btn-primary">
+                    <span class="icon">💾</span>
+                    <span data-i18n="treasureGenerator.saveAllToGallery">שמור הכל לגלריה</span>
+                </button>
+                <button type="button" id="clear-treasure-btn" class="btn-secondary">
+                    <span class="icon">🗑️</span>
+                    <span data-i18n="treasureGenerator.clear">נקה</span>
+                </button>
+            </div>
+        </section>
+    </main>
+</div>

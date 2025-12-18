@@ -1,4 +1,5 @@
 import { getRarityFromLevel, blobToBase64 } from '../utils.js';
+import { enrichItemDetails } from '../utils/item-enrichment.js';
 import GeminiService from '../gemini-service.js';
 
 export class GeneratorController {
@@ -78,20 +79,40 @@ export class GeneratorController {
 
             const locale = window.i18n?.getLocale() || 'he';
 
+            // --- Context Inheritance ---
+            // Pull Ability/Theme context from the Card Creator tab
+            const creatorAbility = document.getElementById('item-ability')?.value.trim() || '';
+
+            // Pull manual overrides from the Card Creator tab
+            const manualDamage = document.getElementById('weapon-damage')?.value.trim() || '';
+            const manualAC = document.getElementById('armor-class')?.value.trim() || '';
+
+            console.log(`🧠 Auto-equip Context: Ability='${creatorAbility}', manualDamage='${manualDamage}', manualAC='${manualAC}'`);
+
             // Generate item details
             const itemDetails = await this.gemini.generateItemDetails(
                 level === 'mundane' ? '1-4' : level, // Use low level for mundane
                 type,
                 subtype,
                 rarity,
-                '', // No specific ability
+                creatorAbility, // Use current ability as context
                 null, // No context image
                 complexityMode,
                 locale
             );
 
+            // Apply manual overrides IF they were provided in the Creator tab
+            if (manualDamage && type === 'weapon') {
+                console.log('⚔️ Inheriting manual damage override:', manualDamage);
+                itemDetails.weaponDamage = manualDamage;
+            }
+            if (manualAC && type === 'armor') {
+                console.log('🛡️ Inheriting manual AC override:', manualAC);
+                itemDetails.armorClass = manualAC;
+            }
+
             // Enrich with official stats
-            this.enrichItemDetails(itemDetails, type, subtype, locale);
+            enrichItemDetails(itemDetails, type, subtype, locale);
 
             // Generate image
             const finalVisualPrompt = itemDetails.visualPrompt || `${type} ${subtype || ''}`;
@@ -112,78 +133,15 @@ export class GeneratorController {
                 originalParams: { level, type, subtype, rarity }
             };
 
-            // === RENDER FULL CARD (Front and Back) ===
-            // Use the main canvas to render a complete card with stats/text
-            const canvas = document.getElementById('card-canvas');
-            const backCanvas = document.getElementById('card-canvas-back');
-
-            if (canvas && window.cardRenderer) {
-                try {
-                    console.log('🎴 Rendering full card for auto-equip...');
-
-                    // Save current state before rendering
-                    const currentState = this.state.getState();
-                    const savedCardData = currentState.cardData;
-
-                    // Temporarily use the new card data
-                    const renderOptions = {
-                        imageScale: 1.0,
-                        backgroundScale: 1.0,
-                        fontFamily: 'Heebo',
-                        fontSizes: { nameSize: 48, typeSize: 24, raritySize: 24, statsSize: 28, goldSize: 24 }
-                    };
-
-                    // Render front
-                    await window.cardRenderer.render(cardData, renderOptions, false);
-                    const frontImageUrl = canvas.toDataURL('image/png', 1.0);
-                    console.log('📸 Captured front card image');
-
-                    // Render back (if we have back content)
-                    let backImageUrl = null;
-                    if (backCanvas && window.backRenderer && (cardData.abilityName || cardData.abilityDesc)) {
-                        await window.backRenderer.render(cardData, {
-                            ...renderOptions,
-                            fontSizes: { abilityNameSize: 36, mechSize: 24, loreSize: 20 }
-                        }, true);
-                        backImageUrl = backCanvas.toDataURL('image/png', 1.0);
-                        console.log('📸 Captured back card image');
-                    }
-
-                    // Restore previous state
-                    if (savedCardData) {
-                        await window.cardRenderer.render(savedCardData, renderOptions, false);
-                    }
-
-                    // Dispatch equip request with FULL card images
-                    document.dispatchEvent(new CustomEvent('request-character-equip-item', {
-                        detail: {
-                            cardData: { ...cardData, capturedBackImage: backImageUrl },
-                            imageUrl: frontImageUrl,
-                            backImageUrl: backImageUrl
-                        }
-                    }));
-
-                    console.log(`✅ Auto-equip full card rendered for slot: ${slotId}`);
-
-                } catch (renderError) {
-                    console.error('Failed to render full card, falling back to image only:', renderError);
-                    // Fallback: Send just the item image
-                    document.dispatchEvent(new CustomEvent('request-character-equip-item', {
-                        detail: {
-                            cardData,
-                            imageUrl: persistentImageUrl
-                        }
-                    }));
+            // Dispatch equip request
+            // CharacterController will handle rendering the full card thumbnail
+            document.dispatchEvent(new CustomEvent('request-character-equip-item', {
+                detail: {
+                    cardData,
+                    imageUrl: persistentImageUrl,
+                    isRenderedCard: false
                 }
-            } else {
-                // Canvas not available, fallback to image only
-                document.dispatchEvent(new CustomEvent('request-character-equip-item', {
-                    detail: {
-                        cardData,
-                        imageUrl: persistentImageUrl
-                    }
-                }));
-            }
+            }));
 
             console.log(`✅ Auto-equip item generated for slot: ${slotId}`);
 
@@ -272,7 +230,7 @@ export class GeneratorController {
             const itemDetails = await this.gemini.generateItemDetails(level, type, finalSubtype, rarity, ability, contextImage, complexityMode, locale);
 
             // --- CUSTOM TYPE FORMATTING & BACKFILL ---
-            this.enrichItemDetails(itemDetails, type, finalSubtype, locale);
+            enrichItemDetails(itemDetails, type, finalSubtype, locale);
             // -------------------------------------
             // -------------------------------------
 
@@ -469,7 +427,7 @@ export class GeneratorController {
             };
 
             // Apply Enrichment (Formatting + Backfill)
-            this.enrichItemDetails(newCardData, type, subtype, locale);
+            enrichItemDetails(newCardData, type, subtype, locale);
 
             this.state.setCardData(newCardData);
             this.ui.showToast(window.i18n?.t('toasts.newStatsCreated') || 'New stats created!', 'success');
@@ -481,254 +439,7 @@ export class GeneratorController {
         }
     }
 
-    enrichItemDetails(itemDetails, type, finalSubtype, locale = 'he') {
-        if (!window.OFFICIAL_ITEMS) return;
-
-        const isHebrew = locale === 'he';
-
-        try {
-            console.log(`Generator: Enriching details for ${type} / ${finalSubtype} (locale: ${locale})`);
-            let specificType = "";
-
-            // Extract name from Subtype (format: "Longsword (חרב ארוכה)")
-            if (finalSubtype && finalSubtype.includes('(')) {
-                const matches = finalSubtype.match(/\(([^)]+)\)/);
-                if (matches && matches[1]) {
-                    specificType = matches[1].trim();
-                }
-                // For English, use the English name (before parentheses)
-                if (!isHebrew) {
-                    specificType = finalSubtype.split('(')[0].trim();
-                }
-            } else if (finalSubtype) {
-                specificType = finalSubtype;
-            }
-
-            // Translations for weapon/armor categories
-            const categoryTranslations = {
-                simple: { he: 'פשוט', en: 'Simple' },
-                martial: { he: 'קרבי', en: 'Martial' },
-                weapon: { he: 'נשק', en: 'Weapon' },
-                light: { he: 'קל', en: 'Light' },
-                medium: { he: 'בינוני', en: 'Medium' },
-                heavy: { he: 'כבד', en: 'Heavy' },
-                shield: { he: 'מגן', en: 'Shield' }
-            };
-
-            const t = (key) => categoryTranslations[key]?.[isHebrew ? 'he' : 'en'] || key;
-
-            // -- WEAPONS --
-            if (type === 'weapon' && window.OFFICIAL_ITEMS.weapon) {
-                let weaponPrefix = t('weapon');
-                const cats = window.OFFICIAL_ITEMS.weapon;
-
-                // Check each category - look for the subtype in the category items
-                const checkCategory = (category) => {
-                    if (!cats[category]) return false;
-                    return cats[category].some(item =>
-                        item.includes(finalSubtype) || finalSubtype.includes(item.split(' ')[0]) ||
-                        (specificType && item.includes(specificType))
-                    );
-                };
-
-                const isSimple = checkCategory("Simple Melee") || checkCategory("Simple Ranged");
-                const isMartial = checkCategory("Martial Melee") || checkCategory("Martial Ranged");
-
-                if (isSimple) weaponPrefix = t('simple');
-                if (isMartial) weaponPrefix = t('martial');
-
-                // Always set typeHe if we have specific type, otherwise use a better fallback
-                if (specificType) {
-                    itemDetails.typeHe = `${specificType} (${weaponPrefix})`;
-                } else if (itemDetails.typeHe && itemDetails.typeHe.toLowerCase() === 'weapon') {
-                    itemDetails.typeHe = `${t('weapon')} ${weaponPrefix}`;
-                }
-            }
-
-            // -- ARMOR --
-            else if (type === 'armor' && window.OFFICIAL_ITEMS.armor) {
-                let armorCategory = "";
-                const cats = window.OFFICIAL_ITEMS.armor;
-
-                if ((cats["Light Armor"] || []).some(x => x.includes(finalSubtype))) armorCategory = t('light');
-                else if ((cats["Medium Armor"] || []).some(x => x.includes(finalSubtype))) armorCategory = t('medium');
-                else if ((cats["Heavy Armor"] || []).some(x => x.includes(finalSubtype))) armorCategory = t('heavy');
-                else if ((cats["Shield"] || []).some(x => x.includes(finalSubtype))) armorCategory = t('shield');
-
-                if (specificType) {
-                    if (armorCategory === t('shield')) {
-                        itemDetails.typeHe = t('shield');
-                    } else if (armorCategory) {
-                        itemDetails.typeHe = `${specificType} (${armorCategory})`;
-                    } else {
-                        itemDetails.typeHe = specificType;
-                    }
-                }
-            }
-
-            // --- STAT BACKFILL LOGIC ---
-            // Find matching stats using partial key match (keys are like "Longbow (קשת ארוכה)")
-            if (window.ITEM_STATS && finalSubtype) {
-                let officialStats = null;
-
-                // Try direct match first
-                if (window.ITEM_STATS[finalSubtype]) {
-                    officialStats = window.ITEM_STATS[finalSubtype];
-                    console.log("Generator: Direct match found:", finalSubtype);
-                } else {
-                    // Search for partial match - check multiple formats
-                    const statsKeys = Object.keys(window.ITEM_STATS);
-                    const matchingKey = statsKeys.find(key => {
-                        // Check if key contains the subtype
-                        if (key.includes(finalSubtype)) return true;
-                        // Check if subtype contains the English name (first word of key)
-                        if (finalSubtype.includes(key.split(' ')[0])) return true;
-                        // Check if subtype matches the Hebrew name (inside parentheses)
-                        const hebrewMatch = key.match(/\(([^)]+)\)/);
-                        if (hebrewMatch && hebrewMatch[1]) {
-                            const hebrewName = hebrewMatch[1].trim();
-                            if (finalSubtype.includes(hebrewName) || hebrewName.includes(finalSubtype)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
-                    if (matchingKey) {
-                        console.log("Generator: Found stats via partial match:", matchingKey, "for subtype:", finalSubtype);
-                        officialStats = window.ITEM_STATS[matchingKey];
-                    }
-                }
-
-                if (officialStats) {
-                    // ALWAYS use official damage/type for weapons - these are known values
-                    // Only AI-generated bonus (e.g., "+1") should be preserved
-                    if (type === 'weapon' && officialStats.damage) {
-                        // Locale-aware damage type mapping
-                        const damageMap = isHebrew
-                            ? { "bludgeoning": "מוחץ", "piercing": "דוקר", "slashing": "חותך" }
-                            : { "bludgeoning": "bludgeoning", "piercing": "piercing", "slashing": "slashing" };
-                        const officialDamageType = damageMap[officialStats.damageType] || officialStats.damageType;
-
-                        // Check if AI added a bonus (e.g., "+1", "+2")
-                        let bonusMatch = null;
-                        if (itemDetails.weaponDamage && typeof itemDetails.weaponDamage === 'string') {
-                            bonusMatch = itemDetails.weaponDamage.match(/(\+\s*\d+)/);
-                        }
-                        const bonus = bonusMatch ? ` ${bonusMatch[1].replace(/\s/g, '')}` : '';
-
-                        // Set the official damage + any bonus
-                        itemDetails.weaponDamage = `${officialStats.damage}${bonus}`;
-                        itemDetails.damageType = officialDamageType;
-
-                        console.log("Generator: Using official weapon stats:", itemDetails.weaponDamage, itemDetails.damageType);
-                    }
-
-                    // ALWAYS use official AC for armor
-                    if (type === 'armor' && officialStats.ac) {
-                        itemDetails.armorClass = officialStats.ac;
-                        console.log("Generator: Using official armor AC:", officialStats.ac);
-                    }
-
-                    // Build weapon properties from official data
-                    if (type === 'weapon') {
-                        const propTranslations = {
-                            twoHanded: { he: 'דו-ידני', en: 'Two-Handed' },
-                            versatile: { he: 'רב-שימושי', en: 'Versatile' },
-                            finesse: { he: 'עדין', en: 'Finesse' },
-                            reach: { he: 'טווח', en: 'Reach' },
-                            thrown: { he: 'הטלה', en: 'Thrown' },
-                            light: { he: 'קל', en: 'Light' }
-                        };
-                        const tp = (key) => propTranslations[key]?.[isHebrew ? 'he' : 'en'] || key;
-
-                        const props = [];
-                        if (officialStats.twoHanded) props.push(tp('twoHanded'));
-                        if (officialStats.versatile) {
-                            props.push(tp('versatile'));
-                            // Store the versatile (two-handed) damage for display
-                            itemDetails.versatileDamage = officialStats.versatile;
-                        }
-                        if (officialStats.finesse) props.push(tp('finesse'));
-                        if (officialStats.reach) props.push(tp('reach'));
-                        if (officialStats.thrown) props.push(tp('thrown'));
-                        if (officialStats.light) props.push(tp('light'));
-
-                        // Store properties for display
-                        itemDetails.weaponProperties = props;
-                    }
-                } else {
-                    console.warn("Generator: NO OFFICIAL STATS FOUND for:", finalSubtype, "- type:", type);
-                    console.log("Generator: Available stats keys:", Object.keys(window.ITEM_STATS || {}).slice(0, 10));
-                }
-            }
-
-            // --- POST-PROCESSING: Translate damage types based on locale ---
-            const damageTypeTranslations = {
-                "slashing": "חותך", "piercing": "דוקר", "bludgeoning": "מוחץ",
-                "fire": "אש", "cold": "קור", "lightning": "ברק", "poison": "רעל",
-                "acid": "חומצה", "necrotic": "נמק", "radiant": "זוהר", "force": "כוח",
-                "psychic": "נפשי", "thunder": "רעם"
-            };
-
-            // Helper function to clean damage string - translate or keep based on locale
-            const cleanDamageString = (str) => {
-                if (!str) return str;
-                let result = str;
-
-                if (isHebrew) {
-                    // Translate English to Hebrew
-                    for (const [eng, heb] of Object.entries(damageTypeTranslations)) {
-                        result = result.replace(new RegExp(eng, 'gi'), heb);
-                    }
-                    // Remove duplicate Hebrew damage types (e.g., "חותך חותך" -> "חותך")
-                    for (const heb of Object.values(damageTypeTranslations)) {
-                        result = result.replace(new RegExp(`${heb}\\s+${heb}`, 'g'), heb);
-                    }
-                } else {
-                    // For English, translate Hebrew to English
-                    for (const [eng, heb] of Object.entries(damageTypeTranslations)) {
-                        result = result.replace(new RegExp(heb, 'g'), eng);
-                    }
-                    // Remove duplicate English damage types
-                    for (const eng of Object.keys(damageTypeTranslations)) {
-                        result = result.replace(new RegExp(`${eng}\\s+${eng}`, 'gi'), eng);
-                    }
-                }
-
-                // Clean up extra spaces
-                result = result.replace(/\s{2,}/g, ' ').trim();
-
-                return result;
-            };
-
-            // Clean up weaponDamage field
-            if (itemDetails.weaponDamage) {
-                itemDetails.weaponDamage = cleanDamageString(itemDetails.weaponDamage);
-            }
-
-            // Clean up quickStats field
-            if (itemDetails.quickStats) {
-                itemDetails.quickStats = cleanDamageString(itemDetails.quickStats);
-            }
-
-            // Fix typeHe if it's in wrong language
-            const typeTranslations = {
-                "weapon": "נשק", "armor": "שריון", "potion": "שיקוי", "ring": "טבעת",
-                "rod": "מטה", "staff": "מקל", "wand": "שרביט", "scroll": "מגילה",
-                "wondrous": "פלאי", "wondrous item": "חפץ פלאי"
-            };
-
-            if (itemDetails.typeHe && isHebrew) {
-                const lower = itemDetails.typeHe.toLowerCase();
-                if (typeTranslations[lower]) {
-                    itemDetails.typeHe = typeTranslations[lower];
-                }
-            }
-
-        } catch (err) {
-            console.warn("Error enriching item details:", err);
-        }
-    }
+    // enrichItemDetails is now imported from '../utils/item-enrichment.js'
 
     async onGenerateBackground() {
         const apiKey = this.getApiKey();

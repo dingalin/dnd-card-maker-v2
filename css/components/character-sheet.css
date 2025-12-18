@@ -237,3 +237,66 @@
     transform: scale(1.05);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
 }
+
+/* Slot Quick Actions */
+.slot-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+.slot:hover .slot-actions {
+    opacity: 1;
+}
+
+.slot-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid rgba(212, 175, 55, 0.8);
+    background: rgba(43, 29, 14, 0.9);
+    color: white;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.slot-action-btn:hover {
+    transform: scale(1.2);
+    background: #d4af37;
+    color: #2b1d0e;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+}
+
+/* Mobile adjustments for slot actions */
+@media (max-width: 800px) {
+    .slot-actions {
+        background: rgba(0, 0, 0, 0.2);
+        opacity: 1;
+        /* Always visible on mobile since no hover */
+        height: 35px;
+        top: auto;
+        bottom: 0;
+        border-radius: 0 0 8px 8px;
+        backdrop-filter: none;
+    }
+
+    .slot-action-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+}

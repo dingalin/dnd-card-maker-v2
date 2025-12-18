@@ -199,6 +199,7 @@
         "generate": "Generate Background",
         "reset": "Reset to Default",
         "readyMade": "🖼️ Ready-Made Backgrounds",
+        "readyMadeLabel": "Ready-Made Backgrounds",
         "scale": "Background Scale",
         "selectTitle": "Select Ready-Made Background"
     },

@@ -405,8 +405,18 @@ export class BackgroundManager {
         }
 
         console.log('[BGManager] Opening modal...');
+
+        // CRITICAL: Move modal to document.body to escape sidebar stacking context
+        // This ensures the modal appears ABOVE the card (which has z-index from preview-panel)
+        if (this.modal.parentElement !== document.body) {
+            this.originalParent = this.modal.parentElement;
+            document.body.appendChild(this.modal);
+        }
+
         this.updateModalPosition();
-        this.modal.style.zIndex = '750'; // Above scroll-container (600), below modals (800)
+        // Use position:fixed to cover over the card
+        this.modal.style.position = 'fixed';
+        this.modal.style.zIndex = '9999'; // Above everything including the card preview
         this.modal.classList.remove('hidden');
 
         // Load images if not already loaded
@@ -417,13 +427,20 @@ export class BackgroundManager {
 
     updateModalPosition() {
         const sidebar = document.querySelector('.sidebar-end');
+
         if (sidebar && this.modal) {
             const rect = sidebar.getBoundingClientRect();
             const isRTL = document.body.classList.contains('rtl');
 
-            // Apply sidebar dimensions and position to the modal
-            this.modal.style.top = `${rect.top}px`;
-            this.modal.style.height = `${rect.height}px`;
+            // Use viewport-relative height to be TALLER than the card
+            // Header is ~80px tall, leave some margin
+            const headerHeight = 80;
+            const margin = 20;
+            const modalTop = headerHeight + margin;
+            const modalHeight = window.innerHeight - modalTop - margin;
+
+            this.modal.style.top = `${modalTop}px`;
+            this.modal.style.height = `${modalHeight}px`;
 
             // Expand width significantly to allow 3 columns (approx 900px or wider)
             const expandedWidth = Math.min(950, window.innerWidth * 0.7);
@@ -440,12 +457,70 @@ export class BackgroundManager {
                 this.modal.style.left = 'auto';
             }
 
-            console.log(`[BGManager] Modal positioned - isRTL: ${isRTL}, rect:`, rect);
+            console.log(`[BGManager] Modal positioned - isRTL: ${isRTL}, height: ${modalHeight}px, top: ${modalTop}px`);
         }
     }
 
     closeModal() {
         if (this.modal) this.modal.classList.add('hidden');
+    }
+
+    async selectBackground(url) {
+        if (this.renderer) {
+            // Check if the URL is a thumbnail (which we now generate small)
+            // If it's a thumbnail from our grid, we might want to regenerate it in high-res
+            // or just use it. Since the thumbnail is now small, we MUST regenerate.
+
+            let finalUrl = url;
+
+            // If it's a blob/dataURL from our slicer, we know its source image index
+            // But to keep it simple, we'll search for the slice metadata
+            const sliceMeta = this.allSlices?.find(s => s.thumb === url);
+            if (sliceMeta) {
+                console.log('[BGManager] Regenerating high-res for selection...');
+                finalUrl = await this.generateHighResSlice(sliceMeta);
+            }
+
+            await this.renderer.setTemplate(finalUrl);
+            // Trigger re-render if needed
+            if (window.stateManager) {
+                window.stateManager.setLastContext(finalUrl); // Store context
+                window.stateManager.updateStyle('cardBackgroundUrl', finalUrl);
+                window.stateManager.notify('cardData');
+            } else {
+                this.renderer.render({}, {});
+            }
+        }
+        this.closeModal();
+    }
+
+    /**
+     * Regenerate a specific slice in high resolution
+     */
+    async generateHighResSlice(meta) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1000;
+                canvas.height = 1500;
+                const ctx = canvas.getContext('2d');
+
+                ctx.drawImage(
+                    img,
+                    meta.sx, meta.sy, meta.sw, meta.sh,
+                    0, 0, 1000, 1500
+                );
+
+                const highResUrl = canvas.toDataURL('image/jpeg', 0.9);
+                // Clear canvas for GC
+                canvas.width = 0; canvas.height = 0;
+                resolve(highResUrl);
+            };
+            img.onerror = reject;
+            img.src = meta.sourcePath;
+        });
     }
 
     async loadAllGrids() {
@@ -469,7 +544,7 @@ export class BackgroundManager {
                 this.allSlices.push(...slices);
 
                 // Render this batch
-                this.renderGrid(slices, true);
+                this.renderGrid(slices.map(s => s.thumb), true);
 
             } catch (error) {
                 console.error(`Failed to load grid ${imagePath}:`, error);
@@ -489,10 +564,11 @@ export class BackgroundManager {
         }
 
         if (this.allSlices && this.allSlices.length > 0) {
-            const randomSlice = this.allSlices[Math.floor(Math.random() * this.allSlices.length)];
+            const randomMeta = this.allSlices[Math.floor(Math.random() * this.allSlices.length)];
             console.log("🎲 Random Background selected!");
-            this.selectBackground(randomSlice);
-            return randomSlice;
+            const highRes = await this.generateHighResSlice(randomMeta);
+            this.selectBackground(highRes);
+            return highRes;
         } else {
             console.warn("⚠️ No backgrounds available for random selection.");
             return null;
@@ -690,65 +766,57 @@ export class BackgroundManager {
                 const slices = [];
                 const cols = 3;
 
-                // Determine rows based on aspect ratio
-                // 9:16 (0.5625) -> likely 3x4 grid
-                // 2:3 (0.666) -> likely 3x3 grid
                 const imageRatio = img.width / img.height;
                 const rows = imageRatio < 0.6 ? 4 : 3;
 
                 const cellWidth = img.width / cols;
                 const cellHeight = img.height / rows;
 
-                console.log(`Processing grid: ${imagePath}`);
-                console.log(`Image Size: ${img.width}x${img.height}`);
-                console.log(`Cell Size: ${cellWidth.toFixed(2)}x${cellHeight.toFixed(2)}`);
-
                 // Target Aspect Ratio (2:3)
                 const targetRatio = 2 / 3;
 
-                // Calculate "Cover" Crop for 2:3 Ratio using full cell dimensions
                 let cropWidth, cropHeight;
                 const cellRatio = cellWidth / cellHeight;
 
                 if (cellRatio > targetRatio) {
-                    // Cell is wider than target (e.g., 4:3 or Square vs 2:3)
-                    // Constrain by height, crop width
                     cropHeight = cellHeight;
                     cropWidth = cropHeight * targetRatio;
                 } else {
-                    // Cell is taller than target (e.g., 9:16 vs 2:3)
-                    // Constrain by width, crop height
                     cropWidth = cellWidth;
                     cropHeight = cropWidth / targetRatio;
                 }
 
-                // Center the Crop within the Cell
                 const startX = (cellWidth - cropWidth) / 2;
                 const startY = (cellHeight - cropHeight) / 2;
 
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
                         const canvas = document.createElement('canvas');
-                        // Set canvas to high resolution for quality
-                        canvas.width = 1000;
-                        canvas.height = 1500;
+                        // Thumbnails only need to be small (approx 300x450 for the 3-column grid)
+                        canvas.width = 300;
+                        canvas.height = 450;
                         const ctx = canvas.getContext('2d');
 
-                        // Source coordinates relative to the image
                         const sx = (c * cellWidth) + startX;
                         const sy = (r * cellHeight) + startY;
 
                         ctx.drawImage(
                             img,
-                            sx, sy, cropWidth, cropHeight, // Source Crop
-                            0, 0, canvas.width, canvas.height // Destination (Scaled to fit)
+                            sx, sy, cropWidth, cropHeight,
+                            0, 0, canvas.width, canvas.height
                         );
 
-                        // NOTE: Auto-crop disabled - many backgrounds have intentional decorative elements
-                        // that would be incorrectly removed. Use original sliced canvas.
-                        // const croppedCanvas = this.autoCropToCard(canvas);
+                        // Store metadata for high-res regeneration on selection
+                        slices.push({
+                            thumb: canvas.toDataURL('image/jpeg', 0.8), // Lower quality for thumbs
+                            sourcePath: imagePath,
+                            sx, sy,
+                            sw: cropWidth,
+                            sh: cropHeight
+                        });
 
-                        slices.push(canvas.toDataURL('image/jpeg', 0.9));
+                        // Clear canvas for GC
+                        canvas.width = 0; canvas.height = 0;
                     }
                 }
                 resolve(slices);

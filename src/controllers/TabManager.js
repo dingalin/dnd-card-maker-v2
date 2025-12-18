@@ -83,7 +83,8 @@ export class TabManager {
                 // Re-initialize to setup listeners now that DOM is loaded
                 this.characterController.init();
             } else {
-                this.characterController = new CharacterController();
+                // Fallback: create new one with global stateManager
+                this.characterController = new CharacterController(window.stateManager);
             }
 
         } catch (error) {

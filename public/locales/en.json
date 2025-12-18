@@ -199,6 +199,7 @@
         "generate": "Generate Background",
         "reset": "Reset to Default",
         "readyMade": "🖼️ Ready-Made Backgrounds",
+        "readyMadeLabel": "Ready-Made Backgrounds",
         "scale": "Background Scale",
         "selectTitle": "Select Ready-Made Background"
     },
@@ -250,7 +251,9 @@
         "offhand": "Off Hand",
         "ring": "Ring",
         "boots": "Boots",
-        "belt": "Belt"
+        "belt": "Belt",
+        "edit": "Edit Item",
+        "autoGenerate": "Auto-Generate"
     },
     "equipModal": {
         "title": "Equip Character with Item",

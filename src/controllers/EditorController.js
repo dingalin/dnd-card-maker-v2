@@ -88,6 +88,7 @@ export class EditorController {
             'image-fade': 'imageFade',
             'image-shadow': 'imageShadow',
             'bg-scale': 'backgroundScale',
+            'center-fade': 'centerFade',
             'name-width': 'nameWidth',
             'coreStats-width': 'coreStatsWidth',
             'stats-width': 'statsWidth'
@@ -324,6 +325,7 @@ export class EditorController {
             'image-fade': 'imageFade',
             'image-shadow': 'imageShadow',
             'bg-scale': 'backgroundScale',
+            'center-fade': 'centerFade',
             'name-width': 'nameWidth',
             'type-width': 'typeWidth',
             'coreStats-width': 'coreStatsWidth',
@@ -389,45 +391,50 @@ export class EditorController {
 
         if (!marginYSlider || !marginXSlider) return;
 
+        // Card constants
+        const CARD_CENTER = 525; // 1050 / 2
+
         // Store base values on first interaction
         let baseVerticalOffsets = null;
         let baseHorizontalWidths = null;
 
-        // Elements with their default offset values (to determine direction from center)
+        // Base/Default positions of elements (absolute Y positions)
         // FRONT SIDE elements
-        const frontVerticalElements = {
-            'rarity': -110,      // Top - moves down a lot
-            'type': -50,         // Upper - moves down medium
-            'name': -10,         // Upper-middle - moves down slightly
-            'imageYOffset': 150, // Image below center - moves up when compressing
-            'coreStats': 450,    // Lower area - moves up
-            'stats': 550,        // Lower - moves up more
-            'gold': 700          // Bottom - moves up most
+        const frontVerticalBases = {
+            'rarity': 100,
+            'type': 140,
+            'name': 200,
+            'imageYOffset': 380, // Center of image area
+            'coreStats': 680,
+            'stats': 780,
+            'gold': 920
         };
 
         // BACK SIDE elements
-        const backVerticalElements = {
-            'abilityName': 140,  // Top header
-            'mech': 220,         // Body text
-            'lore': 880          // Bottom lore
+        const backVerticalBases = {
+            'abilityName': 120,
+            'mech': 180,
+            'lore': 600
         };
 
         // Elements affected by horizontal compression (widths)
-        const horizontalKeys = ['nameWidth', 'coreStatsWidth', 'statsWidth'];
-
-        const DEFAULT_WIDTH = 500; // Base width
+        const horizontalKeys = ['nameWidth', 'typeWidth', 'rarityWidth', 'coreStatsWidth', 'statsWidth', 'goldWidth'];
+        const DEFAULT_WIDTH = 500;
 
         let rafId = null;
 
         // Capture base values when slider is first touched
         const captureBaseValues = () => {
-            // Select elements based on which side is being viewed
-            const verticalElements = this.isFlipped ? backVerticalElements : frontVerticalElements;
+            const verticalBases = this.isFlipped ? backVerticalBases : frontVerticalBases;
 
             if (!baseVerticalOffsets) {
                 baseVerticalOffsets = {};
-                Object.keys(verticalElements).forEach(key => {
-                    baseVerticalOffsets[key] = this.state.getOffset(key) ?? verticalElements[key];
+                Object.keys(verticalBases).forEach(key => {
+                    baseVerticalOffsets[key] = this.state.getOffset(key);
+                    // If undefined, initialize based on side (but imageYOffset is tricky since it's a relative offset)
+                    if (baseVerticalOffsets[key] === undefined) {
+                        baseVerticalOffsets[key] = (key === 'imageYOffset' || key === 'rarity' || key === 'type' || key === 'name' || key === 'gold') ? 0 : (key === 'coreStats' ? 680 : 780);
+                    }
                 });
             }
             if (!baseHorizontalWidths) {
@@ -444,39 +451,43 @@ export class EditorController {
             const sliderValue = parseFloat(e.target.value);
             if (marginYDisplay) marginYDisplay.textContent = sliderValue;
 
-            // Select elements based on which side is being viewed
-            const verticalElements = this.isFlipped ? backVerticalElements : frontVerticalElements;
-
-            // Compression factor: 0 = no change, positive = compress towards center
-            const compressionFactor = sliderValue / 100; // -1 to 1 range
+            const verticalBases = this.isFlipped ? backVerticalBases : frontVerticalBases;
+            const compressionFactor = sliderValue / 100; // -1 to 1
 
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                Object.keys(verticalElements).forEach(key => {
-                    const baseVal = baseVerticalOffsets[key];
-                    const defaultPos = verticalElements[key];
+                Object.keys(verticalBases).forEach(key => {
+                    const baseOffset = baseVerticalOffsets[key];
+                    const basePos = verticalBases[key];
 
-                    // Calculate movement based on distance from center
-                    // Top elements (negative default) move DOWN when compressing
-                    // Bottom elements (positive default) move UP when compressing
-                    const direction = defaultPos < 0 ? 1 : -1; // Top moves +, Bottom moves -
-                    const distance = Math.abs(defaultPos) / 100; // Normalize distance
-                    const movement = compressionFactor * 30 * distance * direction;
+                    // Current absolute position (base + saved offset)
+                    // Note: imageYOffset, rarity, type, name, gold are relative to their base
+                    // coreStats, stats are absolute Y themselves
+                    let currentAbsPos;
+                    if (['coreStats', 'stats', 'mech', 'lore', 'abilityName'].includes(key)) {
+                        currentAbsPos = baseOffset;
+                    } else {
+                        currentAbsPos = basePos + baseOffset;
+                    }
 
-                    const newVal = baseVal + movement;
-                    this.state.updateOffset(key, newVal);
+                    // Move proportional to distance from center
+                    // If pos is 100 (top), distance is 100-525 = -425. Squeezing (factor > 0) should move it DOWN (+).
+                    // movement = - (absPos - center) * factor * weight
+                    const weight = 0.5; // Shared weight for uniform movement
+                    const movement = -(currentAbsPos - CARD_CENTER) * compressionFactor * weight;
+
+                    this.state.updateOffset(key, baseOffset + movement);
                 });
 
-                // If locked, also update X
+                // If locked, sync Horizontal
                 if (lockCheckbox && lockCheckbox.checked) {
                     marginXSlider.value = sliderValue;
                     if (marginXDisplay) marginXDisplay.textContent = sliderValue;
 
-                    // Apply same factor to widths (positive = narrower)
                     horizontalKeys.forEach(key => {
                         const baseVal = baseHorizontalWidths[key];
-                        const newVal = baseVal - (compressionFactor * 100);
-                        this.state.updateOffset(key, Math.max(200, newVal)); // Min width 200
+                        const newVal = baseVal - (compressionFactor * 150);
+                        this.state.updateOffset(key, Math.max(200, newVal));
                     });
                 }
 
@@ -490,34 +501,33 @@ export class EditorController {
             const sliderValue = parseFloat(e.target.value);
             if (marginXDisplay) marginXDisplay.textContent = sliderValue;
 
-            // Compression factor for width
             const compressionFactor = sliderValue / 100;
-
-            // Select elements based on which side is being viewed
-            const verticalElements = this.isFlipped ? backVerticalElements : frontVerticalElements;
 
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                // Apply to widths (positive = narrower)
                 horizontalKeys.forEach(key => {
                     const baseVal = baseHorizontalWidths[key];
-                    const newVal = baseVal - (compressionFactor * 100);
-                    this.state.updateOffset(key, Math.max(200, newVal)); // Min width 200
+                    const newVal = baseVal - (compressionFactor * 150);
+                    this.state.updateOffset(key, Math.max(200, newVal));
                 });
 
-                // If locked, also update Y
                 if (lockCheckbox && lockCheckbox.checked) {
                     marginYSlider.value = sliderValue;
                     if (marginYDisplay) marginYDisplay.textContent = sliderValue;
 
-                    Object.keys(verticalElements).forEach(key => {
-                        const baseVal = baseVerticalOffsets[key];
-                        const defaultPos = verticalElements[key];
-                        const direction = defaultPos < 0 ? 1 : -1;
-                        const distance = Math.abs(defaultPos) / 100;
-                        const movement = compressionFactor * 30 * distance * direction;
-                        const newVal = baseVal + movement;
-                        this.state.updateOffset(key, newVal);
+                    const verticalBases = this.isFlipped ? backVerticalBases : frontVerticalBases;
+                    Object.keys(verticalBases).forEach(key => {
+                        const baseOffset = baseVerticalOffsets[key];
+                        const basePos = verticalBases[key];
+                        let currentAbsPos;
+                        if (['coreStats', 'stats', 'mech', 'lore', 'abilityName'].includes(key)) {
+                            currentAbsPos = baseOffset;
+                        } else {
+                            currentAbsPos = basePos + baseOffset;
+                        }
+                        const weight = 0.5;
+                        const movement = -(currentAbsPos - CARD_CENTER) * compressionFactor * weight;
+                        this.state.updateOffset(key, baseOffset + movement);
                     });
                 }
 
@@ -525,19 +535,16 @@ export class EditorController {
             });
         });
 
-        // Reset base values on mouseup so next interaction captures fresh values
-        marginYSlider.addEventListener('change', () => {
-            baseVerticalOffsets = null;
-            baseHorizontalWidths = null;
-            this.state.saveCurrentCard();
-        });
-        marginXSlider.addEventListener('change', () => {
-            baseVerticalOffsets = null;
-            baseHorizontalWidths = null;
-            this.state.saveCurrentCard();
+        // Cleanup
+        [marginYSlider, marginXSlider].forEach(slider => {
+            slider.addEventListener('change', () => {
+                baseVerticalOffsets = null;
+                baseHorizontalWidths = null;
+                this.state.saveCurrentCard();
+            });
         });
 
-        console.log('🎯 Global compression sliders initialized');
+        console.log('🎯 Proportional global compression initialized');
     }
 
     setupFontListeners() {

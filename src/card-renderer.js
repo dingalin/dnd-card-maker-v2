@@ -327,6 +327,12 @@ class CardRenderer {
             }
         }
 
+        // 1.5 Draw Center Fade (Cream overlay on BACKGROUND ONLY - before image and text)
+        const centerFade = options.centerFade || 0;
+        if (centerFade > 0) {
+            this.drawCenterFade(centerFade);
+        }
+
         // 2. Draw Item Image
         if (cardData.imageUrl) {
             console.log("CardRenderer: Drawing item image", cardData.imageUrl);
@@ -359,6 +365,76 @@ class CardRenderer {
 
 
         console.log("CardRenderer: Render complete");
+    }
+
+    /**
+     * Draw a cream-colored rounded rectangle fade from the center outward
+     * Helps improve text readability on complex backgrounds
+     * @param {number} intensity - 0-100, where 100 is maximum fade
+     */
+    drawCenterFade(intensity) {
+        if (intensity <= 0) return;
+
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Cream/parchment color: soft warm off-white
+        const creamColor = 'rgba(253, 245, 230,'; // FDF5E6 = oldlace/cream
+
+        // Calculate opacity based on intensity (max 0.7 for full fade)
+        const maxOpacity = 0.7;
+        const opacity = (intensity / 100) * maxOpacity;
+
+        // Margins for the rounded rectangle (how close to edges)
+        const margin = 30;
+        const cornerRadius = 40;
+
+        // Inner safe area (less margin = more coverage)
+        const innerMargin = margin + (100 - intensity) * 0.8; // Expand inward as intensity increases
+
+        // Create gradient from center outward
+        const centerX = w / 2;
+        const centerY = h / 2;
+
+        // Use a radial gradient approximation with rounded rectangle clip
+        ctx.save();
+
+        // Create rounded rectangle path for clipping
+        ctx.beginPath();
+        const rx = margin;
+        const ry = margin;
+        const rw = w - margin * 2;
+        const rh = h - margin * 2;
+
+        // Draw rounded rectangle
+        ctx.moveTo(rx + cornerRadius, ry);
+        ctx.lineTo(rx + rw - cornerRadius, ry);
+        ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + cornerRadius);
+        ctx.lineTo(rx + rw, ry + rh - cornerRadius);
+        ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - cornerRadius, ry + rh);
+        ctx.lineTo(rx + cornerRadius, ry + rh);
+        ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - cornerRadius);
+        ctx.lineTo(rx, ry + cornerRadius);
+        ctx.quadraticCurveTo(rx, ry, rx + cornerRadius, ry);
+        ctx.closePath();
+
+        // Create radial gradient (elliptical to match card proportions)
+        const gradientRadius = Math.max(w, h) * 0.7;
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, gradientRadius);
+
+        // Center is most opaque, fades to transparent at edges
+        gradient.addColorStop(0, `${creamColor} ${opacity})`);
+        gradient.addColorStop(0.4, `${creamColor} ${opacity * 0.8})`);
+        gradient.addColorStop(0.7, `${creamColor} ${opacity * 0.4})`);
+        gradient.addColorStop(1, `${creamColor} 0)`);
+
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.restore();
+
+        console.log(`CardRenderer: Drew center fade with intensity ${intensity}%`);
     }
 
     async drawItemImage(url, yOffset = 0, scale = 1.0, rotation = 0, style = 'natural', color = '#ffffff', fade = 0, shadow = 0) {

@@ -108,6 +108,12 @@ window.OFFICIAL_ITEMS = {
             "Heavy Crossbow (רובה קשת כבד)",
             "Longbow (קשת ארוכה)",
             "Net (רשת)"
+        ],
+        "Ammunition (תחמושת)": [
+            "Arrows (חצים)",
+            "Bolts (קליעים)",
+            "Sling Bullets (אבני קלע)",
+            "Blowgun Needles (מחטי נשיפה)"
         ]
     },
     armor: {
