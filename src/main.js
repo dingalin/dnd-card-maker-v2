@@ -23,6 +23,9 @@ import { CardViewerService } from './services/CardViewerService.js';
 // i18n (Internationalization)
 import i18n from './i18n.js';
 
+// Debug Panel (shows errors in development)
+import './utils/DebugPanel.ts';
+
 // Legacy Init (for floating windows, bubbles)
 import { initUI, showToast, initWindowManager, initFormHeaderUpdates } from './ui-helpers.js';
 
