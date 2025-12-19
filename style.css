@@ -238,24 +238,24 @@ textarea:focus {
   }
 }
 
-/* Zoomed State - Fit within viewport */
+/* Zoomed State - Enlarged but fits within viewport, no dark overlay */
 .canvas-container.expanded {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.3);
   z-index: 1000;
-  box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.95);
+  /* Just a nice shadow, no black overlay */
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   cursor: zoom-out;
-  max-height: 85vh;
-  max-width: 90vw;
-  width: auto;
-  height: auto;
+  max-height: 70vh;
+  max-width: 80vw;
+  border-radius: 15px;
 }
 
 .canvas-container.expanded canvas {
-  max-height: 85vh;
-  max-width: 90vw;
+  max-height: 70vh;
+  max-width: 80vw;
   width: auto;
   height: auto;
   object-fit: contain;
