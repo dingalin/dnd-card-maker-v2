@@ -548,7 +548,7 @@ class TreasureController {
      */
     async renderCardThumbnail(cardData, imageUrl) {
         // Import shared renderer dynamically
-        const { renderFrontThumbnail } = await import('../utils/CardThumbnailRenderer.js');
+        const { renderFrontThumbnail } = await import('../utils/CardThumbnailRenderer.ts');
         return renderFrontThumbnail(cardData, imageUrl, this.state);
     }
 

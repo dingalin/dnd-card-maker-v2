@@ -5,6 +5,7 @@
  */
 
 import CardRenderer from '../card-renderer.js';
+import type { CardData, IStateManager, ThumbnailResult, AppSettings, RenderOptions } from '../types/index.js';
 import {
     CARD_WIDTH,
     CARD_HEIGHT,
@@ -18,13 +19,13 @@ import {
 
 /**
  * Render a card to an off-screen canvas and return as dataURL
- * @param {Object} cardData - Card data to render
- * @param {string} imageUrl - URL of the card image
- * @param {Object} stateManager - StateManager instance for getting current settings
- * @param {boolean} renderBack - Whether to also render the back side
- * @returns {Promise<{front: string, back: string|null}>} - DataURLs for front and back
  */
-export async function renderCardThumbnail(cardData, imageUrl, stateManager, renderBack = true) {
+export async function renderCardThumbnail(
+    cardData: CardData,
+    imageUrl: string,
+    stateManager: IStateManager,
+    renderBack: boolean = true
+): Promise<ThumbnailResult> {
     try {
         // Create off-screen canvas
         const canvas = document.createElement('canvas');
@@ -42,7 +43,7 @@ export async function renderCardThumbnail(cardData, imageUrl, stateManager, rend
         const renderData = buildRenderData(cardData, imageUrl);
 
         // Get current settings from stateManager
-        const settings = stateManager.getState().settings || {};
+        const settings = stateManager.getState().settings || {} as AppSettings;
 
         // Build render options for front
         const frontOptions = buildFrontRenderOptions(settings);
@@ -52,7 +53,7 @@ export async function renderCardThumbnail(cardData, imageUrl, stateManager, rend
         const frontThumb = canvas.toDataURL(THUMBNAIL_FORMAT, THUMBNAIL_QUALITY);
 
         // Render BACK (if has content and requested)
-        let backThumb = null;
+        let backThumb: string | null = null;
         if (renderBack && hasBackContent(renderData)) {
             const backOptions = buildBackRenderOptions(settings);
             await tempRenderer.render(renderData, backOptions, true);
@@ -71,10 +72,27 @@ export async function renderCardThumbnail(cardData, imageUrl, stateManager, rend
     }
 }
 
+interface RenderData {
+    name: string;
+    typeHe: string;
+    rarityHe: string;
+    weaponDamage?: string;
+    damageType?: string;
+    armorClass?: string;
+    versatileDamage?: string;
+    weaponProperties?: string[];
+    quickStats: string;
+    gold: string;
+    imageUrl: string;
+    abilityName: string;
+    abilityDesc: string;
+    description: string;
+}
+
 /**
  * Build render data object from card data
  */
-function buildRenderData(cardData, imageUrl) {
+function buildRenderData(cardData: CardData, imageUrl: string): RenderData {
     return {
         name: cardData.name || cardData.front?.title || 'חפץ',
         typeHe: cardData.typeHe || cardData.front?.type || '',
@@ -99,14 +117,14 @@ function buildRenderData(cardData, imageUrl) {
 /**
  * Check if card has back content
  */
-function hasBackContent(renderData) {
+function hasBackContent(renderData: RenderData): boolean {
     return !!(renderData.abilityName || renderData.abilityDesc || renderData.description);
 }
 
 /**
  * Build render options for front side using stateManager settings
  */
-function buildFrontRenderOptions(settings) {
+function buildFrontRenderOptions(settings: any): RenderOptions {
     const frontSettings = settings.front || {};
     const styleSettings = settings.style || {};
     const fo = frontSettings.offsets || {};
@@ -163,7 +181,7 @@ function buildFrontRenderOptions(settings) {
 /**
  * Build render options for back side using stateManager settings
  */
-function buildBackRenderOptions(settings) {
+function buildBackRenderOptions(settings: any): RenderOptions {
     const frontSettings = settings.front || {};
     const backSettings = settings.back || {};
     const styleSettings = settings.style || {};
@@ -197,7 +215,11 @@ function buildBackRenderOptions(settings) {
 /**
  * Render only front side (convenience method)
  */
-export async function renderFrontThumbnail(cardData, imageUrl, stateManager) {
+export async function renderFrontThumbnail(
+    cardData: CardData,
+    imageUrl: string,
+    stateManager: IStateManager
+): Promise<string> {
     const result = await renderCardThumbnail(cardData, imageUrl, stateManager, false);
     return result.front;
 }

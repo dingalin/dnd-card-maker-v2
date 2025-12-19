@@ -608,7 +608,7 @@ export class CharacterController {
      */
     async renderCardThumbnail(cardData, imageUrl) {
         // Import shared renderer dynamically to avoid circular dependencies
-        const { renderCardThumbnail: sharedRender } = await import('../utils/CardThumbnailRenderer.js');
+        const { renderCardThumbnail: sharedRender } = await import('../utils/CardThumbnailRenderer.ts');
         return sharedRender(cardData, imageUrl, this.state, true);
     }
 
