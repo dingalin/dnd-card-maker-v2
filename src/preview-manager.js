@@ -56,7 +56,7 @@ export class PreviewManager {
         let backImage = null;
 
         // Try to render back side if we have card data with back content
-        if (cardData && window.cardRenderer) {
+        if (cardData) {
             const hasBackContent = cardData.back && (
                 cardData.back.title ||
                 cardData.back.description ||
@@ -66,12 +66,64 @@ export class PreviewManager {
 
             if (hasBackContent) {
                 try {
-                    // Render back side to get the image
-                    await window.cardRenderer.render(cardData, {}, true);
-                    backImage = canvas.toDataURL('image/png');
+                    // Import CardRenderer dynamically - FIX: Use .default for default export
+                    const CardRenderer = (await import('./card-renderer.js')).default;
 
-                    // Re-render front to restore the display
-                    await window.cardRenderer.render(cardData, {}, false);
+                    // Create SEPARATE temp canvas for back (like TreasureController)
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 750;
+                    tempCanvas.height = 1050;
+                    tempCanvas.id = 'temp-back-preview-' + Date.now();
+                    tempCanvas.style.display = 'none';
+                    document.body.appendChild(tempCanvas);
+
+                    const tempRenderer = new CardRenderer(tempCanvas.id);
+                    await tempRenderer.templateReady;
+
+                    // Get settings
+                    const currentState = window.stateManager?.getState?.() || {};
+                    const backSettings = currentState.settings?.back || {};
+                    const styleSettings = currentState.settings?.style || {};
+
+                    // --- FIX: Load Custom Background if exists ---
+                    if (styleSettings.cardBackgroundUrl) {
+                        try {
+                            console.log("previewManager: Loading custom background for enlarged view...", styleSettings.cardBackgroundUrl);
+                            await tempRenderer.setTemplate(styleSettings.cardBackgroundUrl);
+                        } catch (bgErr) {
+                            console.warn("previewManager: Failed to load custom background, falling back to default.", bgErr);
+                        }
+                    }
+
+                    // --- FIX: Spread ALL offsets to ensure widths/positions are correct ---
+                    // Mimics RenderController logic
+                    const renderOptions = {
+                        ...backSettings.offsets, // Spread all offsets/widths (mechWidth, loreWidth, etc.)
+
+                        fontSizes: backSettings.fontSizes,
+                        fontStyles: backSettings.fontStyles,
+
+                        // Fallbacks just in case
+                        fontFamily: styleSettings.fontFamily || 'Heebo',
+                        backgroundScale: currentState.settings?.front?.offsets?.backgroundScale ?? 1.0,
+
+                        // Text Effects
+                        textOutlineEnabled: styleSettings.textOutlineEnabled,
+                        textOutlineWidth: styleSettings.textOutlineWidth,
+                        textShadowEnabled: styleSettings.textShadowEnabled,
+                        textShadowBlur: styleSettings.textShadowBlur,
+                        textBackdropEnabled: styleSettings.textBackdropEnabled,
+                        textBackdropOpacity: styleSettings.textBackdropOpacity
+                    };
+
+                    await tempRenderer.render(cardData, renderOptions, true);
+                    backImage = tempCanvas.toDataURL('image/png');
+
+                    // MEMORY LEAK FIX: Clear canvas dimensions to release GPU memory
+                    tempCanvas.width = 0;
+                    tempCanvas.height = 0;
+                    document.body.removeChild(tempCanvas);
+                    console.log('📸 PreviewManager: Back image rendered with custom settings');
                 } catch (err) {
                     console.warn('Failed to render back for preview:', err);
                 }

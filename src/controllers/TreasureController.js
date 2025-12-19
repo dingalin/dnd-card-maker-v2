@@ -775,6 +775,10 @@ class TreasureController {
             await tempRenderer.render(renderData, renderOptions, true); // true = back side
 
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            // MEMORY LEAK FIX: Clear canvas dimensions to release GPU memory before removal
+            canvas.width = 0;
+            canvas.height = 0;
             document.body.removeChild(canvas);
 
             return dataUrl;

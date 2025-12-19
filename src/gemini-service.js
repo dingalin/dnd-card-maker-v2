@@ -7,6 +7,59 @@ console.log("GeminiService module loaded (Clean Version)");
 // Cloudflare Worker URL for secure API access
 const WORKER_URL = "https://dnd-api-proxy.dingalin2000.workers.dev/";
 
+// MEMORY LEAK FIX: Registry to track blob URLs for cleanup
+const BlobURLRegistry = {
+    urls: new Map(), // url -> timestamp
+    maxAge: 5 * 60 * 1000, // 5 minutes - URLs older than this get auto-cleaned
+    maxCount: 20, // Max blob URLs to keep
+
+    register(url) {
+        this.urls.set(url, Date.now());
+        this.cleanup();
+        return url;
+    },
+
+    revoke(url) {
+        if (url && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+            this.urls.delete(url);
+        }
+    },
+
+    cleanup() {
+        const now = Date.now();
+        // Remove old URLs
+        for (const [url, timestamp] of this.urls) {
+            if (now - timestamp > this.maxAge) {
+                URL.revokeObjectURL(url);
+                this.urls.delete(url);
+                console.log('🧹 BlobURLRegistry: Cleaned old URL');
+            }
+        }
+        // If still over limit, remove oldest
+        while (this.urls.size > this.maxCount) {
+            const oldest = [...this.urls.entries()].sort((a, b) => a[1] - b[1])[0];
+            if (oldest) {
+                URL.revokeObjectURL(oldest[0]);
+                this.urls.delete(oldest[0]);
+                console.log('🧹 BlobURLRegistry: Cleaned excess URL');
+            }
+        }
+    },
+
+    // Force cleanup all - call when navigating away or when memory is tight
+    revokeAll() {
+        for (const url of this.urls.keys()) {
+            URL.revokeObjectURL(url);
+        }
+        this.urls.clear();
+        console.log('🧹 BlobURLRegistry: All URLs revoked');
+    }
+};
+
+// Expose for manual cleanup if needed
+window.blobURLRegistry = BlobURLRegistry;
+
 class GeminiService {
     constructor(apiKeyOrPassword) {
         // Check if this looks like an API key or a password
@@ -578,7 +631,8 @@ class GeminiService {
                 if (data.image) {
                     const imageUrl = `data:image/jpeg;base64,${data.image}`;
                     const blob = await (await fetch(imageUrl)).blob();
-                    return URL.createObjectURL(blob);
+                    // MEMORY LEAK FIX: Register blob URL for automatic cleanup
+                    return BlobURLRegistry.register(URL.createObjectURL(blob));
                 } else if (data.error) {
                     throw new Error(data.error);
                 } else {
@@ -613,7 +667,8 @@ class GeminiService {
             const imageUrl = `data:image/jpeg;base64,${base64Image}`;
 
             const blob = await (await fetch(imageUrl)).blob();
-            return URL.createObjectURL(blob);
+            // MEMORY LEAK FIX: Register blob URL for automatic cleanup
+            return BlobURLRegistry.register(URL.createObjectURL(blob));
 
         } catch (error) {
             console.error("GetImg Generation failed:", error);
@@ -790,7 +845,8 @@ class GeminiService {
             if (data.image) {
                 const imageUrl = `data:image/jpeg;base64,${data.image}`;
                 const blob = await (await fetch(imageUrl)).blob();
-                return URL.createObjectURL(blob);
+                // MEMORY LEAK FIX: Register blob URL for automatic cleanup
+                return BlobURLRegistry.register(URL.createObjectURL(blob));
             } else if (data.error) {
                 throw new Error(data.error);
             } else {

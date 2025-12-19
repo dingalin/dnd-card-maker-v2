@@ -320,8 +320,8 @@ export class BackgroundManager {
             selectionDiv.classList.remove('hidden');
         });
 
-        // Use document-level mousemove so dragging works outside canvas
-        document.addEventListener('mousemove', (e) => {
+        // MEMORY LEAK FIX: Use named handlers so we can remove them later
+        const handleMouseMove = (e) => {
             if (!isDrawing) return;
 
             const rect = canvas.getBoundingClientRect();
@@ -347,20 +347,27 @@ export class BackgroundManager {
             selectionDiv.style.top = selection.y + 'px';
             selectionDiv.style.width = selection.width + 'px';
             selectionDiv.style.height = selection.height + 'px';
-        });
+        };
 
-        // Use document-level mouseup so it triggers even if mouse is outside canvas
-        document.addEventListener('mouseup', () => {
+        const handleMouseUp = () => {
             if (!isDrawing) return;
             isDrawing = false;
             // Enable apply button if selection is valid
             if (selection.width > 20 && selection.height > 20) {
                 applyBtn.disabled = false;
             }
-        });
+        };
 
-        // Close handlers
-        const closeModal = () => modal.remove();
+        // Use document-level events so dragging works outside canvas
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // Close handlers - MEMORY LEAK FIX: Remove document event listeners on close
+        const closeModal = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            modal.remove();
+        };
         modal.querySelector('.crop-close-btn').addEventListener('click', closeModal);
         modal.querySelector('.crop-cancel-btn').addEventListener('click', closeModal);
         modal.querySelector('.crop-modal-overlay').addEventListener('click', (e) => {
