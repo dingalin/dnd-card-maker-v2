@@ -45,22 +45,47 @@ export class PreviewManager {
     }
 
     openFullscreen() {
-        const container = document.querySelector('.canvas-container');
-        if (!container) return;
+        const canvas = document.getElementById('card-canvas');
+        const backCanvas = document.getElementById('card-canvas-back');
+        if (!canvas) return;
 
-        // Toggle expanded class
-        container.classList.toggle('expanded');
+        // Use CardViewerService for beautiful popup with buttons
+        const frontImage = canvas.toDataURL('image/png');
+        let backImage = null;
 
-        // Handle backdrop click to close (optional, but good UX)
-        if (container.classList.contains('expanded')) {
-            // Add one-time click listener to close if clicked again (handled by toggle, but maybe we want specific behavior)
+        // Check if back canvas has content
+        if (backCanvas && !backCanvas.classList.contains('hidden')) {
+            backImage = backCanvas.toDataURL('image/png');
         }
+
+        // Get current card data from state
+        const cardData = window.stateManager?.getCardData?.() || null;
+
+        // Import and use CardViewerService
+        import('./services/CardViewerService.js').then(({ CardViewerService }) => {
+            CardViewerService.show({
+                frontImage: frontImage,
+                backImage: backImage,
+                cardData: cardData,
+                sourceElement: canvas
+            });
+        }).catch(err => {
+            console.error('Failed to open card viewer:', err);
+            // Fallback to old CSS behavior
+            const container = document.querySelector('.canvas-container');
+            if (container) container.classList.toggle('expanded');
+        });
     }
 
     closeFullscreen() {
+        // CardViewerService handles its own close
         const container = document.querySelector('.canvas-container');
         if (container) {
             container.classList.remove('expanded');
+        }
+        // Also close CardViewerService if open
+        if (window.cardViewerService) {
+            window.cardViewerService.hide();
         }
     }
 
