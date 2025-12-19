@@ -53,9 +53,17 @@ export class PreviewManager {
         const frontImage = canvas.toDataURL('image/png');
         let backImage = null;
 
-        // Check if back canvas has content
-        if (backCanvas && !backCanvas.classList.contains('hidden')) {
-            backImage = backCanvas.toDataURL('image/png');
+        // Always get back canvas image if it exists
+        // The back canvas may be hidden but still have content rendered on it
+        if (backCanvas) {
+            // Check if back canvas has actual content (not just empty/white)
+            const ctx = backCanvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, 1, 1);
+            const hasContent = imageData.data[3] > 0; // Check alpha channel
+
+            if (hasContent) {
+                backImage = backCanvas.toDataURL('image/png');
+            }
         }
 
         // Get current card data from state
