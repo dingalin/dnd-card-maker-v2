@@ -249,8 +249,9 @@ export function enrichItemDetails(itemDetails, type, finalSubtype, locale = 'he'
             }
         }
 
-        // === STAT BACKFILL ===
-        const officialStats = findOfficialStats(finalSubtype);
+        // === STAT BACKFILL (only for weapons and armor) ===
+        const shouldLookupStats = type === 'weapon' || type === 'armor';
+        const officialStats = shouldLookupStats ? findOfficialStats(finalSubtype) : null;
 
         if (officialStats) {
             // Weapon damage

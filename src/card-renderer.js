@@ -230,10 +230,11 @@ class CardRenderer {
 
     async renderFront(cardData, options = {}) {
 
-        // DEBUG: Check if canvas is visible in DOM
+        // DEBUG: Check if canvas is visible in DOM (can be 0 for off-screen thumbnails - that's OK)
         const rect = this.canvas.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) {
-            console.error("CardRenderer: Canvas has 0 dimensions on screen!", rect);
+            // This is expected for off-screen thumbnail rendering, just log as debug
+            console.log("CardRenderer: Canvas not visible on screen (off-screen render)", rect);
         }
 
         const imageYOffset = parseInt(options.imageYOffset) || 0;
