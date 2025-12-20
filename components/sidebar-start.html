@@ -270,25 +270,24 @@
                 </button>
             </div>
 
-            <div class="secondary-actions-grid">
-                <button type="button" id="surprise-btn" class="btn-surprise">
-                    <img src="assets/icons/icon-d20.png" class="icon-img-sm" alt=""> <span
-                        data-i18n="actions.surprise">הפתע אותי</span>
-                </button>
+            <!-- Surprise Me Button (Full Width) -->
+            <button type="button" id="surprise-btn" class="btn-surprise" style="width: 100%; margin-top: 0.5rem;">
+                <img src="assets/icons/icon-d20.png" class="icon-img-sm" alt=""> <span data-i18n="actions.surprise">הפתע
+                    אותי</span>
+            </button>
 
-                <!-- Regenerate Controls (Hidden by default) -->
-                <div id="regenerate-controls" class="regenerate-grid hidden">
-                    <button type="button" id="regen-image-btn" class="btn-secondary small-btn"
-                        data-i18n-title="actions.regenImageTooltip" title="צור תמונה חדשה">
-                        <img src="assets/icons/icon-brush.png" class="icon-img-sm" alt=""> <span
-                            data-i18n="actions.regenImage">מראה</span>
-                    </button>
-                    <button type="button" id="regen-stats-btn" class="btn-secondary small-btn"
-                        data-i18n-title="actions.regenStatsTooltip" title="צור תכונות חדשות">
-                        <img src="assets/icons/icon-quill.png" class="icon-img-sm" alt=""> <span
-                            data-i18n="actions.regenStats">תכונות</span>
-                    </button>
-                </div>
+            <!-- Regenerate Controls (Hidden by default, shown after generation) -->
+            <div id="regenerate-controls" class="regenerate-row hidden">
+                <button type="button" id="regen-image-btn" class="btn-secondary"
+                    data-i18n-title="actions.regenImageTooltip" title="צור תמונה חדשה">
+                    <img src="assets/icons/icon-brush.png" class="icon-img-sm" alt=""> <span
+                        data-i18n="actions.regenImage">מראה</span>
+                </button>
+                <button type="button" id="regen-stats-btn" class="btn-secondary"
+                    data-i18n-title="actions.regenStatsTooltip" title="צור תכונות חדשות">
+                    <img src="assets/icons/icon-quill.png" class="icon-img-sm" alt=""> <span
+                        data-i18n="actions.regenStats">תכונות</span>
+                </button>
             </div>
         </div>
         <div id="error-message" class="error-message hidden"></div>

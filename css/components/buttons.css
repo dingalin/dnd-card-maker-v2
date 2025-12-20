@@ -56,7 +56,8 @@
 }
 
 /* Secondary Button */
-.regenerate-grid .btn-secondary {
+.regenerate-grid .btn-secondary,
+.regenerate-row .btn-secondary {
     flex: 1;
     padding: 0.5rem;
     font-size: 0.9rem;
@@ -70,6 +71,19 @@
     color: #ccc;
     border-radius: 4px;
     cursor: pointer;
+}
+
+/* Regenerate buttons row - full width flex container */
+.regenerate-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+/* Hidden class override - must use !important to override display:flex */
+.regenerate-row.hidden {
+    display: none !important;
 }
 
 /* Surprise Button - Optimized */
