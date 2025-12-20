@@ -7,7 +7,9 @@ import CardRenderer from '../card-renderer.js';
 export class CharacterController {
     constructor(stateManager) {
         this.itemRegistry = new Map(); // Stores cardData by UUID
+        this.backpackItems = new Map(); // Stores backpack items by slot index
         this.state = stateManager;     // Reference to global state (passed from main.js)
+        this.draggedItem = null;       // Currently dragged item data
         this.init();
     }
 
@@ -42,6 +44,9 @@ export class CharacterController {
                 }
             }, 100);
         }
+
+        // Initialize backpack system
+        this.initBackpack();
     }
 
     populateOptions() {
@@ -100,6 +105,17 @@ export class CharacterController {
             autoEquipBtn.addEventListener('click', () => this.autoEquipAllSlots());
         }
 
+        // Character Name - Press Enter to display above portrait
+        const nameInput = document.getElementById('character-name');
+        if (nameInput) {
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.displayCharacterName(nameInput.value.trim());
+                }
+            });
+        }
+
         // Listen for Equip Request (from RenderController)
         document.addEventListener('request-character-equip-item', (e) => {
             this.handleEquipRequest(e.detail);
@@ -119,6 +135,9 @@ export class CharacterController {
 
         // --- Synchronization with Card Creator ---
         this.setupSyncListeners();
+
+        // Setup Drag & Drop for inventory management
+        this.setupDragDrop();
     }
 
     /**
@@ -155,6 +174,495 @@ export class CharacterController {
         // For now, let's just ensure they are initialized from each other if one exists.
         if (creatorLevel && charLevel) {
             charLevel.value = creatorLevel.value;
+        }
+    }
+
+    /**
+     * Display character name above portrait
+     * @param {string} name - The character name to display
+     */
+    displayCharacterName(name) {
+        const displayEl = document.getElementById('character-name-display');
+        if (displayEl) {
+            displayEl.textContent = name;
+            console.log('📝 Character name set to:', name);
+        }
+    }
+
+    // ===============================
+    // BACKPACK INVENTORY SYSTEM
+    // ===============================
+
+    /**
+     * Initialize the backpack UI
+     */
+    initBackpack() {
+        console.log('🎒 Initializing backpack system...');
+
+        // Add click handlers for backpack slots (for viewing items)
+        const backpackGrid = document.querySelector('.backpack-grid');
+        if (backpackGrid) {
+            backpackGrid.addEventListener('click', (e) => this.handleBackpackSlotClick(e));
+        }
+    }
+
+    /**
+     * Setup drag & drop for all slots (equipment and backpack)
+     */
+    setupDragDrop() {
+        console.log('🎒 Setting up drag & drop...');
+
+        // Make all equipped item images draggable
+        this.makeDraggable('.equipment-grid .equipped-item-icon');
+        this.makeDraggable('.backpack-grid .backpack-item-icon');
+
+        // Setup drop zones for all slots
+        this.setupDropZones('.slot[data-slot]');           // Equipment slots
+        this.setupDropZones('.backpack-slot[data-backpack-slot]');  // Backpack slots
+
+        // Setup equipment grid as a drop zone for auto-slotting from backpack
+        this.setupEquipmentGridDrop();
+
+        // Listen for new items being equipped to make them draggable
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.classList?.contains('equipped-item-icon') ||
+                            node.classList?.contains('backpack-item-icon')) {
+                            this.makeElementDraggable(node);
+                        }
+                        // Check for img inside added nodes
+                        if (node.querySelector) {
+                            const imgs = node.querySelectorAll('.equipped-item-icon, .backpack-item-icon');
+                            imgs.forEach(img => this.makeElementDraggable(img));
+                        }
+                    });
+                }
+            });
+        });
+
+        const sheetContainer = document.querySelector('.character-sheet-container');
+        if (sheetContainer) {
+            observer.observe(sheetContainer, { childList: true, subtree: true });
+        }
+    }
+
+    /**
+     * Setup equipment grid as drop zone for auto-slot detection
+     */
+    setupEquipmentGridDrop() {
+        const grid = document.querySelector('.equipment-grid');
+        if (!grid || grid.dataset.gridDropSetup) return;
+        grid.dataset.gridDropSetup = 'true';
+
+        grid.addEventListener('dragover', (e) => {
+            // Only handle if dragging from backpack
+            if (this.draggedItem && this.draggedItem.sourceType === 'backpack') {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+        });
+
+        grid.addEventListener('drop', (e) => {
+            // Only handle if the drop target is the grid itself (not a slot)
+            if (e.target !== grid && !e.target.classList.contains('equipment-grid')) return;
+            if (!this.draggedItem || this.draggedItem.sourceType !== 'backpack') return;
+
+            e.preventDefault();
+            this.handleAutoSlotFromBackpack(this.draggedItem);
+        });
+    }
+
+    /**
+     * Auto-detect natural slot when dragging from backpack to equipment grid
+     */
+    handleAutoSlotFromBackpack(dragData) {
+        console.log('🎒 Auto-slotting from backpack:', dragData);
+
+        // Get card data from registry
+        const cardData = this.itemRegistry.get(dragData.uniqueId);
+        if (!cardData) {
+            console.warn('Card data not found for auto-slot:', dragData.uniqueId);
+            return;
+        }
+
+        // Use the existing getTargetSlots method to find natural slot
+        const result = this.getTargetSlots(cardData);
+        if (!result || !result.slots || result.slots.length === 0) {
+            // No natural slot found - notify user
+            if (window.uiManager) {
+                window.uiManager.showToast(i18n.t('character.noSlotFound') || 'לא נמצא מקום מתאים', 'warning');
+            }
+            return;
+        }
+
+        let targetSlotId = result.slots[0];
+        let targetSlot = document.querySelector(`.slot[data-slot="${targetSlotId}"]`);
+
+        // Check if primary slot is occupied and we have an alternate
+        if (targetSlot) {
+            const targetContent = targetSlot.querySelector('.slot-content');
+            const existingImg = targetContent?.querySelector('img');
+
+            if (existingImg && result.altSlot) {
+                // Primary is full, try alternate
+                const altSlot = document.querySelector(`.slot[data-slot="${result.altSlot}"]`);
+                const altContent = altSlot?.querySelector('.slot-content');
+                const altExisting = altContent?.querySelector('img');
+
+                if (!altExisting) {
+                    // Alt slot is empty - use it
+                    targetSlotId = result.altSlot;
+                    targetSlot = altSlot;
+                }
+            }
+        }
+
+        if (!targetSlot) {
+            if (window.uiManager) {
+                window.uiManager.showToast(i18n.t('character.noSlotFound') || 'לא נמצא מקום מתאים', 'warning');
+            }
+            return;
+        }
+
+        // Now handle the drop on the target slot
+        this.handleDropOnEquipment(targetSlot, dragData);
+    }
+
+    /**
+     * Make existing elements draggable
+     */
+    makeDraggable(selector) {
+        document.querySelectorAll(selector).forEach(el => {
+            this.makeElementDraggable(el);
+        });
+    }
+
+    /**
+     * Make a single element draggable
+     */
+    makeElementDraggable(el) {
+        if (el.dataset.draggableSetup) return; // Already setup
+        el.dataset.draggableSetup = 'true';
+        el.draggable = true;
+
+        el.addEventListener('dragstart', (e) => {
+            console.log('🎒 Drag started');
+            e.stopPropagation();
+
+            // Get slot info
+            const equipmentSlot = el.closest('.slot[data-slot]');
+            const backpackSlot = el.closest('.backpack-slot[data-backpack-slot]');
+
+            let sourceType, sourceId;
+            if (equipmentSlot) {
+                sourceType = 'equipment';
+                sourceId = equipmentSlot.dataset.slot;
+            } else if (backpackSlot) {
+                sourceType = 'backpack';
+                sourceId = backpackSlot.dataset.backpackSlot;
+            }
+
+            // Store drag data
+            this.draggedItem = {
+                element: el,
+                sourceType,
+                sourceId,
+                uniqueId: el.dataset.uniqueId,
+                itemName: el.dataset.itemName,
+                imageSrc: el.src
+            };
+
+            el.classList.add('dragging');
+
+            // Set drag image
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                sourceType,
+                sourceId,
+                uniqueId: el.dataset.uniqueId
+            }));
+        });
+
+        el.addEventListener('dragend', () => {
+            el.classList.remove('dragging');
+            this.draggedItem = null;
+            // Remove all drag-over states
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+    }
+
+    /**
+     * Setup drop zones
+     */
+    setupDropZones(selector) {
+        document.querySelectorAll(selector).forEach(slot => {
+            if (slot.dataset.dropSetup) return;
+            slot.dataset.dropSetup = 'true';
+
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                slot.classList.add('drag-over');
+            });
+
+            slot.addEventListener('dragleave', (e) => {
+                // Only remove if actually leaving the slot (not entering child)
+                if (!slot.contains(e.relatedTarget)) {
+                    slot.classList.remove('drag-over');
+                }
+            });
+
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('drag-over');
+
+                if (!this.draggedItem) return;
+
+                const isEquipmentSlot = slot.dataset.slot !== undefined;
+                const isBackpackSlot = slot.dataset.backpackSlot !== undefined;
+
+                if (isEquipmentSlot) {
+                    this.handleDropOnEquipment(slot, this.draggedItem);
+                } else if (isBackpackSlot) {
+                    this.handleDropOnBackpack(slot, this.draggedItem);
+                }
+            });
+        });
+    }
+
+    /**
+     * Handle dropping an item on an equipment slot
+     */
+    handleDropOnEquipment(targetSlot, dragData) {
+        const targetSlotId = targetSlot.dataset.slot;
+        let targetContent = targetSlot.querySelector('.slot-content');
+
+        console.log(`🎒 Drop on equipment slot: ${targetSlotId}`, dragData);
+
+        // Get card data from registry
+        const cardData = this.itemRegistry.get(dragData.uniqueId);
+        if (!cardData) {
+            console.warn('Card data not found for:', dragData.uniqueId);
+            return;
+        }
+
+        // If dragging from backpack, ALWAYS use the natural slot (not where user dropped)
+        if (dragData.sourceType === 'backpack') {
+            const result = this.getTargetSlots(cardData);
+            if (result && result.slots && result.slots.length > 0) {
+                let naturalSlotId = result.slots[0];
+                let naturalSlot = document.querySelector(`.slot[data-slot="${naturalSlotId}"]`);
+
+                // Check if natural slot is occupied and we have an alternate
+                if (naturalSlot) {
+                    const naturalContent = naturalSlot.querySelector('.slot-content');
+                    const naturalExisting = naturalContent?.querySelector('img');
+
+                    if (naturalExisting && result.altSlot) {
+                        // Primary is full, try alternate first
+                        const altSlot = document.querySelector(`.slot[data-slot="${result.altSlot}"]`);
+                        const altContent = altSlot?.querySelector('.slot-content');
+                        const altExisting = altContent?.querySelector('img');
+
+                        if (!altExisting) {
+                            // Alternate is empty - use it
+                            naturalSlotId = result.altSlot;
+                            naturalSlot = altSlot;
+                        }
+                        // If alternate is also full, stay with primary and let swap handle it
+                    }
+                    // If no alternate, stay with primary and let swap handle it
+                }
+
+                if (naturalSlot) {
+                    console.log(`🎒 Auto-redirecting from ${targetSlotId} to natural slot: ${naturalSlotId}`);
+                    // ALWAYS use the natural slot - don't fall back to user's target
+                    targetSlot = naturalSlot;
+                    targetContent = naturalSlot.querySelector('.slot-content');
+                }
+            }
+        }
+
+        const actualTargetSlotId = targetSlot.dataset.slot;
+
+        // Check if target slot already has an item
+        const existingImg = targetContent.querySelector('img');
+        if (existingImg && existingImg.dataset.uniqueId !== dragData.uniqueId) {
+            // Slot is occupied - ask user if they want to swap
+            const existingData = {
+                uniqueId: existingImg.dataset.uniqueId,
+                itemName: existingImg.dataset.itemName,
+                imageSrc: existingImg.src
+            };
+
+            // Get the slot label for the message
+            const slotLabel = i18n.t(`characterSheet.${actualTargetSlotId.replace(/\\d/g, '')}`) || actualTargetSlotId;
+
+            this.promptSwapConfirmation(slotLabel, () => {
+                // User confirmed - perform the swap
+                if (dragData.sourceType === 'backpack') {
+                    this.placeItemInBackpack(dragData.sourceId, existingData);
+                } else if (dragData.sourceType === 'equipment') {
+                    const sourceSlot = document.querySelector(`.slot[data-slot="${dragData.sourceId}"] .slot-content`);
+                    if (sourceSlot) {
+                        sourceSlot.innerHTML = `<img src="${existingData.imageSrc}" data-item-name="${existingData.itemName || ''}" data-unique-id="${existingData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                        this.makeElementDraggable(sourceSlot.querySelector('img'));
+                    }
+                }
+
+                // Place dragged item in target
+                targetContent.innerHTML = `<img src="${dragData.imageSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                this.makeElementDraggable(targetContent.querySelector('img'));
+
+                if (window.uiManager) {
+                    window.uiManager.showToast(i18n.t('characterSheet.itemMoved') || 'פריט הועבר', 'success');
+                }
+            });
+        } else {
+            // Slot is empty - just move the item
+            this.clearSourceSlot(dragData);
+
+            // Place dragged item in target
+            targetContent.innerHTML = `<img src="${dragData.imageSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+            this.makeElementDraggable(targetContent.querySelector('img'));
+
+            if (window.uiManager) {
+                window.uiManager.showToast(i18n.t('characterSheet.itemMoved') || 'פריט הועבר', 'success');
+            }
+        }
+    }
+
+    /**
+     * Show confirmation dialog for item swap
+     */
+    promptSwapConfirmation(slotLabel, onConfirm) {
+        const modal = document.getElementById('confirmation-modal');
+        if (!modal) {
+            // Fallback if modal missing
+            if (confirm(i18n.t('character.conflictConfirm', { label: slotLabel }) || `המיקום תפוס. האם להחליף?`)) {
+                onConfirm();
+            }
+            return;
+        }
+
+        const msg = modal.querySelector('.modal-message');
+        if (msg) msg.textContent = i18n.t('character.conflictConfirm', { label: slotLabel }) || `המקום מיועד ל-${slotLabel} תפוס. האם להחליף?`;
+
+        modal.classList.remove('hidden');
+
+        const okBtn = document.getElementById('confirm-ok-btn');
+        const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+        const cleanup = () => {
+            okBtn.replaceWith(okBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            modal.classList.add('hidden');
+        };
+
+        // Re-bind listeners
+        const newOk = document.getElementById('confirm-ok-btn');
+        const newCancel = document.getElementById('confirm-cancel-btn');
+
+        newCancel.addEventListener('click', () => {
+            cleanup();
+        });
+
+        newOk.addEventListener('click', () => {
+            onConfirm();
+            cleanup();
+        });
+    }
+
+    /**
+     * Handle dropping an item on a backpack slot
+     */
+    handleDropOnBackpack(targetSlot, dragData) {
+        const targetSlotIndex = targetSlot.dataset.backpackSlot;
+        const targetContent = targetSlot.querySelector('.slot-content');
+
+        console.log(`🎒 Drop on backpack slot: ${targetSlotIndex}`, dragData);
+
+        // Check if target slot already has an item
+        const existingImg = targetContent.querySelector('img');
+        if (existingImg && existingImg.dataset.uniqueId !== dragData.uniqueId) {
+            // Swap items
+            const existingData = {
+                uniqueId: existingImg.dataset.uniqueId,
+                itemName: existingImg.dataset.itemName,
+                imageSrc: existingImg.src
+            };
+
+            // Move existing to source location
+            if (dragData.sourceType === 'equipment') {
+                const sourceSlot = document.querySelector(`.slot[data-slot="${dragData.sourceId}"] .slot-content`);
+                if (sourceSlot) {
+                    sourceSlot.innerHTML = `<img src="${existingData.imageSrc}" data-item-name="${existingData.itemName || ''}" data-unique-id="${existingData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                    this.makeElementDraggable(sourceSlot.querySelector('img'));
+                }
+            } else if (dragData.sourceType === 'backpack') {
+                this.placeItemInBackpack(dragData.sourceId, existingData);
+            }
+        } else {
+            // Clear source location
+            this.clearSourceSlot(dragData);
+        }
+
+        // Place dragged item in backpack slot
+        this.placeItemInBackpack(targetSlotIndex, {
+            uniqueId: dragData.uniqueId,
+            itemName: dragData.itemName,
+            imageSrc: dragData.imageSrc
+        });
+
+        if (window.uiManager) {
+            window.uiManager.showToast(i18n.t('characterSheet.itemStored') || 'פריט הועבר לתיק', 'info');
+        }
+    }
+
+    /**
+     * Place an item in a backpack slot
+     */
+    placeItemInBackpack(slotIndex, itemData) {
+        const slot = document.querySelector(`.backpack-slot[data-backpack-slot="${slotIndex}"] .slot-content`);
+        if (!slot) return;
+
+        slot.innerHTML = `<img src="${itemData.imageSrc}" data-item-name="${itemData.itemName || ''}" data-unique-id="${itemData.uniqueId}" class="backpack-item-icon" />`;
+
+        // Store in backpack registry
+        this.backpackItems.set(slotIndex, itemData);
+
+        // Make draggable
+        const img = slot.querySelector('img');
+        if (img) this.makeElementDraggable(img);
+    }
+
+    /**
+     * Clear the source slot after a successful drop
+     */
+    clearSourceSlot(dragData) {
+        if (dragData.sourceType === 'equipment') {
+            const sourceSlot = document.querySelector(`.slot[data-slot="${dragData.sourceId}"] .slot-content`);
+            if (sourceSlot) sourceSlot.innerHTML = '';
+        } else if (dragData.sourceType === 'backpack') {
+            const sourceSlot = document.querySelector(`.backpack-slot[data-backpack-slot="${dragData.sourceId}"] .slot-content`);
+            if (sourceSlot) sourceSlot.innerHTML = '';
+            this.backpackItems.delete(dragData.sourceId);
+        }
+    }
+
+    /**
+     * Handle click on backpack slot (view item)
+     */
+    handleBackpackSlotClick(e) {
+        const slot = e.target.closest('.backpack-slot');
+        if (!slot) return;
+
+        const img = slot.querySelector('img');
+        if (img) {
+            // Show card viewer for backpack item
+            this.showCardViewer(img);
         }
     }
 
@@ -264,14 +772,46 @@ export class CharacterController {
 
     /**
      * Get mapping from slot ID to item type/subtype
+     * For slots that support multiple subtypes (like armor), picks a random one
      */
     getSlotMapping() {
+        // Helper to pick random subtype from OFFICIAL_ITEMS
+        const pickRandomSubtype = (type, excludeShield = false) => {
+            const items = window.OFFICIAL_ITEMS?.[type];
+            if (!items) return null;
+
+            const allSubtypes = [];
+            for (const category in items) {
+                if (Array.isArray(items[category])) {
+                    // Exclude Shield from armor randomization
+                    if (excludeShield && category === 'Shield') continue;
+                    allSubtypes.push(...items[category]);
+                }
+            }
+            if (allSubtypes.length > 0) {
+                return allSubtypes[Math.floor(Math.random() * allSubtypes.length)];
+            }
+            return null;
+        };
+
+        // Pick random armor type (excluding Shield - it has its own slot)
+        const randomArmor = pickRandomSubtype('armor', true) || 'Leather (עור)';
+        // Pick random weapon for mainhand
+        const randomWeapon = pickRandomSubtype('weapon') || 'Longsword (חרב ארוכה)';
+        // Pick random ranged weapon
+        const rangedItems = window.OFFICIAL_ITEMS?.weapon?.['Simple Ranged']?.concat(
+            window.OFFICIAL_ITEMS?.weapon?.['Martial Ranged'] || []
+        ) || [];
+        const randomRanged = rangedItems.length > 0
+            ? rangedItems[Math.floor(Math.random() * rangedItems.length)]
+            : 'Longbow (קשת ארוכה)';
+
         return {
             'helmet': { type: 'wondrous', subtype: 'Helmet', label: 'קסדה' },
-            'armor': { type: 'armor', subtype: 'Armor', label: 'שריון' },
-            'mainhand': { type: 'weapon', label: 'נשק' },
-            'offhand': { type: 'armor', subtype: 'Shield', label: 'מגן' },
-            'ranged': { type: 'weapon', subtype: 'Longbow (קשת ארוכה)', label: 'קשת' },
+            'armor': { type: 'armor', subtype: randomArmor, label: 'שריון' },
+            'mainhand': { type: 'weapon', subtype: randomWeapon, label: 'נשק' },
+            'offhand': { type: 'armor', subtype: 'Shield (מגן)', label: 'מגן' },
+            'ranged': { type: 'weapon', subtype: randomRanged, label: 'קשת' },
             'ring1': { type: 'ring', label: 'טבעת' },
             'ring2': { type: 'ring', label: 'טבעת' },
             'necklace': { type: 'wondrous', subtype: 'Amulet', label: 'שרשרת' },
@@ -458,7 +998,7 @@ export class CharacterController {
     navigateToCreatorForSlot(slotId) {
         const mapping = {
             'helmet': { type: 'wondrous', subtype: 'Helmet', label: 'קסדה' }, // Changed to Wondrous
-            'armor': { type: 'armor', subtype: 'Armor', label: 'שריון' },
+            'armor': { type: 'armor', subtype: 'Leather (עור)', label: 'שריון' },
             'mainhand': { type: 'weapon', label: 'נשק' },
             'offhand': { type: 'armor', subtype: 'Shield', label: 'מגן' },
             'ranged': { type: 'weapon', subtype: 'Bow', label: 'קשת' },
@@ -724,6 +1264,13 @@ export class CharacterController {
             nameLower.includes('חגורה') || nameLower.includes('אבנט')) {
             console.log('  → Detected as BELT');
             return { slots: ['belt'], isTwoHanded: false, itemLabel: name };
+        }
+        // --- QUIVER / AMMUNITION ---
+        if (subtype.includes('Quiver') || subtype.includes('אשפה') ||
+            nameLower.includes('אשפה') || nameLower.includes('תחמושת') ||
+            nameLower.includes('חצים') || nameLower.includes('קליעים')) {
+            console.log('  → Detected as AMMO');
+            return { slots: ['ammo'], isTwoHanded: false, itemLabel: name };
         }
 
         // --- WEAPONS: Check for two-handed ---

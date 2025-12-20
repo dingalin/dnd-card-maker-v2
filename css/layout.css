@@ -60,14 +60,16 @@ body::before {
 /* Desktop Main Grid Layout */
 .main-layout {
     display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr var(--sidebar-width);
+    grid-template-columns: minmax(0, var(--sidebar-width)) 1fr minmax(0, var(--sidebar-width));
     gap: 1.5rem;
     height: calc(100vh - 80px);
     /* Subtract header height */
-    padding: 0 2rem 2rem 2rem;
-    max-width: 1920px;
+    padding: 0 1rem 2rem 1rem;
+    max-width: 100%;
     margin: 0 auto;
     align-items: start;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .secondary-actions-grid {
@@ -86,13 +88,45 @@ body::before {
 }
 
 /* Fix for Sidebar Overflow - Allow scrolling while keeping dropdown menus visible */
-.sidebar-end,
 .sidebar-start {
-    overflow-x: visible;
+    overflow-x: hidden;
     overflow-y: auto;
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 180px);
     scrollbar-width: thin;
     scrollbar-color: var(--accent-color) rgba(0, 0, 0, 0.3);
+    min-width: 0;
+    padding-bottom: 1.5rem;
+}
+
+/* Fix sidebar-end to always show footer buttons */
+.sidebar-end {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: calc(100vh - 100px);
+    min-width: 0;
+}
+
+.sidebar-end>h2 {
+    flex-shrink: 0;
+}
+
+.sidebar-end .stone-menu {
+    flex-shrink: 0;
+}
+
+.sidebar-end #sidebar-end-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-end .sidebar-actions-footer {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
 }
 
 /* Header Styles */

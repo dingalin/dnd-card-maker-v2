@@ -281,7 +281,21 @@ export function enrichItemDetails(itemDetails, type, finalSubtype, locale = 'he'
             if (type === 'armor' && officialStats.ac) {
                 itemDetails.armorClass = officialStats.ac;
                 itemDetails.coreStats = `AC ${officialStats.ac}`;
-                console.log("ItemEnrichment: Set armor AC:", officialStats.ac);
+
+                // Add dexterity modifier info based on armor category
+                if (officialStats.dexMod) {
+                    const dexLabels = {
+                        full: { he: '+זריזות', en: '+Dex' },
+                        max2: { he: '+זריזות (עד +2)', en: '+Dex (max 2)' },
+                        none: { he: '', en: '' } // No text for heavy armor
+                    };
+                    const dexLabel = dexLabels[officialStats.dexMod]?.[isHebrew ? 'he' : 'en'] || '';
+                    if (dexLabel) {
+                        itemDetails.dexModLabel = dexLabel;
+                    }
+                }
+
+                console.log("ItemEnrichment: Set armor AC:", officialStats.ac, "DexMod:", officialStats.dexMod);
             }
 
             // Weapon properties
@@ -300,6 +314,37 @@ export function enrichItemDetails(itemDetails, type, finalSubtype, locale = 'he'
                 if (officialStats.light) props.push(tp('light'));
 
                 itemDetails.weaponProperties = props;
+            }
+
+            // Potion effects
+            if (type === 'potion' && officialStats.effect) {
+                const effect = officialStats.effect[isHebrew ? 'he' : 'en'] || officialStats.effect;
+                const duration = officialStats.duration?.[isHebrew ? 'he' : 'en'] || officialStats.duration || '';
+
+                // Build quickStats from official data
+                if (duration && duration !== 'Instant' && duration !== 'מיידי') {
+                    itemDetails.quickStats = `${effect}\n(${duration})`;
+                } else {
+                    itemDetails.quickStats = effect;
+                }
+
+                console.log("ItemEnrichment: Set potion effect:", effect);
+            }
+
+            // Ring effects
+            if (type === 'ring' && officialStats.effect) {
+                const effect = officialStats.effect[isHebrew ? 'he' : 'en'] || officialStats.effect;
+                itemDetails.quickStats = effect;
+                console.log("ItemEnrichment: Set ring effect:", effect);
+            }
+
+            // Wondrous item type labels
+            if (type === 'wondrous' && officialStats.typeLabel) {
+                const typeLabel = officialStats.typeLabel[isHebrew ? 'he' : 'en'] || '';
+                if (typeLabel && !itemDetails.typeHe?.includes(typeLabel)) {
+                    itemDetails.typeHe = `${typeLabel} (${isHebrew ? 'פלאי' : 'Wondrous'})`;
+                }
+                console.log("ItemEnrichment: Set wondrous type:", itemDetails.typeHe);
             }
         }
 

@@ -251,7 +251,10 @@
         "offhand": "Off Hand",
         "ring": "Ring",
         "boots": "Boots",
-        "belt": "Belt"
+        "belt": "Belt",
+        "backpack": "Backpack",
+        "itemMoved": "Item moved!",
+        "itemStored": "Item stored in backpack"
     },
     "equipModal": {
         "title": "Equip Character with Item",

@@ -221,18 +221,160 @@ window.ITEM_STATS = {
     "Longbow (קשת ארוכה)": { damage: "1d8", damageType: "piercing", twoHanded: true, ranged: true },
     "Net (רשת)": { damage: "-", damageType: "-", thrown: true, ranged: true },
 
-    // Armor
-    "Padded (מרופד)": { ac: "11" },
-    "Leather (עור)": { ac: "11" },
-    "Studded Leather (עור מחוזק)": { ac: "12" },
-    "Hide (פרווה)": { ac: "12" },
-    "Chain Shirt (חולצת שרשראות)": { ac: "13" },
-    "Scale Mail (שריון קשקשים)": { ac: "14" },
-    "Breastplate (שריון חזה)": { ac: "14" },
-    "Half Plate (חצי לוחות)": { ac: "15" },
-    "Ring Mail (שריון טבעות)": { ac: "14" },
-    "Chain Mail (שריון שרשראות)": { ac: "16" },
-    "Splint (שריון רצועות)": { ac: "17" },
-    "Plate (שריון לוחות)": { ac: "18" },
-    "Shield (מגן)": { ac: "+2" }
+    // Armor - dexMod: 'full' = +Dex, 'max2' = +Dex (max +2), 'none' = no Dex
+    // Light Armor
+    "Padded (מרופד)": { ac: "11", dexMod: "full", category: "light" },
+    "Leather (עור)": { ac: "11", dexMod: "full", category: "light" },
+    "Studded Leather (עור מחוזק)": { ac: "12", dexMod: "full", category: "light" },
+    // Medium Armor
+    "Hide (פרווה)": { ac: "12", dexMod: "max2", category: "medium" },
+    "Chain Shirt (חולצת שרשראות)": { ac: "13", dexMod: "max2", category: "medium" },
+    "Scale Mail (שריון קשקשים)": { ac: "14", dexMod: "max2", category: "medium" },
+    "Breastplate (שריון חזה)": { ac: "14", dexMod: "max2", category: "medium" },
+    "Half Plate (חצי לוחות)": { ac: "15", dexMod: "max2", category: "medium" },
+    // Heavy Armor
+    "Ring Mail (שריון טבעות)": { ac: "14", dexMod: "none", category: "heavy" },
+    "Chain Mail (שריון שרשראות)": { ac: "16", dexMod: "none", category: "heavy" },
+    "Splint (שריון רצועות)": { ac: "17", dexMod: "none", category: "heavy" },
+    "Plate (שריון לוחות)": { ac: "18", dexMod: "none", category: "heavy" },
+    // Shield
+    "Shield (מגן)": { ac: "+2", dexMod: "none", category: "shield" },
+
+    // ==================== POTIONS ====================
+    "Healing (ריפוי)": {
+        effect: { he: "מרפא 2d4+2 HP", en: "Heals 2d4+2 HP" },
+        duration: { he: "מיידי", en: "Instant" },
+        rarity: "common"
+    },
+    "Greater Healing (ריפוי גדול)": {
+        effect: { he: "מרפא 4d4+4 HP", en: "Heals 4d4+4 HP" },
+        duration: { he: "מיידי", en: "Instant" },
+        rarity: "uncommon"
+    },
+    "Superior Healing (ריפוי עילאי)": {
+        effect: { he: "מרפא 8d4+8 HP", en: "Heals 8d4+8 HP" },
+        duration: { he: "מיידי", en: "Instant" },
+        rarity: "rare"
+    },
+    "Climbing (טיפוס)": {
+        effect: { he: "מהירות טיפוס = מהירות הליכה", en: "Climbing speed = walking speed" },
+        duration: { he: "שעה אחת", en: "1 hour" },
+        rarity: "common"
+    },
+    "Invisibility (היעלמות)": {
+        effect: { he: "הופך לבלתי נראה", en: "Become invisible" },
+        duration: { he: "שעה אחת (או עד התקפה)", en: "1 hour (or until attack)" },
+        rarity: "very rare"
+    },
+    "Speed (מהירות)": {
+        effect: { he: "מהירות כפולה, +2 לדרג\"ש", en: "Speed doubled, +2 AC" },
+        duration: { he: "דקה אחת", en: "1 minute" },
+        rarity: "very rare"
+    },
+    "Water Breathing (נשימה במים)": {
+        effect: { he: "יכול לנשום מתחת למים", en: "Can breathe underwater" },
+        duration: { he: "שעה אחת", en: "1 hour" },
+        rarity: "uncommon"
+    },
+    "Giant Strength (כוח ענקים)": {
+        effect: { he: "כוח הופך ל-21", en: "Strength becomes 21" },
+        duration: { he: "שעה אחת", en: "1 hour" },
+        rarity: "rare"
+    },
+    "Fire Resistance (עמידות לאש)": {
+        effect: { he: "עמידות לנזק אש", en: "Resistance to fire damage" },
+        duration: { he: "שעה אחת", en: "1 hour" },
+        rarity: "uncommon"
+    },
+    "Flying (טיסה)": {
+        effect: { he: "מהירות טיסה 60 רגל", en: "Flying speed 60 ft" },
+        duration: { he: "שעה אחת", en: "1 hour" },
+        rarity: "very rare"
+    },
+
+    // ==================== RINGS ====================
+    "Protection (הגנה)": {
+        slot: "finger",
+        effect: { he: "+1 לדרג\"ש ולגלגולי הצלה", en: "+1 to AC and saving throws" },
+        rarity: "rare"
+    },
+    "Invisibility (היעלמות) Ring": {
+        slot: "finger",
+        effect: { he: "פעולה להפוך לבלתי נראה", en: "Action to become invisible" },
+        rarity: "legendary"
+    },
+    "Feather Falling (נפילת נוצה)": {
+        slot: "finger",
+        effect: { he: "נופל לאט (60 רגל/סיבוב), ללא נזק נפילה", en: "Fall slowly (60 ft/round), no fall damage" },
+        rarity: "rare"
+    },
+    "Regeneration (התחדשות)": {
+        slot: "finger",
+        effect: { he: "מרפא 1d6 HP כל 10 דקות", en: "Regain 1d6 HP every 10 minutes" },
+        rarity: "very rare"
+    },
+
+    // ==================== WONDROUS ITEMS ====================
+    "Amulet (קמע)": {
+        slot: "neck",
+        typical: ["protection", "health", "detection"],
+        typeLabel: { he: "קמע", en: "Amulet" }
+    },
+    "Belt (חגורה)": {
+        slot: "waist",
+        typical: ["strength", "carrying", "storage"],
+        typeLabel: { he: "חגורה", en: "Belt" }
+    },
+    "Boots (מגפיים)": {
+        slot: "feet",
+        typical: ["speed", "stealth", "terrain"],
+        typeLabel: { he: "מגפיים", en: "Boots" }
+    },
+    "Cloak (גלימה)": {
+        slot: "shoulders",
+        typical: ["protection", "stealth", "resistance"],
+        typeLabel: { he: "גלימה", en: "Cloak" }
+    },
+    "Gloves (כפפות)": {
+        slot: "hands",
+        typical: ["dexterity", "combat", "thievery"],
+        typeLabel: { he: "כפפות", en: "Gloves" }
+    },
+    "Helmet (קסדה)": {
+        slot: "head",
+        typical: ["perception", "telepathy", "protection"],
+        typeLabel: { he: "קסדה", en: "Helmet" }
+    },
+    "Bag (תיק)": {
+        slot: "held",
+        typical: ["storage", "extradimensional", "carrying"],
+        typeLabel: { he: "תיק", en: "Bag" }
+    },
+    "Gem (אבן חן)": {
+        slot: "held",
+        typical: ["elemental", "storing", "focus"],
+        typeLabel: { he: "אבן חן", en: "Gem" }
+    },
+    "Wand (שרביט)": {
+        slot: "held",
+        typical: ["spellcasting", "charges", "attack"],
+        typeLabel: { he: "שרביט", en: "Wand" }
+    },
+    "Rod (מוט)": {
+        slot: "held",
+        typical: ["leadership", "control", "power"],
+        typeLabel: { he: "מוט", en: "Rod" }
+    },
+    "Staff (מטה קסם)": {
+        slot: "held",
+        typical: ["spellcasting", "charges", "versatile"],
+        typeLabel: { he: "מטה קסם", en: "Staff" }
+    },
+
+    // Quiver/Ammunition
+    "Quiver (אשפה)": {
+        slot: "back",
+        typical: ["storage", "magical arrows"],
+        typeLabel: { he: "אשפה", en: "Quiver" }
+    }
 };

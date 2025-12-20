@@ -2,6 +2,12 @@
     <h2 data-i18n="characterSidebar.title">יצירת דמות</h2>
 
     <form id="character-form" onsubmit="return false;">
+        <!-- Character Name -->
+        <div class="form-group mb-2">
+            <input type="text" id="character-name" class="glass-input character-name-input"
+                placeholder="שם הדמות (Enter לאישור)" data-i18n-placeholder="characterSheet.namePlaceholderHint">
+        </div>
+
         <!-- Gender -->
         <div class="form-group mb-2">
             <select id="char-gender" class="glass-input">

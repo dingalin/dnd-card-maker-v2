@@ -252,6 +252,9 @@
         "ring": "Ring",
         "boots": "Boots",
         "belt": "Belt",
+        "backpack": "Backpack",
+        "itemMoved": "Item moved!",
+        "itemStored": "Item stored in backpack",
         "edit": "Edit Item",
         "autoGenerate": "Auto-Generate"
     },

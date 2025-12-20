@@ -259,6 +259,10 @@
         "ring": "טבעת",
         "boots": "מגפיים",
         "belt": "חגורה",
+        "backpack": "תיק גב",
+        "namePlaceholder": "שם הדמות",
+        "itemMoved": "פריט הועבר!",
+        "itemStored": "פריט הועבר לתיק",
         "edit": "ערוך חפץ",
         "autoGenerate": "צור חפץ אוטומטי"
     },

@@ -2,43 +2,50 @@
     width: 100%;
     height: 100%;
     display: flex;
-    justify-content: flex-end;
-    /* Physical Left in RTL */
+    flex-direction: row-reverse;
+    /* RTL: backpack on visual left, grid on visual right */
+    justify-content: flex-start;
+    /* Align to the right side (next to sidebar in RTL) */
     align-items: center;
     padding: 0.5rem;
-    /* Minimal padding */
-    overflow: hidden;
+    gap: 1.5rem;
+    /* Space between backpack and grid */
+    overflow: visible;
 }
 
 .equipment-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    gap: 0.8rem;
-    gap: 0.8rem;
+    gap: 0.5rem;
     height: calc(100vh - 140px);
     /* Explicit view height */
     max-height: 100%;
     width: auto;
     max-width: 100%;
-    aspect-ratio: 0.75;
-    background: url('../../assets/textures/parchment.jpg');
-    /* Fallback or procedural */
-    background-color: #f4e4bc;
-    padding: 1rem;
+    aspect-ratio: 0.77;
+    /* Match the reference image aspect ratio */
+    background: url('../../assets/textures/character-sheet-bg.jpg');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 2.5rem 1.5rem;
+    /* Larger padding to account for burnt edges */
     box-sizing: border-box;
-    /* IMPORTANT: Include padding in height calculation */
-    border-radius: 12px;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    border-radius: 0;
+    /* No border radius - image has natural edges */
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
     position: relative;
-    border: 8px solid #4a3c31;
-    margin-left: 2rem;
+    border: none;
+    /* No border - image provides the frame */
+    flex-shrink: 0;
 }
 
+
 .slot {
-    background: rgba(255, 255, 255, 0.3);
-    border: 2px dashed #8b7355;
-    border-radius: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -52,10 +59,9 @@
 }
 
 .slot:hover {
-    background: rgba(255, 255, 255, 0.5);
-    border-color: #d4af37;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
 }
 
 .slot-content {
@@ -69,28 +75,24 @@
 }
 
 .slot-label {
-    font-family: var(--font-display);
-    font-size: 1.2rem;
-    color: #4a3c31;
-    font-weight: bold;
-    text-align: center;
-    pointer-events: none;
+    /* Hide labels - background image has decorative frames */
+    display: none;
 }
 
 /* Portrait - Spans 2x2 in the center */
 .character-portrait-slot {
     grid-column: 2 / 4;
     grid-row: 2 / 4;
-    background: rgba(0, 0, 0, 0.1);
-    border: 4px double #d4af37;
-    border-radius: 50% 50% 0 0 / 15% 15% 0 0;
-    /* Arch shape? Or just rect */
-    border-radius: 12px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     overflow: hidden;
     position: relative;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+    padding-top: 1rem;
 }
 
 .portrait-placeholder {
@@ -252,10 +254,17 @@
     transition: opacity 0.3s ease;
     border-radius: 8px;
     z-index: 10;
+    pointer-events: none;
+    /* Allow dragging through this overlay */
 }
 
 .slot:hover .slot-actions {
     opacity: 1;
+}
+
+/* But buttons should still be clickable */
+.slot-action-btn {
+    pointer-events: auto;
 }
 
 .slot-action-btn {
@@ -298,5 +307,398 @@
         width: 30px;
         height: 30px;
         font-size: 0.9rem;
+    }
+}
+
+/* ===============================
+   BACKPACK INVENTORY SYSTEM
+   =============================== */
+
+.backpack-container {
+    position: relative;
+    width: 260px;
+    min-width: 200px;
+    max-height: calc(100vh - 160px);
+    background: rgba(74, 60, 49, 0.95);
+    border: 4px solid #8b7355;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow:
+        0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 0 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(5px);
+    flex-shrink: 0;
+    overflow-y: scroll;
+}
+
+.backpack-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+}
+
+.backpack-icon {
+    font-size: 1.5rem;
+}
+
+.backpack-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: #d4af37;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.backpack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+.backpack-slot {
+    aspect-ratio: 2.5 / 3.5;
+    /* Card proportions */
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px dashed rgba(139, 115, 85, 0.6);
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.backpack-slot:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: #d4af37;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.backpack-slot .slot-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.backpack-slot .slot-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Drag & Drop States */
+.backpack-slot.drag-over,
+.slot.drag-over {
+    background: rgba(212, 175, 55, 0.3) !important;
+    border: 2px solid #d4af37 !important;
+    border-style: solid !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+.backpack-slot.dragging,
+.slot.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+/* Item being dragged */
+.equipped-item-icon.dragging,
+.backpack-item-icon.dragging {
+    opacity: 0.5;
+}
+
+/* Equipped items in backpack */
+.backpack-item-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: grab;
+    transition: transform 0.2s ease;
+}
+
+.backpack-item-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Make equipped items draggable */
+.equipped-item-icon {
+    cursor: grab;
+}
+
+.equipped-item-icon:active {
+    cursor: grabbing;
+}
+
+/* Drop indicator text */
+.drop-indicator {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212, 175, 55, 0.2);
+    color: #d4af37;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.backpack-slot.drag-over .drop-indicator,
+.slot.drag-over .drop-indicator {
+    opacity: 1;
+}
+
+/* Responsive - Move backpack below on smaller screens */
+@media (max-width: 1200px) {
+    .character-sheet-container {
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
+    }
+
+    .backpack-container {
+        width: 100%;
+        max-width: 400px;
+        max-height: none;
+        margin-top: 1rem;
+        order: 1;
+        /* Show below the grid */
+    }
+
+    .backpack-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .backpack-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ================================
+   SLOT PLACEHOLDER ICONS
+   ================================ */
+
+.slot-placeholder-icon {
+    /* Hide placeholder icons - background image has decorative slot icons */
+    display: none;
+}
+
+/* Hide placeholder when slot has actual content */
+.slot-content:has(.equipped-item-icon) .slot-placeholder-icon {
+    display: none;
+}
+
+/* Alternative hide for browsers without :has() support */
+.slot-content .equipped-item-icon~.slot-placeholder-icon {
+    display: none;
+}
+
+/* ================================
+   CHARACTER NAME (Fantasy Fonts)
+   ================================ */
+
+/* Import fantasy fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Uncial+Antiqua&display=swap');
+
+/* Name display banner above portrait */
+.character-name-display {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cinzel', 'MedievalSharp', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #3d2914;
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.4);
+    z-index: 5;
+    width: 80%;
+    padding: 4px 8px;
+}
+
+.character-name-display:empty {
+    display: none;
+}
+
+/* Position portrait correctly */
+.character-portrait-slot {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.character-name-input {
+    width: 90%;
+    margin: 0 auto 8px auto;
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(139, 115, 85, 0.5);
+    font-family: 'Cinzel', 'MedievalSharp', var(--font-display), serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3d2914;
+    text-align: center;
+    letter-spacing: 1px;
+    outline: none;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+    transition: border-color 0.3s ease;
+}
+
+.character-name-input::placeholder {
+    color: #7a6a5a;
+    opacity: 0.6;
+    font-style: italic;
+    font-weight: 400;
+}
+
+.character-name-input:focus {
+    border-bottom-color: #b8860b;
+}
+
+/* ================================
+   DECORATIVE FRAME CORNERS
+   ================================ */
+
+.equipment-grid::before,
+.equipment-grid::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 3px solid #8b7355;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.equipment-grid::before {
+    top: 8px;
+    right: 8px;
+    border-left: none;
+    border-bottom: none;
+    border-top-right-radius: 8px;
+}
+
+.equipment-grid::after {
+    top: 8px;
+    left: 8px;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+}
+
+/* Additional corners using pseudo-elements on container */
+.character-sheet-container .equipment-grid {
+    overflow: visible;
+}
+
+/* Enhanced slot styling */
+.slot {
+    background: rgba(255, 248, 230, 0.4);
+    border: 2px solid #a89070;
+    border-radius: 6px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.slot::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border: 1px solid rgba(139, 115, 85, 0.3);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+/* Enhanced portrait frame */
+.character-portrait-slot {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(184, 134, 11, 0.1));
+    border: 4px solid #b8860b;
+    box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.2),
+        0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.character-portrait-slot::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* ================================
+   PRINT OPTIMIZATION
+   ================================ */
+
+@media print {
+
+    /* Hide interactive elements */
+    .slot-actions,
+    .backpack-container,
+    .auto-gen-btn {
+        display: none !important;
+    }
+
+    /* Full page layout */
+    .character-sheet-container {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .equipment-grid {
+        width: 210mm;
+        height: 297mm;
+        max-height: none;
+        aspect-ratio: auto;
+        box-shadow: none;
+        border-radius: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Show placeholder icons clearly */
+    .slot-placeholder-icon {
+        opacity: 0.5;
+        filter: sepia(20%) saturate(60%);
+    }
+
+    /* Ensure borders print */
+    .slot {
+        border: 2px solid #8b7355 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .character-portrait-slot {
+        border: 4px solid #b8860b !important;
+    }
+
+    /* Character name input as text */
+    .character-name-input {
+        border: none;
+        background: transparent;
+        box-shadow: none;
     }
 }

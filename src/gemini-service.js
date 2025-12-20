@@ -359,7 +359,7 @@ class GeminiService {
     }
 
     // Main image generation using GetImg/FLUX - OPTIMIZED FOR FANTASY ITEMS
-    async generateImageGetImg(visualPrompt, model, style, getImgApiKey, styleOption = 'natural', userColor = '#ffffff') {
+    async generateImageGetImg(visualPrompt, model, style, getImgApiKey, styleOption = 'natural', userColor = '#ffffff', colorDescription = null) {
 
         // === FLUX-OPTIMIZED PROMPT BUILDER ===
         // Based on research: FLUX excels with natural language, detailed descriptions,
@@ -415,7 +415,7 @@ class GeminiService {
 
         const styleConfig = styleConfigs[style] || styleConfigs['realistic'];
 
-        // Helper to convert hex to descriptive color name
+        // Helper to convert hex to descriptive color name (fallback if no colorDescription provided)
         const getColorName = (hex) => {
             const map = {
                 '#ffffff': 'pure white', '#000000': 'deep black', '#ff0000': 'crimson red',
@@ -426,7 +426,9 @@ class GeminiService {
             };
             return map[hex.toLowerCase()] || 'neutral';
         };
-        const colorName = getColorName(userColor);
+
+        // Use the smart color description if provided, otherwise fall back to hex lookup
+        const colorName = colorDescription || getColorName(userColor);
 
         // === ELEMENTAL/THEMATIC ENHANCEMENT ===
         // Add visual keywords based on item's elemental theme (detected from visualPrompt)
@@ -522,9 +524,20 @@ class GeminiService {
         }
 
         // ARMOR - Enhanced for detailed armor renders
-        else if (promptLower.includes('leather') || promptLower.includes('עור')) {
+        // CHAINMAIL - Must come BEFORE generic armor to catch "chain" correctly
+        else if (promptLower.includes('chain') || promptLower.includes('שרשראות')) {
+            itemTypeEnhancement = 'medieval chainmail armor, interlocking metal rings, protective mail hauberk, iron ring mesh, warrior torso armor, wearable body protection';
+            compositionGuide = 'front torso view showing chainmail ring pattern texture';
+            // HIDE/FUR ARMOR
+        } else if (promptLower.includes('hide') || promptLower.includes('פרווה') || promptLower.includes('fur')) {
+            itemTypeEnhancement = 'fur hide armor vest, thick animal pelt chest piece, tanned leather with brown fur trim, primitive armor item on display stand, rugged wilderness gear';
+            compositionGuide = 'front view of armor piece on mannequin torso, showing fur texture';
+        } else if (promptLower.includes('leather') || promptLower.includes('עור')) {
             itemTypeEnhancement = 'supple leather armor, stitched panels, reinforced shoulders, adventurer gear';
             compositionGuide = 'front view showing leather texture and straps';
+        } else if (promptLower.includes('scale') || promptLower.includes('קשקשים')) {
+            itemTypeEnhancement = 'overlapping metal scale armor, fish-scale pattern, protective scales, dragon-like mail';
+            compositionGuide = 'front view showing scale pattern and metallic sheen';
         } else if (promptLower.includes('armor') || promptLower.includes('plate') || promptLower.includes('שריון') || promptLower.includes('צלחות')) {
             itemTypeEnhancement = 'ornate plate armor piece, polished metal surface, functional battle design, riveted construction';
             compositionGuide = 'front view showing craftsmanship details';
@@ -573,13 +586,18 @@ class GeminiService {
         }
 
         // === BACKGROUND CONFIGURATION ===
+        // Smart background: ALWAYS use the sampled card color for better background removal
         let backgroundPrompt = '';
+        console.log(`🎨 FLUX Background: styleOption=${styleOption}, colorName=${colorName}`);
+
         if (styleOption === 'no-background') {
-            backgroundPrompt = 'isolated on pure white background, clean studio shot, no shadows';
+            // STRONGEST possible white background instruction for FLUX
+            backgroundPrompt = 'PURE WHITE BACKGROUND ONLY, solid white #FFFFFF background, product photography on seamless white paper, clean white studio backdrop, no environment, no scenery, white void background';
         } else if (styleOption === 'colored-background') {
             backgroundPrompt = `isolated on ${colorName} gradient background, soft ambient glow, ${colorName} color tones`;
-        } else { // natural
-            backgroundPrompt = 'atmospheric fantasy environment background, mystical ambiance, complementary lighting';
+        } else {
+            // 'natural' mode - item in sharp focus, nature bokeh background
+            backgroundPrompt = 'sharp focused item in foreground, beautiful blurred bokeh nature background, forest leaves and sunlight bokeh, shallow depth of field, dreamy soft background blur, natural outdoor lighting, fantasy forest atmosphere';
         }
 
         // === POSITIVE REINFORCEMENT (FLUX works better with positive descriptions) ===
@@ -589,8 +607,11 @@ class GeminiService {
         const positiveReinforcement = 'isolated single item displayed alone, clean professional product render, complete item fully visible, sharp focus, centered composition';
 
         // === BUILD FINAL OPTIMIZED PROMPT ===
-        // Structure: [Composition] [Style Prefix] [Subject/Item] [Type Enhancement] [Elemental] [Rarity] [Visual Prompt] [Quality] [Background] [Style Suffix] [Positive]
+        // CRITICAL: Background instruction FIRST so FLUX prioritizes it
+        // Structure: [Background FIRST] [Composition] [Style Prefix] [Subject/Item] ...
         const finalPrompt = [
+            backgroundPrompt,  // FIRST - most important for background removal
+            positiveReinforcement,
             compositionGuide,
             styleConfig.prefix,
             itemTypeEnhancement,
@@ -598,9 +619,7 @@ class GeminiService {
             rarityQuality,
             visualPrompt,
             styleConfig.quality,
-            backgroundPrompt,
-            styleConfig.suffix,
-            positiveReinforcement
+            styleConfig.suffix
         ].filter(Boolean).join(', ');
 
         console.log(`🎨 GeminiService (GetImg/FLUX): Style=${style}, Option=${styleOption}`);

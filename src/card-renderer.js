@@ -498,7 +498,7 @@ class CardRenderer {
         // 1. Prepare Source (Remove BG if needed)
         let drawSource = img;
         if (style === 'no-background') {
-            drawSource = this.removeWhiteBackground(img);
+            drawSource = this.removeWhiteBackground(img, color);
         }
 
         // 2. Draw Image on Temp Canvas
@@ -570,8 +570,8 @@ class CardRenderer {
     }
 
 
-    removeWhiteBackground(img) {
-        console.log("CardRenderer: removeWhiteBackground called");
+    removeWhiteBackground(img, targetColor = '#ffffff') {
+        console.log(`CardRenderer: removeWhiteBackground called with targetColor: ${targetColor}`);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -592,55 +592,141 @@ class CardRenderer {
 
         console.log(`CardRenderer: Processing image ${width}x${height}`);
 
+        // Parse target color from hex
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 255, g: 255, b: 255 };
+        };
+
+        const target = hexToRgb(targetColor);
+        console.log(`CardRenderer: Target color RGB: (${target.r}, ${target.g}, ${target.b})`);
+
+        // --- AUTO-DETECT: If target is white but corners are different, use corner color ---
+        const getPixelColor = (x, y) => {
+            const idx = (y * width + x) * 4;
+            return { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+        };
+
+        // Sample corners and edges
+        const cornerSamples = [
+            getPixelColor(5, 5),                           // Top-left
+            getPixelColor(width - 6, 5),                   // Top-right
+            getPixelColor(5, height - 6),                  // Bottom-left
+            getPixelColor(width - 6, height - 6),          // Bottom-right
+            getPixelColor(Math.floor(width / 2), 5),       // Top-center
+            getPixelColor(Math.floor(width / 2), height - 6), // Bottom-center
+            getPixelColor(5, Math.floor(height / 2)),      // Left-center
+            getPixelColor(width - 6, Math.floor(height / 2))  // Right-center
+        ];
+
+        // Calculate average corner color
+        let avgR = 0, avgG = 0, avgB = 0;
+        cornerSamples.forEach(c => { avgR += c.r; avgG += c.g; avgB += c.b; });
+        avgR = Math.round(avgR / cornerSamples.length);
+        avgG = Math.round(avgG / cornerSamples.length);
+        avgB = Math.round(avgB / cornerSamples.length);
+
+        // If target is white (#ffffff) but corners are significantly different, use corner color
+        const cornerDistance = Math.sqrt(
+            Math.pow(avgR - target.r, 2) + Math.pow(avgG - target.g, 2) + Math.pow(avgB - target.b, 2)
+        );
+
+        let effectiveTarget = target;
+        if (target.r === 255 && target.g === 255 && target.b === 255 && cornerDistance > 50) {
+            effectiveTarget = { r: avgR, g: avgG, b: avgB };
+            console.log(`CardRenderer: Auto-detected background color: RGB(${avgR}, ${avgG}, ${avgB})`);
+        } else if (cornerDistance < 100) {
+            // Target matches corners closely, good!
+            console.log(`CardRenderer: Target color matches corners (distance: ${cornerDistance.toFixed(1)})`);
+        } else {
+            console.log(`CardRenderer: Using provided target, corner distance: ${cornerDistance.toFixed(1)}`);
+        }
+
         // --- STRATEGY 1: FLOOD FILL (Magic Wand) ---
-        // Scan ALL border pixels for starting points, not just corners
         const queue = [];
         const visited = new Uint8Array(width * height);
 
         const getIdx = (x, y) => (y * width + x) * 4;
 
-        // Helper: Is this pixel "white enough" to start removing?
-        const isStartWhite = (idx) => {
+        // Color distance function - now uses effectiveTarget
+        const colorDistance = (r, g, b) => {
+            return Math.sqrt(
+                Math.pow(r - effectiveTarget.r, 2) +
+                Math.pow(g - effectiveTarget.g, 2) +
+                Math.pow(b - effectiveTarget.b, 2)
+            );
+        };
+
+        // Threshold for PURE WHITE backgrounds
+        // 60 is balanced: catches light grays from FLUX but protects item colors
+        const isStartColor = (idx) => {
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
-            // Threshold: > 200 (light gray or white)
-            return r > 200 && g > 200 && b > 200;
+            return colorDistance(r, g, b) < 60; // Catches white and light gray
         };
 
-        // Helper: Is this pixel close enough to be removed?
-        const isCloseToWhite = (idx) => {
+        // Expansion threshold - slightly higher to fill gaps
+        const isCloseToTarget = (idx) => {
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
-            const threshold = 40;
-            return r > (255 - threshold) && g > (255 - threshold) && b > (255 - threshold) &&
-                Math.abs(r - g) < threshold && Math.abs(r - b) < threshold && Math.abs(g - b) < threshold;
+            return colorDistance(r, g, b) < 70; // Expand through light areas but stop at item
         };
 
-        // 1. Collect start points from borders
+        // 1. Collect start points from ALL borders (every pixel on edge)
         for (let x = 0; x < width; x++) {
-            // Top and Bottom rows
             [0, height - 1].forEach(y => {
                 const idx = getIdx(x, y);
-                if (isStartWhite(idx)) {
+                if (isStartColor(idx)) {
                     queue.push({ x, y });
                     visited[y * width + x] = 1;
                 }
             });
         }
         for (let y = 0; y < height; y++) {
-            // Left and Right columns
             [0, width - 1].forEach(x => {
                 const idx = getIdx(x, y);
-                if (!visited[y * width + x] && isStartWhite(idx)) {
+                if (!visited[y * width + x] && isStartColor(idx)) {
                     queue.push({ x, y });
                     visited[y * width + x] = 1;
                 }
             });
         }
 
-        console.log(`CardRenderer: Found ${queue.length} starting border pixels`);
+        // 2. IMPROVED: Also add corner regions (not just edge pixels)
+        const cornerSize = 20;
+        const corners = [
+            { x0: 0, y0: 0 },                                    // Top-left
+            { x0: width - cornerSize, y0: 0 },                   // Top-right
+            { x0: 0, y0: height - cornerSize },                  // Bottom-left
+            { x0: width - cornerSize, y0: height - cornerSize }  // Bottom-right
+        ];
+
+        corners.forEach(corner => {
+            for (let dy = 0; dy < cornerSize; dy++) {
+                for (let dx = 0; dx < cornerSize; dx++) {
+                    const x = corner.x0 + dx;
+                    const y = corner.y0 + dy;
+                    if (x >= 0 && x < width && y >= 0 && y < height) {
+                        const vIdx = y * width + x;
+                        if (!visited[vIdx]) {
+                            const idx = getIdx(x, y);
+                            if (isStartColor(idx)) {
+                                queue.push({ x, y });
+                                visited[vIdx] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log(`CardRenderer: Found ${queue.length} starting pixels (borders + corners)`);
 
         let floodFilledPixels = 0;
         while (queue.length > 0) {
@@ -651,9 +737,12 @@ class CardRenderer {
             data[idx + 3] = 0;
             floodFilledPixels++;
 
+            // 8-direction neighbors (including diagonals for better fill)
             const neighbors = [
                 { x: x + 1, y: y }, { x: x - 1, y: y },
-                { x: x, y: y + 1 }, { x: x, y: y - 1 }
+                { x: x, y: y + 1 }, { x: x, y: y - 1 },
+                { x: x + 1, y: y + 1 }, { x: x - 1, y: y - 1 },
+                { x: x + 1, y: y - 1 }, { x: x - 1, y: y + 1 }
             ];
 
             for (const n of neighbors) {
@@ -661,7 +750,7 @@ class CardRenderer {
                     const vIdx = n.y * width + n.x;
                     if (!visited[vIdx]) {
                         const nIdx = getIdx(n.x, n.y);
-                        if (isCloseToWhite(nIdx)) {
+                        if (isCloseToTarget(nIdx)) {
                             visited[vIdx] = 1;
                             queue.push(n);
                         }
@@ -671,24 +760,27 @@ class CardRenderer {
         }
         console.log(`CardRenderer: Flood Fill removed ${floodFilledPixels} pixels`);
 
-        // --- STRATEGY 2: FALLBACK (Simple Threshold) ---
-        // If Flood Fill failed (e.g. removed < 1% of pixels), maybe the background isn't connected to borders?
-        // Or maybe borders aren't white?
-        // Let's run a simple "remove all white pixels" pass if Flood Fill did little work.
-
+        // --- STRATEGY 2: FALLBACK (Target Color Threshold) with FEATHERING ---
         if (floodFilledPixels < (width * height * 0.01)) {
-            console.warn("CardRenderer: Flood Fill ineffective, running fallback threshold removal...");
+            console.warn("CardRenderer: Flood Fill ineffective, running fallback threshold removal with feathering...");
+
             for (let i = 0; i < data.length; i += 4) {
-                // Skip already transparent ones
                 if (data[i + 3] === 0) continue;
 
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
 
-                // Simple threshold: > 230
-                if (r > 230 && g > 230 && b > 230) {
+                const dist = colorDistance(r, g, b);
+
+                // Fallback threshold - balanced
+                if (dist < 50) {
+                    // White/very light gray - fully transparent
                     data[i + 3] = 0;
+                } else if (dist < 80) {
+                    // Light colors - gradual feathering for smooth edges
+                    const alpha = Math.round(((dist - 50) / 30) * 255);
+                    data[i + 3] = Math.min(data[i + 3], alpha);
                 }
             }
         }
@@ -874,6 +966,11 @@ class CardRenderer {
             const locale = window.i18n?.getLocale() || 'he';
             const acLabel = locale === 'he' ? 'דרג"ש' : 'AC';
             coreStatsText = `${data.armorClass} ${acLabel}`;
+
+            // Add dexterity modifier label if present (from item-enrichment)
+            if (data.dexModLabel) {
+                coreStatsText += `\n(${data.dexModLabel})`;
+            }
         }
 
         // Clean up any English damage types and remove 'null' text
@@ -926,8 +1023,20 @@ class CardRenderer {
             // Also remove common damage type words that would be redundant (locale-aware)
             if (locale === 'he') {
                 statsText = statsText.replace(/(מוחץ|דוקר|חותך|נזק)/gi, '').trim();
+                // Remove redundant armor class mentions (already shown in coreStats)
+                statsText = statsText.replace(/דרגת שריון\s*:?\s*\d+/gi, '').trim();
+                statsText = statsText.replace(/דרג"ש\s*:?\s*\d+/gi, '').trim();
+                // Remove confusing dexterity text (now handled by dexModLabel)
+                statsText = statsText.replace(/\(?ללא\s*זריזות\)?/gi, '').trim();
+                statsText = statsText.replace(/\(?\+\s*זריזות[^)]*\)?/gi, '').trim();
             } else {
                 statsText = statsText.replace(/(bludgeoning|piercing|slashing|damage)/gi, '').trim();
+                // Remove redundant AC mentions
+                statsText = statsText.replace(/AC\s*:?\s*\d+/gi, '').trim();
+                statsText = statsText.replace(/Armor Class\s*:?\s*\d+/gi, '').trim();
+                // Remove confusing dexterity text
+                statsText = statsText.replace(/\(?no\s*Dex(terity)?\)?/gi, '').trim();
+                statsText = statsText.replace(/\(?\+\s*Dex[^)]*\)?/gi, '').trim();
             }
             // Clean up any double spaces (but preserve newlines!)
             statsText = statsText.replace(/[^\S\n]{2,}/g, ' ');

@@ -26,6 +26,9 @@ import i18n from './i18n.js';
 // Debug Panel (shows errors in development)
 import './utils/DebugPanel.ts';
 
+// Zoom Lock (maintains consistent UI size regardless of browser zoom)
+import './utils/ZoomLock.js';
+
 // Legacy Init (for floating windows, bubbles)
 import { initUI, showToast, initWindowManager, initFormHeaderUpdates } from './ui-helpers.js';
 

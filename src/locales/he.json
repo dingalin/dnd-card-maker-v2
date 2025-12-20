@@ -251,7 +251,11 @@
         "offhand": "יד שמאל",
         "ring": "טבעת",
         "boots": "מגפיים",
-        "belt": "חגורה"
+        "belt": "חגורה",
+        "backpack": "תיק גב",
+        "namePlaceholder": "שם הדמות",
+        "itemMoved": "פריט הועבר!",
+        "itemStored": "פריט הועבר לתיק"
     },
     "equipModal": {
         "title": "צייד דמות בחפץ",

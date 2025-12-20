@@ -21,6 +21,8 @@ class DebugPanel {
     private errorCount: number = 0;
     private warningCount: number = 0;
     private maxLogs: number = 50;
+    private isDragging: boolean = false;
+    private dragOffset: { x: number; y: number } = { x: 0, y: 0 };
 
     constructor() {
         this.init();
@@ -33,6 +35,49 @@ class DebugPanel {
         this.createPanel();
         this.hookConsole();
         this.listenForErrors();
+        this.setupDrag();
+    }
+
+    private setupDrag(): void {
+        if (!this.panel) return;
+
+        const header = this.panel.querySelector('.debug-header') as HTMLElement;
+        if (!header) return;
+
+        header.style.cursor = 'move';
+
+        header.addEventListener('mousedown', (e: MouseEvent) => {
+            // Don't start drag if clicking on buttons
+            if ((e.target as HTMLElement).closest('button')) return;
+
+            this.isDragging = true;
+            const rect = this.panel!.getBoundingClientRect();
+            this.dragOffset.x = e.clientX - rect.left;
+            this.dragOffset.y = e.clientY - rect.top;
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e: MouseEvent) => {
+            if (!this.isDragging || !this.panel) return;
+
+            let newX = e.clientX - this.dragOffset.x;
+            let newY = e.clientY - this.dragOffset.y;
+
+            // Keep within viewport bounds
+            const rect = this.panel.getBoundingClientRect();
+            newX = Math.max(0, Math.min(newX, window.innerWidth - rect.width));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - rect.height));
+
+            this.panel.style.left = `${newX}px`;
+            this.panel.style.top = `${newY}px`;
+            this.panel.style.bottom = 'auto';
+            this.panel.style.right = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            this.isDragging = false;
+        });
     }
 
     private shouldShow(): boolean {
