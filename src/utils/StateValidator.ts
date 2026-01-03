@@ -3,8 +3,8 @@
  * Prevents corrupted data from being stored
  */
 
-import type { CardData, AppSettings, RenderOptions } from '../types/index.js';
-import { logWarning, logError } from './ErrorLogger.js';
+import type { CardData, AppSettings, RenderOptions } from '../types/index.ts';
+import { logWarning, logError } from './ErrorLogger.ts';
 
 interface ValidationResult {
     valid: boolean;

@@ -1,0 +1,223 @@
+<!-- Power Budget Panel - Manual Item Creation Mode -->
+<div id="power-budget-panel" class="power-budget-panel">
+    <div class="budget-header">
+        <h3 data-i18n="powerBudget.title">בונה יכולות</h3>
+        <div class="mode-toggle">
+            <button type="button" id="mode-auto" class="mode-btn active" data-i18n="powerBudget.modeAuto">אוטו</button>
+            <button type="button" id="mode-manual" class="mode-btn" data-i18n="powerBudget.modeManual">ידני</button>
+        </div>
+    </div>
+
+    <!-- Budget Display Bar -->
+    <div class="budget-display">
+        <div class="budget-bar-container">
+            <div class="budget-bar-fill" id="budget-bar-fill"></div>
+            <span class="budget-label"><span id="budget-used">0</span> / <span id="budget-max">4</span></span>
+        </div>
+        <div class="budget-rarity" id="budget-rarity">
+            <span class="rarity-icon">🟢</span>
+            <span class="rarity-name" data-i18n="rarity.uncommon">לא נפוץ</span>
+        </div>
+    </div>
+
+    <!-- Rarity Selector -->
+    <div class="budget-section" id="rarity-selector-section">
+        <label data-i18n="powerBudget.selectRarity">בחר נדירות:</label>
+        <div class="rarity-buttons" id="rarity-buttons">
+            <button type="button" class="rarity-btn" data-rarity="Common" style="--rarity-color: #9ca3af;">
+                <span class="rarity-icon">⚪</span>
+                <span data-i18n="rarity.common">נפוץ</span>
+            </button>
+            <button type="button" class="rarity-btn active" data-rarity="Uncommon" style="--rarity-color: #22c55e;">
+                <span class="rarity-icon">🟢</span>
+                <span data-i18n="rarity.uncommon">לא נפוץ</span>
+            </button>
+            <button type="button" class="rarity-btn" data-rarity="Rare" style="--rarity-color: #3b82f6;">
+                <span class="rarity-icon">🔵</span>
+                <span data-i18n="rarity.rare">נדיר</span>
+            </button>
+            <button type="button" class="rarity-btn" data-rarity="Very Rare" style="--rarity-color: #a855f7;">
+                <span class="rarity-icon">🟣</span>
+                <span data-i18n="rarity.veryRare">נדיר מאוד</span>
+            </button>
+            <button type="button" class="rarity-btn" data-rarity="Legendary" style="--rarity-color: #f97316;">
+                <span class="rarity-icon">🟠</span>
+                <span data-i18n="rarity.legendary">אגדי</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modifiers (Attunement, Cursed) -->
+    <div class="budget-section modifiers-section">
+        <div class="modifier-toggle">
+            <input type="checkbox" id="budget-attunement">
+            <label for="budget-attunement">
+                <span data-i18n="powerBudget.attunement">התכווננות</span>
+                <span class="modifier-bonus">+2</span>
+            </label>
+        </div>
+        <div class="modifier-toggle">
+            <input type="checkbox" id="budget-cursed">
+            <label for="budget-cursed">
+                <span data-i18n="powerBudget.cursed">מקולל</span>
+                <span class="modifier-bonus">+1</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Ability Builder (Manual Mode) -->
+    <div id="ability-builder" class="ability-builder hidden">
+        <!-- Bonuses Section -->
+        <div class="ability-category">
+            <h4 data-i18n="powerBudget.bonuses">בונוסים</h4>
+            <div class="ability-options" id="bonus-options">
+                <button type="button" class="ability-btn" data-ability="magical" data-cost="1">
+                    <span class="ability-name">קסום</span>
+                    <span class="ability-cost">1</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="bonus_1" data-cost="3">
+                    <span class="ability-name">+1</span>
+                    <span class="ability-cost">3</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="bonus_2" data-cost="6">
+                    <span class="ability-name">+2</span>
+                    <span class="ability-cost">6</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="bonus_3" data-cost="10">
+                    <span class="ability-name">+3</span>
+                    <span class="ability-cost">10</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Extra Damage Section -->
+        <div class="ability-category">
+            <h4 data-i18n="powerBudget.extraDamage">נזק נוסף</h4>
+            <div class="ability-options" id="damage-options">
+                <button type="button" class="ability-btn" data-ability="damage_1d4" data-cost="2">
+                    <span class="ability-name">1d4</span>
+                    <span class="ability-cost">2</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="damage_1d6" data-cost="3">
+                    <span class="ability-name">1d6</span>
+                    <span class="ability-cost">3</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="damage_1d8" data-cost="4">
+                    <span class="ability-name">1d8</span>
+                    <span class="ability-cost">4</span>
+                </button>
+            </div>
+
+            <!-- Element Selector (shows when damage is selected) -->
+            <div class="element-selector hidden" id="element-selector">
+                <div class="element-options">
+                    <button type="button" class="element-btn" data-element="fire" data-cost="0">🔥</button>
+                    <button type="button" class="element-btn" data-element="cold" data-cost="0">❄️</button>
+                    <button type="button" class="element-btn" data-element="lightning" data-cost="0">⚡</button>
+                    <button type="button" class="element-btn" data-element="acid" data-cost="0">🧪</button>
+                    <button type="button" class="element-btn" data-element="poison" data-cost="0">☠️</button>
+                    <button type="button" class="element-btn" data-element="necrotic" data-cost="0">💀</button>
+                    <button type="button" class="element-btn premium" data-element="radiant" data-cost="1">☀️ <span
+                            class="cost-badge">+1</span></button>
+                    <button type="button" class="element-btn premium" data-element="force" data-cost="1">💫 <span
+                            class="cost-badge">+1</span></button>
+                    <button type="button" class="element-btn premium" data-element="psychic" data-cost="1">🧠 <span
+                            class="cost-badge">+1</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- On-Hit Effects Section -->
+        <div class="ability-category">
+            <h4 data-i18n="powerBudget.onHitEffects">אפקטי פגיעה</h4>
+            <div class="ability-options multi-select" id="effect-options">
+                <button type="button" class="ability-btn" data-ability="push_5ft" data-cost="1">
+                    <span class="ability-name" data-i18n="powerBudget.push5">דחיפה 5'</span>
+                    <span class="ability-cost">1</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="push_10ft" data-cost="2">
+                    <span class="ability-name" data-i18n="powerBudget.push10">דחיפה 10'</span>
+                    <span class="ability-cost">2</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="slow" data-cost="2">
+                    <span class="ability-name" data-i18n="powerBudget.slow">האטה</span>
+                    <span class="ability-cost">2</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="prone" data-cost="4">
+                    <span class="ability-name" data-i18n="powerBudget.prone">הפלה</span>
+                    <span class="ability-cost">4</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="bleed" data-cost="3">
+                    <span class="ability-name" data-i18n="powerBudget.bleed">דימום</span>
+                    <span class="ability-cost">3</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Special Features Section -->
+        <div class="ability-category">
+            <h4 data-i18n="powerBudget.specialFeatures">תכונות מיוחדות</h4>
+            <div class="ability-options multi-select" id="feature-options">
+                <button type="button" class="ability-btn" data-ability="returning" data-cost="1">
+                    <span class="ability-name" data-i18n="powerBudget.returning">חזרה</span>
+                    <span class="ability-cost">1</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="light" data-cost="1">
+                    <span class="ability-name" data-i18n="powerBudget.light">אור</span>
+                    <span class="ability-cost">1</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="thrown" data-cost="1">
+                    <span class="ability-name" data-i18n="powerBudget.thrown">זריקה</span>
+                    <span class="ability-cost">1</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="reach" data-cost="2">
+                    <span class="ability-name" data-i18n="powerBudget.reach">טווח+</span>
+                    <span class="ability-cost">2</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="crit_19" data-cost="4">
+                    <span class="ability-name" data-i18n="powerBudget.crit19">קריט 19</span>
+                    <span class="ability-cost">4</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Spells Section -->
+        <div class="ability-category">
+            <h4 data-i18n="powerBudget.spells">לחשים</h4>
+            <div class="ability-options" id="spell-options">
+                <button type="button" class="ability-btn" data-ability="spell_1" data-cost="2">
+                    <span class="ability-name">Lv.1</span>
+                    <span class="ability-cost">2</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="spell_2" data-cost="3">
+                    <span class="ability-name">Lv.2</span>
+                    <span class="ability-cost">3</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="spell_3" data-cost="4">
+                    <span class="ability-name">Lv.3</span>
+                    <span class="ability-cost">4</span>
+                </button>
+                <button type="button" class="ability-btn" data-ability="spell_4" data-cost="5">
+                    <span class="ability-name">Lv.4</span>
+                    <span class="ability-cost">5</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selected Abilities Summary -->
+    <div class="selected-summary" id="selected-summary">
+        <h4 data-i18n="powerBudget.selectedAbilities">יכולות נבחרות</h4>
+        <div class="selected-list" id="selected-list">
+            <p class="empty-message" data-i18n="powerBudget.noAbilities">אין יכולות נבחרות</p>
+        </div>
+        <button type="button" id="clear-abilities-btn" class="btn-clear" data-i18n="powerBudget.clearAll">נקה
+            הכל</button>
+    </div>
+
+    <!-- Estimated Price -->
+    <div class="price-estimate">
+        <span class="price-label" data-i18n="powerBudget.estimatedPrice">מחיר משוער:</span>
+        <span class="price-value" id="estimated-price">200-500 gp</span>
+    </div>
+</div>

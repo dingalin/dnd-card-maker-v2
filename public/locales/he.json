@@ -8,8 +8,9 @@
         "about": "אודות",
         "cardCreator": "יוצר קלפים",
         "characterSheet": "דף דמות",
-        "treasureGenerator": "מחולל אוצרות",
-        "toggleLang": "החלף שפה (EN/HE)"
+        "toggleLang": "החלף שפה (EN/HE)",
+        "assemblyTable": "🧩 שולחן הרכבה",
+        "treasureGenerator": "💎 מחולל אוצרות"
     },
     "modal": {
         "confirmTitle": "אישור פעולה",
@@ -130,9 +131,20 @@
     },
     "stickyNote": {
         "title": "🗡️ פרטי חפץ",
+        "name": "שם:",
         "level": "רמה:",
         "type": "סוג:",
-        "item": "חפץ:"
+        "rarity": "נדירות:",
+        "price": "מחיר:",
+        "item": "חפץ:",
+        "ability": "נושא:",
+        "style": "סגנון:",
+        "visualContextBadge": "🎨 רקע קלף",
+        "attunementBadge": "🔗 התכווננות"
+    },
+    "modes": {
+        "auto": "🤖 אוטומטי",
+        "manual": "🛠️ ידני"
     },
     "editSidebar": {
         "title": "עריכה ועיצוב",
@@ -162,8 +174,8 @@
         "mechanics": "מכניקה",
         "lore": "רקע וסיפור (לור)",
         "textWidth": "רוחב טקסט:",
-        "quickDesc": "תיאור מהיר",
         "price": "מחיר",
+        "quickDesc": "תיאור קצר",
         "positionLabel": "מיקום:"
     },
     "textDesign": {
@@ -209,9 +221,9 @@
         "readyMadeLabel": "רקעים מוכנים",
         "scale": "גודל רקע (Scale)",
         "selectTitle": "בחר רקע מוכן",
-        "styleLabel": "סגנון רקע",
-        "centerFade": "עמעום מרכזי",
-        "centerFadeHint": "מעמעם את מרכז הקלף"
+        "styleLabel": "סגנון רקע:",
+        "centerFade": "עמעום מרכז",
+        "centerFadeHint": "הכהה את המרכז לקריאות טובה יותר"
     },
     "footer": {
         "saveToGallery": "💾 שמור לגלריה",
@@ -265,11 +277,10 @@
         "gloves": "כפפות",
         "backpack": "תיק גב",
         "namePlaceholder": "שם הדמות",
-        "namePlaceholderHint": "הקלד שם ולחץ Enter",
+        "namePlaceholderHint": "הכנס שם ולחץ Enter",
         "itemMoved": "פריט הועבר!",
         "itemStored": "פריט הועבר לתיק",
-        "edit": "ערוך חפץ",
-        "autoGenerate": "צור חפץ אוטומטי"
+        "autoGenerate": "צור אוטומטי"
     },
     "equipModal": {
         "title": "צייד דמות בחפץ",
@@ -337,7 +348,10 @@
         "newBackgroundCreated": "נוצר רקע חדש!",
         "errorCreatingBackground": "שגיאה ביצירת רקע",
         "selectingRandomBg": "בוחר רקע אקראי...",
-        "surpriseRolling": "מגריל חפץ בהפתעה..."
+        "surpriseRolling": "מגריל חפץ בהפתעה...",
+        "autoLayoutComplete": "כיוונון אוטומטי הושלם!",
+        "autoLayoutError": "שגיאה בכיוונון אוטומטי",
+        "layoutApplied": "פריסה הוחלה!"
     },
     "cardViewer": {
         "edit": "ערוך ✏️",
@@ -398,8 +412,76 @@
         "detectingFrame": "🔍 מזהה מסגרת...",
         "calculating": "✨ מחשב..."
     },
+    "rarity": {
+        "common": "נפוץ",
+        "uncommon": "לא נפוץ",
+        "rare": "נדיר",
+        "veryrare": "נדיר מאוד",
+        "veryRare": "נדיר מאוד",
+        "legendary": "אגדי"
+    },
+    "powerBudget": {
+        "title": "בונה יכולות",
+        "modeAuto": "אוטו",
+        "modeManual": "ידני",
+        "selectRarity": "בחר נדירות:",
+        "attunement": "התכווננות",
+        "cursed": "מקולל",
+        "bonuses": "בונוסים",
+        "extraDamage": "נזק נוסף",
+        "onHitEffects": "אפקטי פגיעה",
+        "specialFeatures": "תכונות מיוחדות",
+        "spells": "לחשים",
+        "selectedAbilities": "יכולות נבחרות",
+        "noAbilities": "אין יכולות נבחרות",
+        "clearAll": "נקה הכל",
+        "estimatedPrice": "מחיר משוער:",
+        "push5": "דחיפה 5'",
+        "push10": "דחיפה 10'",
+        "slow": "האטה",
+        "prone": "הפלה",
+        "bleed": "דימום",
+        "returning": "חזרה",
+        "light": "אור",
+        "thrown": "זריקה",
+        "reach": "טווח+",
+        "crit19": "קריט 19"
+    },
+    "assembly": {
+        "title": "שולחן ההרכבה",
+        "details": "פרטי הקלף",
+        "itemName": "שם הפריט",
+        "namePlaceholder": "לחץ לעריכה...",
+        "flavorText": "טקסט פלאף",
+        "flavorPlaceholder": "תיאור אווירה...",
+        "powerBudget": "תקציב כוח",
+        "console": "קונסולת פעולות",
+        "summaryEmpty": "בחר רכיבים כדי להתחיל...",
+        "targetRarity": "נדירות יעד:",
+        "dropHint": "גרור רכיבים לכאן",
+        "generate": "צור קלף",
+        "clear": "נקה הכל",
+        "newItem": "פריט חדש",
+        "statsPlaceholder": "סטטיסטיקות יופיעו כאן",
+        "socketBase": "בסיס פריט",
+        "socketElement": "אלמנט/נזק",
+        "socketRarity": "נדירות/הקסמה",
+        "socketAbility": "יכולות מיוחדות",
+        "dropBase": "גרור בסיס לכאן",
+        "dropElement": "אלמנט",
+        "dropRarity": "נדירות",
+        "dropAbility": "יכולות",
+        "catBase": "בסיס",
+        "catElement": "אלמנט",
+        "catRarity": "נדירות",
+        "catAbility": "יכולות",
+        "selectBase": "בחר פריט בסיס",
+        "generating": "יוצר קלף...",
+        "selectBackground": "בחר רקע קלף",
+        "generateBackground": "צור רקע חדש"
+    },
     "treasureGenerator": {
-        "title": "🏆 מחולל אוצרות",
+        "title": "מחולל אוצרות",
         "autoMode": "אוטומטי",
         "manualMode": "ידני",
         "battleDetails": "פרטי הקרב",
@@ -422,27 +504,6 @@
         "goldCoins": "מטבעות זהב",
         "noTreasureYet": "לחץ על \"יצירת אוצר\" כדי להתחיל",
         "saveAllToGallery": "שמור הכל לגלריה",
-        "clear": "נקה",
-        "success": "האוצר נוצר בהצלחה!",
-        "error": "שגיאה ביצירת האוצר",
-        "enemyTypes": {
-            "dragon": "🐉 דרקון (Dragon)",
-            "undead": "💀 לא-מת (Undead)",
-            "fiend": "👹 שד (Fiend/Demon)",
-            "fey": "🧝 פֵיי (Fey)",
-            "humanoid": "🗡️ הומנואיד (Humanoid)",
-            "giant": "🏔️ ענק (Giant)",
-            "celestial": "🌟 שמימי (Celestial)",
-            "aberration": "🦑 מפלצת (Aberration)",
-            "construct": "🤖 מבנה (Construct)",
-            "elemental": "🌀 יסודי (Elemental)"
-        },
-        "crRanges": {
-            "cr0_4": "CR 0-4 (רגיל/נפוץ)",
-            "cr5_10": "CR 5-10 (לא נפוץ)",
-            "cr11_16": "CR 11-16 (נדיר)",
-            "cr17_20": "CR 17-20 (נדיר מאוד)",
-            "cr21plus": "CR 21+ (אגדי)"
-        }
+        "clear": "נקה"
     }
 }

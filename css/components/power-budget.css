@@ -1,0 +1,589 @@
+/**
+ * Power Budget Panel Styles
+ * Fantasy Stone Button Aesthetic - Matching app design language
+ */
+
+/* ============================================
+   MAIN PANEL CONTAINER
+   ============================================ */
+
+.power-budget-panel {
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 0.75rem;
+    border: 2px solid #5a5a5a;
+    border-bottom: 3px solid #3a3a3a;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.power-budget-panel.hidden {
+    display: none;
+}
+
+/* Header with title and mode toggle */
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.budget-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #d4af37;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+}
+
+/* Mode Toggle (Auto/Manual) - Stone Style */
+.mode-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.mode-btn {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #5a5a5a;
+    background: rgba(0, 0, 0, 0.4);
+    color: #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s ease;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+}
+
+.mode-btn:hover {
+    background: rgba(0, 0, 0, 0.5);
+    color: #ccc;
+}
+
+.mode-btn.active {
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border-color: #d4af37;
+    color: #d4af37;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.4);
+}
+
+/* ============================================
+   BUDGET DISPLAY BAR
+   ============================================ */
+
+.budget-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.budget-bar-container {
+    flex: 1;
+    height: 22px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #5a5a5a;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.budget-bar-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #4ade80, #22c55e, #16a34a);
+    transition: width 0.3s ease, background 0.3s ease;
+    width: 0%;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.budget-bar-fill.warning {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b, #d97706);
+}
+
+.budget-bar-fill.danger {
+    background: linear-gradient(180deg, #f87171, #ef4444, #dc2626);
+}
+
+.budget-bar-fill.overflow {
+    background: linear-gradient(180deg, #ef4444, #b91c1c, #7f1d1d);
+    animation: pulse-danger 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse-danger {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.budget-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.budget-rarity {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #5a5a5a;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #d4af37;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.rarity-icon {
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   RARITY SELECTOR BUTTONS - Stone Coins
+   ============================================ */
+
+.budget-section {
+    margin-bottom: 0.75rem;
+}
+
+.budget-section>label {
+    display: block;
+    font-size: 0.8rem;
+    color: #d4af37;
+    margin-bottom: 0.4rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+    text-align: right;
+}
+
+.rarity-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+}
+
+.rarity-btn {
+    padding: 0.4rem 0.25rem;
+    border: 2px solid #5a5a5a;
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    transition: all 0.15s ease;
+    color: #aaa;
+    font-size: 0.7rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.rarity-btn:hover:not(.disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.rarity-btn:active:not(.disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.rarity-btn.active {
+    border-color: var(--rarity-color, #d4af37);
+    box-shadow: 0 0 8px rgba(var(--rarity-color-rgb, 212, 175, 55), 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Rarity-specific text colors when active */
+.rarity-btn.active[data-rarity="common"] {
+    color: #22c55e;
+}
+
+.rarity-btn.active[data-rarity="uncommon"] {
+    color: #22c55e;
+}
+
+.rarity-btn.active[data-rarity="rare"] {
+    color: #3b82f6;
+}
+
+.rarity-btn.active[data-rarity="veryrare"] {
+    color: #a855f7;
+}
+
+.rarity-btn.active[data-rarity="legendary"] {
+    color: #f97316;
+}
+
+.rarity-btn .rarity-icon {
+    font-size: 1.1rem;
+    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.rarity-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+/* Legendary button spans full row */
+.rarity-btn[data-rarity="legendary"] {
+    grid-column: span 3;
+}
+
+/* ============================================
+   MODIFIERS SECTION - Stone Checkboxes
+   ============================================ */
+
+.modifiers-section {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modifier-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.modifier-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #d4af37;
+    cursor: pointer;
+}
+
+.modifier-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #ccc;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.modifier-bonus {
+    background: linear-gradient(180deg, #22c55e, #16a34a);
+    color: white;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   ABILITY BUILDER - Stone Buttons
+   ============================================ */
+
+.ability-builder {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.ability-builder.hidden {
+    display: none;
+}
+
+.ability-category {
+    margin-bottom: 0.6rem;
+}
+
+.ability-category h4 {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.8rem;
+    color: #d4af37;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    text-align: right;
+}
+
+.ability-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.ability-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    padding: 0.3rem 0.5rem;
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border: 1px solid #5a5a5a;
+    border-bottom: 2px solid #3a3a3a;
+    border-radius: 4px;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.75rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.ability-btn:hover:not(.disabled) {
+    filter: brightness(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.ability-btn:active:not(.disabled) {
+    transform: translateY(1px);
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.ability-btn.selected {
+    border-color: #22c55e;
+    color: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.4), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.ability-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.ability-cost {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border: 1px solid #5a5a5a;
+}
+
+.ability-btn.selected .ability-cost {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: #22c55e;
+}
+
+/* ============================================
+   ELEMENT SELECTOR - Stone Circles
+   ============================================ */
+
+.element-selector {
+    margin-top: 0.35rem;
+    padding: 0.35rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    border: 1px solid #5a5a5a;
+}
+
+.element-selector.hidden {
+    display: none;
+}
+
+.element-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.element-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border: 2px solid #5a5a5a;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.15s ease;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.element-btn:hover {
+    transform: scale(1.1);
+    filter: brightness(1.1);
+}
+
+.element-btn.selected {
+    border-color: #d4af37;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+}
+
+.element-btn.premium {
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+.element-btn .cost-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #d4af37;
+    color: #1a1a2e;
+    font-size: 0.55rem;
+    padding: 0.05rem 0.2rem;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* ============================================
+   SELECTED ABILITIES SUMMARY
+   ============================================ */
+
+.selected-summary {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    border: 1px solid #5a5a5a;
+}
+
+.selected-summary h4 {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.8rem;
+    color: #d4af37;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+    text-align: right;
+}
+
+.selected-list {
+    min-height: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.selected-list .empty-message {
+    color: #888;
+    font-style: italic;
+    font-size: 0.75rem;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.selected-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.4rem;
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border: 1px solid #22c55e;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #22c55e;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.selected-tag .remove-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.selected-tag .remove-btn:hover {
+    opacity: 1;
+}
+
+.btn-clear {
+    margin-top: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    background: url('../../assets/textures/stone_slab.png');
+    background-size: cover;
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.btn-clear:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================
+   PRICE ESTIMATE
+   ============================================ */
+
+.price-estimate {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    border: 1px solid #d4af37;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.3);
+}
+
+.price-label {
+    font-size: 0.8rem;
+    color: #ccc;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.price-value {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #d4af37;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+    .rarity-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rarity-btn[data-rarity="legendary"] {
+        grid-column: span 2;
+    }
+
+    .modifiers-section {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+}

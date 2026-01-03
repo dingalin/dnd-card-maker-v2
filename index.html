@@ -14,10 +14,14 @@
     rel="stylesheet">
 
   <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="./css/base/reset.css">
+  <link rel="stylesheet" href="./css/base/variables.css">
   <link rel="stylesheet" href="./style.css?v=4">
   <link rel="stylesheet" href="./css/layout.css">
-  <link rel="stylesheet" href="./css/components/buttons.css">
-  <link rel="stylesheet" href="./css/components/panels.css">
+  <link rel="stylesheet" href="./css/components/buttons.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/canvas.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/navigation.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/panels.css?v=nuclear">
   <link rel="stylesheet" href="./css/components/toast.css">
   <link rel="stylesheet" href="./css/components/scroll-menu.css">
   <link rel="stylesheet" href="./css/components/forms.css">
@@ -25,6 +29,11 @@
   <link rel="stylesheet" href="./css/components/character-sheet.css">
   <link rel="stylesheet" href="./css/components/card-viewer.css">
   <link rel="stylesheet" href="./css/components/treasure-generator.css">
+  <link rel="stylesheet" href="./css/components/power-budget.css">
+  <link rel="stylesheet" href="./css/components/assembly-table.css">
+  <link rel="stylesheet" href="./css/components/ability-selector.css">
+  <link rel="stylesheet" href="./css/components/gallery.css">
+  <link rel="stylesheet" href="./css/utilities.css">
   <link rel="stylesheet" href="./css/mobile.css">
 
 </head>
@@ -62,6 +71,9 @@
       <button class="nav-tab" data-tab="treasure-generator">
         <span class="icon">🏆</span> <span data-i18n="nav.treasureGenerator">מחולל אוצרות</span>
       </button>
+      <button class="nav-tab" data-tab="assembly-table">
+        <span class="icon">🧩</span> <span data-i18n="nav.assemblyTable">שולחן הרכבה</span>
+      </button>
     </nav>
 
     <!-- Tab 1: Card Creator -->
@@ -92,6 +104,9 @@
     <!-- Tab 3: Treasure Generator -->
     <div id="treasure-generator-placeholder"></div>
 
+    <!-- Tab 4: Assembly Table -->
+    <div id="assembly-table-placeholder"></div>
+
     <!-- Custom Confirmation Modal -->
     <div id="confirmation-modal" class="modal-overlay hidden">
       <div class="modal-content glass-panel">
@@ -119,10 +134,13 @@
         <span>עריכה</span>
       </button>
     </div>
+
+    <!-- Position Edit Mode Toggle Button (fixed bottom-left) -->
+
   </div>
 
   <!-- Scripts - main.js is the single entry point for Vite -->
-  <script type="module" src="./src/main.js?v=35"></script>
+  <script type="module" src="./src/main.ts?v=35"></script>
 </body>
 
 </html>

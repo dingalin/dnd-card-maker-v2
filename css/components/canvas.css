@@ -1,0 +1,406 @@
+/* === Canvas & Preview Panel Styles === */
+/* Extracted from style.css for better organization */
+
+/* === POSITION CONTROL CENTER === */
+/* All positioning values in ONE PLACE - adjust here only! */
+:root {
+    --scroll-top-offset: 20px;
+    /* Distance from top for both scrolls */
+    --scroll-scale: 1.0;
+    /* Scale for both scrolls */
+    --scroll-left-position: 300px;
+    /* Left scroll distance from left edge */
+    --scroll-right-position: 300px;
+    /* Right scroll distance from right edge */
+    --card-max-height: 65vh;
+    /* Maximum card height */
+}
+
+/* Position Mode Toggle Button */
+.position-mode-toggle {
+    position: fixed;
+    bottom: 60px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(50, 50, 50, 0.95));
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    color: #d4af37;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+.position-mode-toggle:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(241, 196, 15, 0.2));
+    border-color: #d4af37;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.position-mode-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Preview Panel */
+.preview-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    transition: transform 0.3s ease;
+    z-index: 500;
+}
+
+/* === PREVIEW LAYOUT: CSS GRID SYSTEM === */
+/* Replaces fragile flexbox/scale hacks */
+.preview-layout {
+    display: grid;
+    /* [Left Scroll Area] [Main Card Stage] [Right Scroll Area] */
+    grid-template-columns: 220px 1fr 220px;
+    grid-template-rows: 1fr;
+    align-items: start;
+    /* Vertically center everything */
+    justify-items: center;
+    /* Horizontally center content in cells */
+    height: 100%;
+    width: 100%;
+    gap: 0;
+    /* Grid handles spacing via column width */
+    transform: none;
+    /* No global scaling - reliable flow */
+    margin: 0;
+    direction: ltr;
+    /* Force LTR for Grid order */
+}
+
+/* 1. Left Column: Ability Scroll */
+.ability-scroll-container {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 200px;
+    transform: scale(var(--scroll-scale));
+    transform-origin: top center;
+    margin-top: var(--scroll-top-offset);
+}
+
+/* 2. Right Column: Sticky Note */
+.sticky-note-container {
+    grid-column: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 200px;
+    transform: scale(var(--scroll-scale));
+    transform-origin: top center;
+    margin-top: var(--scroll-top-offset);
+}
+
+/* 3. Center Column: Main Card Stage */
+.canvas-container {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    /* Independent Scaling: Normal (Height limited by VH) */
+    transform: scale(1.0);
+    transform-origin: center center;
+    width: 100%;
+    /* Fill cell */
+    margin: 0;
+}
+
+/* Controls inside center column */
+.canvas-container .preview-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+    transform: scale(0.9);
+    z-index: 1000;
+    position: relative;
+    padding-bottom: 20px;
+}
+
+/* Ability Scroll Panel - Contains scroll image and clickable overlay */
+.ability-scroll-panel {
+    position: relative;
+    width: 200px;
+    height: 300px;
+}
+
+/* Scroll image - actual category scroll */
+.ability-scroll-panel .scroll-image,
+#scroll-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* Category buttons - BELOW the scroll (not inside) */
+.ability-category-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    justify-items: center;
+    max-width: 200px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.ability-category-buttons .ability-category-btn,
+.ability-scroll-panel .ability-category-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    background: rgba(30, 30, 30, 0.9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 16px;
+}
+
+.ability-category-buttons .ability-category-btn:hover {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
+}
+
+.ability-category-buttons .ability-category-btn.active {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+
+/* Sticky Note in flexbox - override fixed positioning */
+.preview-layout .sticky-note {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 200px;
+    height: 300px;
+    margin: 0;
+    /* Keep internal padding for content */
+}
+
+/* Canvas Styles */
+#card-canvas {
+    max-height: 65vh !important;
+    /* Force smaller size */
+    width: auto;
+    object-fit: contain;
+    border-radius: 18px;
+    /* Match card radius approx */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* Transition for flip effect */
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+#card-canvas-back {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateY(180deg);
+    max-height: 65vh !important;
+    /* Force smaller size */
+    width: auto;
+    object-fit: contain;
+    border-radius: 18px;
+    backface-visibility: hidden;
+    transition: transform 0.6s;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    border-radius: 18px;
+}
+
+#loading-overlay.hidden {
+    display: none;
+}
+
+.loading-content {
+    background: rgba(20, 20, 20, 0.9);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #d4af37;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    min-width: 300px;
+}
+
+#loading-text {
+    color: #e0e0e0;
+    margin-top: 1rem;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+}
+
+.cancel-btn {
+    margin-top: 1.5rem;
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: 1px solid #d44;
+    color: #d44;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-ui);
+}
+
+.cancel-btn:hover {
+    background: rgba(221, 68, 68, 0.1);
+}
+
+/* Fullscreen Modal */
+.fullscreen-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.fullscreen-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.close-fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.fullscreen-canvas-container {
+    width: 90%;
+    height: 85%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#fullscreen-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    border: 1px solid #444;
+}
+
+.zoom-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #555;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: rgba(212, 175, 55, 0.3);
+    border-color: #d4af37;
+}
+
+#zoom-level {
+    min-width: 60px;
+    text-align: center;
+    color: #d4af37;
+    font-weight: bold;
+}
+
+/* ==================== CARD FLIP ANIMATION ==================== */
+.canvas-container {
+    perspective: 1200px;
+    transform-style: preserve-3d;
+}
+
+.canvas-container.flipping {
+    animation: flipCard 0.5s ease-in-out;
+}
+
+@keyframes flipCard {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    50% {
+        transform: rotateY(90deg);
+    }
+
+    100% {
+        transform: rotateY(0deg);
+    }
+}
+
+/* Canvas should inherit 3D */
+.canvas-container canvas {
+    backface-visibility: hidden;
+}

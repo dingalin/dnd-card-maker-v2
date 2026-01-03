@@ -18,7 +18,7 @@ export class UIManager {
     }
 
     showLoading(message = null) {
-        const loadingText = message || window.i18n?.t('toasts.loading') || 'Loading...';
+        const _loadingText = window.i18n?.t('preview.loading') || 'Loading...';
         this.elements.loadingOverlay.classList.remove('hidden');
         if (this.elements.emptyState) this.elements.emptyState.classList.add('hidden');
         if (this.elements.skeletonOverlay) this.elements.skeletonOverlay.classList.remove('hidden');
@@ -78,16 +78,74 @@ export class UIManager {
         }, 3000);
     }
 
-    updateStickyNote(level, type, subtype) {
+    updateStickyNote(options = {}) {
         if (!this.elements.stickyNote) return;
 
+        const {
+            level,
+            type,
+            subtype,
+            ability,
+            style,
+            attunement,
+            damage,
+            armorClass
+        } = options;
+
+        // Core fields
         const noteLevel = document.getElementById('note-level');
         const noteType = document.getElementById('note-type');
         const noteSubtype = document.getElementById('note-subtype');
 
-        if (noteLevel) noteLevel.textContent = level.split('(')[0].trim();
-        if (noteType) noteType.textContent = type.split('(')[0].trim();
-        if (noteSubtype) noteSubtype.textContent = subtype || '-';
+        // Extended fields
+        const noteAbility = document.getElementById('note-ability');
+        const noteStyle = document.getElementById('note-style');
+        const noteAttunement = document.getElementById('note-attunement');
+        const noteDamage = document.getElementById('note-damage');
+        const noteAC = document.getElementById('note-ac');
+
+        // Update core fields
+        if (level !== undefined && noteLevel) {
+            const levelStr = String(level || '');
+            noteLevel.textContent = levelStr.includes('(') ? levelStr.split('(')[0].trim() : levelStr;
+        }
+        if (type !== undefined && noteType) {
+            const typeStr = String(type || '');
+            noteType.textContent = typeStr.includes('(') ? typeStr.split('(')[0].trim() : typeStr;
+        }
+        if (subtype !== undefined && noteSubtype) {
+            noteSubtype.textContent = subtype || '-';
+        }
+
+        // Update extended fields
+        if (ability !== undefined && noteAbility) {
+            noteAbility.textContent = ability || '-';
+            noteAbility.title = ability || '';
+        }
+        if (style !== undefined && noteStyle) {
+            noteStyle.textContent = style || '-';
+        }
+
+        // Update badge modifiers
+        if (attunement !== undefined && noteAttunement) {
+            noteAttunement.classList.toggle('hidden', !attunement);
+        }
+        if (damage !== undefined && noteDamage) {
+            if (damage) {
+                noteDamage.textContent = `⚔️ ${damage}`;
+                noteDamage.classList.remove('hidden');
+            } else {
+                noteDamage.classList.add('hidden');
+            }
+        }
+        if (armorClass !== undefined && noteAC) {
+            if (armorClass) {
+                noteAC.textContent = `🛡️ AC ${armorClass}`;
+                noteAC.classList.remove('hidden');
+            } else {
+                noteAC.classList.add('hidden');
+            }
+        }
 
         this.elements.stickyNote.classList.remove('hidden');
     }

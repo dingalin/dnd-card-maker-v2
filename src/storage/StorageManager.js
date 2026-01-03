@@ -4,11 +4,20 @@ export class StorageManager {
         this.storeName = storeName;
         this.version = 2; // Increment version for schema change
         this.db = null;
+        this.initFailed = false;
         this.initPromise = this.init();
     }
 
-    async init() {
+    async init(retryAfterDelete = false) {
         return new Promise((resolve, reject) => {
+            // Check if IndexedDB is available
+            if (!window.indexedDB) {
+                console.warn("StorageManager: IndexedDB not available in this browser.");
+                this.initFailed = true;
+                resolve(null);
+                return;
+            }
+
             const request = indexedDB.open(this.dbName, this.version);
 
             request.onupgradeneeded = (event) => {
@@ -22,31 +31,72 @@ export class StorageManager {
                     console.log(`StorageManager: Object store '${this.storeName}' created.`);
                 } else {
                     // Upgrade existing store to add index if missing
-                    const store = request.transaction.objectStore(this.storeName);
-                    if (!store.indexNames.contains('folder')) {
-                        store.createIndex('folder', 'folder', { unique: false });
+                    try {
+                        const store = request.transaction.objectStore(this.storeName);
+                        if (!store.indexNames.contains('folder')) {
+                            store.createIndex('folder', 'folder', { unique: false });
+                        }
+                    } catch (e) {
+                        console.warn("StorageManager: Could not upgrade store:", e.message);
                     }
                 }
 
                 // Folders Store
                 if (!db.objectStoreNames.contains('folders')) {
                     const folderStore = db.createObjectStore('folders', { keyPath: 'id' });
-                    // Default folders?
                     console.log("StorageManager: 'folders' store created.");
                 }
             };
 
             request.onsuccess = (event) => {
                 this.db = event.target.result;
+                this.initFailed = false;
                 console.log("StorageManager: IndexedDB connected successfully.");
                 resolve(this.db);
             };
 
             request.onerror = (event) => {
-                console.error("StorageManager: Failed to open IndexedDB", event);
-                reject(event.target.error);
+                const error = event.target.error;
+                const errorName = error?.name || 'Unknown';
+                const errorMessage = error?.message || 'No message';
+                console.error(`StorageManager: Failed to open IndexedDB - ${errorName}: ${errorMessage}`);
+
+                // If this is first attempt and it failed, try to delete and recreate
+                if (!retryAfterDelete) {
+                    console.warn("StorageManager: Attempting to delete corrupted database and retry...");
+                    const deleteRequest = indexedDB.deleteDatabase(this.dbName);
+                    deleteRequest.onsuccess = () => {
+                        console.log("StorageManager: Old database deleted, retrying...");
+                        this.init(true).then(resolve).catch(reject);
+                    };
+                    deleteRequest.onerror = () => {
+                        console.error("StorageManager: Could not delete database. Storage may be corrupted.");
+                        this.initFailed = true;
+                        resolve(null); // Resolve with null to allow app to continue
+                    };
+                    deleteRequest.onblocked = () => {
+                        console.warn("StorageManager: Database delete blocked. Close other tabs and refresh.");
+                        this.initFailed = true;
+                        resolve(null);
+                    };
+                } else {
+                    console.error("StorageManager: Database recovery failed. Gallery features will be unavailable.");
+                    this.initFailed = true;
+                    resolve(null); // Resolve with null to allow app to continue without storage
+                }
+            };
+
+            request.onblocked = () => {
+                console.warn("StorageManager: Database upgrade blocked. Please close other tabs using this app.");
             };
         });
+    }
+
+    /**
+     * Check if storage is available
+     */
+    isAvailable() {
+        return this.db !== null && !this.initFailed;
     }
 
     /**
@@ -56,6 +106,10 @@ export class StorageManager {
      */
     async saveCard(cardData) {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot save - database unavailable');
+            return;
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
@@ -76,6 +130,10 @@ export class StorageManager {
      */
     async getAllCards() {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot get cards - database unavailable');
+            return [];
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readonly');
             const store = transaction.objectStore(this.storeName);
@@ -99,6 +157,10 @@ export class StorageManager {
      */
     async deleteCard(id) {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot delete - database unavailable');
+            return;
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
@@ -119,6 +181,13 @@ export class StorageManager {
      */
     async deleteCards(ids) {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot delete cards - database unavailable');
+            return;
+        }
+        if (!ids || ids.length === 0) {
+            return;
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
@@ -147,6 +216,10 @@ export class StorageManager {
      */
     async clearAll() {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot clear - database unavailable');
+            return;
+        }
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
@@ -163,6 +236,10 @@ export class StorageManager {
      */
     async saveFolder(folder) {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot save folder - database unavailable');
+            return;
+        }
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['folders'], 'readwrite');
             const store = tx.objectStore('folders');
@@ -174,6 +251,10 @@ export class StorageManager {
 
     async getAllFolders() {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot get folders - database unavailable');
+            return [];
+        }
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['folders'], 'readonly');
             const store = tx.objectStore('folders');
@@ -185,6 +266,10 @@ export class StorageManager {
 
     async deleteFolder(id) {
         await this.initPromise;
+        if (!this.isAvailable()) {
+            console.warn('StorageManager: Cannot delete folder - database unavailable');
+            return;
+        }
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(['folders'], 'readwrite');
             const store = tx.objectStore('folders');

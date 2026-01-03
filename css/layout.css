@@ -87,24 +87,51 @@ body::before {
     gap: 0.5rem;
 }
 
-/* Fix for Sidebar Overflow - Allow scrolling while keeping dropdown menus visible */
+/* Sidebar-start - show all buttons without scrolling */
 .sidebar-start {
-    overflow-x: hidden;
-    overflow-y: auto;
-    max-height: calc(100vh - 180px);
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-color) rgba(0, 0, 0, 0.3);
+    /* Visuals moved from style.css */
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    /* Layout - no scrolling, show all content */
+    overflow: visible;
     min-width: 0;
     padding-bottom: 1.5rem;
+    position: sticky;
+    top: 0;
+    /* Updated: Align to top */
+    box-sizing: border-box;
+    margin-top: 0;
 }
 
 /* Fix sidebar-end to always show footer buttons */
 .sidebar-end {
+    /* Visuals moved from style.css */
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    /* Layout */
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    max-height: calc(100vh - 100px);
+    overflow-x: hidden;
+    /* Prevent horizontal scrollbar */
+    max-height: calc(100vh - 20px);
+    /* Increased height slightly */
     min-width: 0;
+    position: sticky;
+    top: 0;
+    /* Updated: Align to top */
+    box-sizing: border-box;
+    margin-top: 0;
 }
 
 .sidebar-end>h2 {
@@ -121,6 +148,92 @@ body::before {
     min-height: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-color) rgba(0, 0, 0, 0.3);
+}
+
+/* === LTR (Left-to-Right) Layout Support === */
+body.ltr {
+    direction: ltr;
+    text-align: left;
+}
+
+body.ltr .sidebar-start {
+    order: 0;
+}
+
+body.ltr .sidebar-end {
+    order: 2;
+}
+
+body.ltr .main-layout {
+    direction: ltr;
+}
+
+/* RTL specific overrides (default) */
+body.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+body.rtl .main-layout {
+    direction: rtl;
+}
+
+/* Form inputs alignment */
+body.ltr input,
+body.ltr textarea,
+body.ltr select {
+    text-align: left;
+}
+
+body.rtl input,
+body.rtl textarea,
+body.rtl select {
+    text-align: right;
+}
+
+/* Stone menu in LTR */
+body.ltr .stone-menu {
+    direction: ltr;
+}
+
+/* Gallery sidebar in LTR */
+body.ltr #gallery-sidebar {
+    border-left: none;
+    border-right: 1px solid #3a3a3a;
+}
+
+/* Sticky note alignment */
+body.ltr .sticky-note {
+    text-align: left;
+}
+
+body.ltr .note-row {
+    flex-direction: row;
+}
+
+/* Control groups alignment */
+body.ltr .control-group label {
+    text-align: left;
+}
+
+/* Modal alignment */
+body.ltr .modal-content {
+    text-align: left;
+}
+
+/* Slider labels */
+body.ltr .slider-label-row {
+    flex-direction: row;
+}
+
+/* Preview controls */
+body.ltr .preview-controls {
+    direction: ltr;
+}
+
+/* Header nav ordering */
+body.ltr .main-nav {
+    direction: ltr;
 }
 
 .sidebar-end .sidebar-actions-footer {

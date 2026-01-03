@@ -53,3 +53,174 @@ html[dir="ltr"] .scroll-container-left {
 html[dir="ltr"] .scroll-container {
     direction: ltr;
 }
+
+/* Old rarity modal styles removed - using inline rarity-btn styles instead */
+
+/* === Manual Ability Selection Button (in controls area) === */
+.manual-ability-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(145deg, rgba(26, 26, 46, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+    border: 2px solid #d4af37;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.manual-ability-btn:hover {
+    border-color: #ffd700;
+    box-shadow: 0 0 35px rgba(212, 175, 55, 0.4);
+    transform: translateY(-2px);
+}
+
+.manual-ability-btn:active {
+    transform: translateY(0);
+}
+
+.manual-btn-icon {
+    font-size: 1.8rem;
+    animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.manual-btn-text {
+    font-family: var(--font-display, 'Noto Sans Hebrew', sans-serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #d4af37;
+    text-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+}
+
+@keyframes pulse-icon {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* === Ability Controls Area === */
+.ability-controls-area {
+    padding: 0.5rem 0;
+    min-height: 80px;
+}
+
+.ability-state {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ability-state.hidden {
+    display: none;
+}
+
+/* === Inline Rarity Selection (HIGH SPECIFICITY to override power-budget.css) === */
+.ability-state-rarity {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.ability-state-rarity .rarity-title {
+    font-family: var(--font-display, 'Noto Sans Hebrew', sans-serif);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #d4af37;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
+}
+
+.ability-state-rarity .rarity-buttons {
+    display: flex !important;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: nowrap;
+    grid-template-columns: unset !important;
+}
+
+.ability-state-rarity .rarity-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(212, 175, 55, 0.5) !important;
+    padding: 0 !important;
+    grid-column: unset !important;
+    background-size: contain !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-color: rgba(20, 20, 30, 0.8) !important;
+}
+
+.ability-state-rarity .rarity-btn:hover {
+    transform: scale(1.25) !important;
+    z-index: 10;
+    filter: brightness(1.2) !important;
+    border-color: #d4af37 !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+}
+
+.ability-state-rarity .rarity-btn .rarity-btn-icon,
+.ability-state-rarity .rarity-btn .rarity-btn-name {
+    display: none;
+}
+
+/* Individual gem images for each rarity */
+.ability-state-rarity .rarity-btn[data-rarity="common"] {
+    background-image: url('../../assets/textures/rare1.png') !important;
+    box-shadow: 0 0 8px rgba(200, 200, 200, 0.4);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="common"]:hover {
+    box-shadow: 0 0 15px rgba(200, 200, 200, 0.8);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="uncommon"] {
+    background-image: url('../../assets/textures/rare2.png') !important;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="uncommon"]:hover {
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.8);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="rare"] {
+    background-image: url('../../assets/textures/rare3.png') !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="rare"]:hover {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="veryRare"] {
+    background-image: url('../../assets/textures/rare4.png') !important;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="veryRare"]:hover {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.8);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="legendary"] {
+    background-image: url('../../assets/textures/rare5.png') !important;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+}
+
+.ability-state-rarity .rarity-btn[data-rarity="legendary"]:hover {
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.8);
+}
+
+/* === Category Buttons State === */
+.ability-state-categories {
+    padding: 0.5rem 0;
+}

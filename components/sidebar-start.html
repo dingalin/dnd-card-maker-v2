@@ -1,5 +1,16 @@
 <aside class="sidebar-start glass-panel">
     <h2 data-i18n="sidebar.createItem">יצירת חפץ</h2>
+
+    <!-- Mode Toggle Switch -->
+    <div class="mode-toggle-container" id="mode-toggle-container">
+        <span class="mode-label mode-label-auto active" data-i18n="modes.auto">🤖 אוטומטי</span>
+        <label class="mode-toggle-switch">
+            <input type="checkbox" id="mode-toggle" />
+            <span class="mode-toggle-slider"></span>
+        </label>
+        <span class="mode-label mode-label-manual" data-i18n="modes.manual">🛠️ ידני</span>
+    </div>
+
     <form id="generator-form">
 
         <!-- Stone Menu Navigation -->
@@ -93,6 +104,7 @@
                     <label for="attunement" data-i18n="levelSection.attunement">דורש התכווננות? (Requires
                         Attunement)</label>
                 </div>
+
             </div>
 
             <!-- 3. Type & Details Section -->
@@ -162,13 +174,21 @@
             <!-- 4. Ability / Theme Section -->
             <div id="ability-content" class="scroll-section hidden">
                 <h3 data-i18n="abilitySection.title">יכולת או נושא</h3>
+
+                <!-- Note pointing to the scroll in preview panel -->
+                <div class="ability-selector-note"
+                    style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 1rem;">
+                    <p style="margin: 0; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                        👈 בחר יכולות מהמגילה שמשמאל לקלף
+                    </p>
+                </div>
+
+                <!-- Manual Ability Input (fallback) -->
                 <div class="form-group">
-                    <label for="item-ability" data-i18n="abilitySection.descriptionLabel">תאר את היכולת או הנושא של
-                        החפץ:</label>
+                    <label for="item-ability" data-i18n="abilitySection.descriptionLabel">או תאר ידנית:</label>
                     <input type="text" id="item-ability" name="ability"
                         data-i18n-placeholder="abilitySection.placeholder"
                         placeholder="לדוגמה: להב אש, טבעת היעלמות..." />
-                    <p class="help-text" data-i18n="abilitySection.help">הבינה המלאכותית תשתמש בזה כהשראה.</p>
                 </div>
             </div>
 
@@ -292,27 +312,6 @@
                         data-i18n="actions.regenStats">תכונות</span>
                 </button>
             </div>
-        </div>
-        <div id="error-message" class="error-message hidden"></div>
+            <div id="error-message" class="error-message hidden"></div>
     </form>
-
-    <!-- Sticky Note Summary -->
-    <div id="sticky-note" class="sticky-note">
-        <div class="note-pin"></div>
-        <h3 data-i18n="stickyNote.title">🗡️ פרטי חפץ</h3>
-        <div class="note-content">
-            <div class="note-row">
-                <span class="note-label" data-i18n="stickyNote.level">רמה:</span>
-                <span id="note-level">1-4</span>
-            </div>
-            <div class="note-row">
-                <span class="note-label" data-i18n="stickyNote.type">סוג:</span>
-                <span id="note-type" data-i18n="typeSection.weapon">נשק</span>
-            </div>
-            <div class="note-row">
-                <span class="note-label" data-i18n="stickyNote.item">חפץ:</span>
-                <span id="note-subtype">-</span>
-            </div>
-        </div>
-    </div>
 </aside>

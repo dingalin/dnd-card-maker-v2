@@ -1,0 +1,75 @@
+<!-- 
+  Ability Scroll Selector
+  =======================
+  Displays scroll images with clickable ability icons.
+  Uses images from assets/icons/a.png through j.png
+-->
+
+<div class="ability-selector">
+    <!-- Category Tabs -->
+    <div class="ability-categories">
+        <button class="ability-category-btn active" data-category="elements" data-scroll="a.png" title="יסודות">
+            <span class="category-icon">🔥</span>
+        </button>
+        <button class="ability-category-btn" data-category="bonuses" data-scroll="b.png" title="בונוסים">
+            <span class="category-icon">⚔️</span>
+        </button>
+        <button class="ability-category-btn" data-category="combat" data-scroll="c.png" title="קרב">
+            <span class="category-icon">💢</span>
+        </button>
+        <button class="ability-category-btn" data-category="special" data-scroll="d.png" title="מיוחד">
+            <span class="category-icon">✨</span>
+        </button>
+        <button class="ability-category-btn" data-category="conditions" data-scroll="e.png" title="מצבים">
+            <span class="category-icon">💫</span>
+        </button>
+        <button class="ability-category-btn" data-category="spells1" data-scroll="f.png" title="לחשים 1">
+            <span class="category-icon">📿</span>
+        </button>
+        <button class="ability-category-btn" data-category="spells2" data-scroll="g.png" title="לחשים 2">
+            <span class="category-icon">🪄</span>
+        </button>
+        <button class="ability-category-btn" data-category="spells3" data-scroll="h.png" title="לחשים 3">
+            <span class="category-icon">⚡</span>
+        </button>
+        <button class="ability-category-btn" data-category="materials" data-scroll="i.png" title="חומרים">
+            <span class="category-icon">🥈</span>
+        </button>
+        <button class="ability-category-btn" data-category="damage" data-scroll="j.png" title="נזק נוסף">
+            <span class="category-icon">🎲</span>
+        </button>
+    </div>
+
+    <!-- Scroll Display -->
+    <div class="ability-scroll-container">
+        <div class="ability-scroll" id="ability-scroll">
+            <!-- Background scroll image -->
+            <img src="assets/icons/a.png" alt="Ability Scroll" class="scroll-image" id="scroll-image">
+
+            <!-- Clickable overlay areas for icons -->
+            <div class="ability-icons-overlay" id="ability-icons-overlay">
+                <!-- Icons will be positioned dynamically based on scroll type -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Display -->
+    <div class="ability-budget">
+        <div class="budget-bar">
+            <div class="budget-fill" id="budget-fill" style="width: 0%"></div>
+        </div>
+        <div class="budget-text">
+            <span class="budget-points"><span id="budget-used">0</span>/<span id="budget-max">8</span> נקודות</span>
+            <span class="budget-rarity" id="budget-rarity">נדיר 🔵</span>
+        </div>
+    </div>
+
+    <!-- Selected Abilities Summary -->
+    <div class="selected-abilities" id="selected-abilities">
+        <div class="selected-title">יכולות נבחרות:</div>
+        <div class="selected-list" id="selected-list">
+            <!-- Selected abilities will appear here -->
+            <span class="no-selection">לא נבחרו יכולות</span>
+        </div>
+    </div>
+</div>

@@ -3,7 +3,7 @@
  * Shows errors, warnings, and debug info in a collapsible panel
  */
 
-import { getErrorHistory } from './ErrorLogger.js';
+import { getErrorHistory } from './ErrorLogger.ts';
 
 interface LogEntry {
     type: 'error' | 'warning' | 'info';

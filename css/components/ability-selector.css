@@ -1,0 +1,370 @@
+/**
+ * Ability Selector Styles
+ * =======================
+ * Styles for the ability scroll selector component
+ */
+
+.ability-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid var(--gold-accent, #c9a227);
+}
+
+/* Category Buttons Row */
+.ability-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+}
+
+.ability-category-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(201, 162, 39, 0.5);
+    background: linear-gradient(145deg, rgba(40, 30, 20, 0.9), rgba(20, 15, 10, 0.9));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.ability-category-btn:hover {
+    border-color: var(--gold-accent, #c9a227);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(201, 162, 39, 0.4);
+}
+
+.ability-category-btn.active {
+    border-color: var(--gold-accent, #c9a227);
+    background: linear-gradient(145deg, rgba(60, 45, 25, 0.95), rgba(40, 30, 15, 0.95));
+    box-shadow: 0 0 15px rgba(201, 162, 39, 0.6), inset 0 0 10px rgba(201, 162, 39, 0.2);
+}
+
+.category-icon {
+    font-size: 18px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Navigation Buttons (Back & Reset) */
+.ability-nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    background: rgba(40, 30, 20, 0.9);
+    color: var(--gold-accent, #c9a227);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    padding: 0;
+}
+
+.ability-nav-btn:hover {
+    border-color: var(--gold-accent, #c9a227);
+    background: rgba(212, 175, 55, 0.2);
+    transform: scale(1.1);
+}
+
+.ability-nav-btn.back-btn {
+    font-size: 12px;
+}
+
+.ability-nav-btn.reset-btn {
+    color: #ff6b6b;
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+.ability-nav-btn.reset-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: #ff6b6b;
+}
+
+/* Scroll Container - MOVED TO canvas.css */
+/* .ability-scroll-container is defined in canvas.css for positioning */
+
+.ability-scroll {
+    position: relative;
+    width: 280px;
+    max-width: 100%;
+}
+
+.scroll-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    transition: opacity 0.3s ease;
+}
+
+/* Clickable Icons Overlay */
+.ability-icons-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.ability-icon-btn {
+    position: absolute;
+    border: 2px solid rgba(212, 175, 55, 0.6);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.2s ease;
+    box-shadow:
+        inset 0 0 3px rgba(212, 175, 55, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.ability-icon-btn:hover {
+    border-color: rgba(212, 175, 55, 0.9);
+    background: rgba(212, 175, 55, 0.15);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+    transform: scale(1.05);
+}
+
+.ability-icon-btn.selected {
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.25);
+    box-shadow:
+        0 0 20px rgba(212, 175, 55, 0.8),
+        inset 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.ability-icon-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    border-color: rgba(212, 175, 55, 0.3);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Edit Mode Styles */
+.ability-icon-btn.editable {
+    border-color: #00ffff;
+    cursor: grab;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.ability-icon-btn.editable:hover {
+    border-color: #00ffff;
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    transform: none;
+}
+
+.ability-icon-btn.dragging {
+    border-color: #ff00ff;
+    box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
+    z-index: 1000;
+}
+
+.ability-icons-overlay.edit-mode {
+    outline: 2px dashed rgba(0, 255, 255, 0.5);
+}
+
+/* Override disabled pointer-events when in edit mode */
+.ability-icon-btn.editable.disabled {
+    pointer-events: auto;
+    cursor: grab;
+}
+
+/* Tooltip disabled - using JS tooltip instead */
+.ability-icon-btn::after {
+    display: none;
+}
+
+/* Global tooltip element (appended to body via JS) */
+#ability-tooltip {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    color: var(--gold-accent, #c9a227);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    white-space: nowrap;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    border: 2px solid var(--gold-accent, #c9a227);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+#ability-tooltip.visible {
+    opacity: 1;
+}
+
+/* Budget Bar */
+.ability-budget {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.budget-bar {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.budget-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #3b82f6, #a855f7, #f97316);
+    background-size: 300% 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Color the bar based on rarity threshold */
+.budget-fill.common {
+    background: #9ca3af;
+}
+
+.budget-fill.uncommon {
+    background: linear-gradient(90deg, #9ca3af, #22c55e);
+}
+
+.budget-fill.rare {
+    background: linear-gradient(90deg, #22c55e, #3b82f6);
+}
+
+.budget-fill.very-rare {
+    background: linear-gradient(90deg, #3b82f6, #a855f7);
+}
+
+.budget-fill.legendary {
+    background: linear-gradient(90deg, #a855f7, #f97316);
+}
+
+.budget-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.budget-points {
+    font-weight: bold;
+    color: var(--gold-accent, #c9a227);
+}
+
+.budget-rarity {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Selected Abilities */
+.selected-abilities {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 10px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.selected-title {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+    text-align: right;
+}
+
+.selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.selected-ability {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: rgba(201, 162, 39, 0.2);
+    border: 1px solid rgba(201, 162, 39, 0.4);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--gold-accent, #c9a227);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selected-ability:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+.selected-ability .cost {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.selected-ability .remove {
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+.no-selection {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+/* Scrollbar styling */
+.selected-abilities::-webkit-scrollbar {
+    width: 4px;
+}
+
+.selected-abilities::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.selected-abilities::-webkit-scrollbar-thumb {
+    background: rgba(201, 162, 39, 0.4);
+    border-radius: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ability-scroll {
+        width: 220px;
+    }
+
+    .ability-category-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .category-icon {
+        font-size: 14px;
+    }
+}

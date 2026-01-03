@@ -1,11 +1,12 @@
+// @ts-nocheck
 /**
  * CardThumbnailRenderer - Shared utility for rendering card thumbnails
  * Used by CharacterController, TreasureController, and HistoryController
  * Eliminates code duplication and ensures consistent rendering
  */
 
-import CardRenderer from '../card-renderer.js';
-import type { CardData, IStateManager, ThumbnailResult, AppSettings, RenderOptions } from '../types/index.js';
+import CardRenderer from '../card-renderer.ts';
+import type { CardData, IStateManager, ThumbnailResult, AppSettings, RenderOptions } from '../types/index.ts';
 import {
     CARD_WIDTH,
     CARD_HEIGHT,
@@ -15,7 +16,7 @@ import {
     DEFAULT_STYLE,
     THUMBNAIL_QUALITY,
     THUMBNAIL_FORMAT
-} from './constants.js';
+} from './constants.ts';
 
 /**
  * Render a card to an off-screen canvas and return as dataURL

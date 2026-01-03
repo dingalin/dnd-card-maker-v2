@@ -8,7 +8,39 @@
         "about": "About",
         "cardCreator": "Card Creator",
         "characterSheet": "Character Sheet",
-        "toggleLang": "Switch Language (EN/HE)"
+        "toggleLang": "Switch Language (EN/HE)",
+        "assemblyTable": "🧩 Assembly Table",
+        "treasureGenerator": "💎 Treasure Generator"
+    },
+    "assembly": {
+        "details": "Item Details",
+        "itemName": "Item Name",
+        "powerBudget": "Power Budget",
+        "flavorText": "Flavor Text",
+        "generate": "Generate Card",
+        "clear": "Clear All",
+        "dropBase": "Drag base weapon here",
+        "newItem": "New Item",
+        "dropElement": "Drag element",
+        "dropRarity": "Drag rarity",
+        "statsPlaceholder": "Stats will appear here",
+        "dropAbility": "Drag ability",
+        "catBase": "Base",
+        "catElement": "Element",
+        "catRarity": "Rarity",
+        "catAbility": "Abilities",
+        "namePlaceholder": "Item name...",
+        "flavorPlaceholder": "Short item description...",
+        "socketBase": "Base Socket",
+        "socketElement": "Element Socket",
+        "socketRarity": "Rarity Socket",
+        "socketAbility": "Ability Socket",
+        "console": "Action Console",
+        "summaryEmpty": "Select components to begin...",
+        "selectBackground": "Select Background",
+        "generateBackground": "New Background",
+        "dropHint": "Drop items here",
+        "targetRarity": "Target Rarity:"
     },
     "modal": {
         "confirmTitle": "Confirm Action",
@@ -45,6 +77,41 @@
         "level11_16": "11-16 (Rare)",
         "level17": "17+ (Legendary)",
         "attunement": "Requires Attunement?"
+    },
+    "rarity": {
+        "common": "Common",
+        "uncommon": "Uncommon",
+        "rare": "Rare",
+        "veryrare": "Very Rare",
+        "veryRare": "Very Rare",
+        "legendary": "Legendary"
+    },
+    "powerBudget": {
+        "title": "Ability Builder",
+        "modeAuto": "Auto",
+        "modeManual": "Manual",
+        "selectRarity": "Select Rarity:",
+        "attunement": "Attunement",
+        "cursed": "Cursed",
+        "bonuses": "Bonuses",
+        "extraDamage": "Extra Damage",
+        "onHitEffects": "On-Hit Effects",
+        "specialFeatures": "Special Features",
+        "spells": "Spells",
+        "push5": "Push 5'",
+        "push10": "Push 10'",
+        "slow": "Slow",
+        "prone": "Prone",
+        "bleed": "Bleed",
+        "returning": "Returning",
+        "light": "Light",
+        "thrown": "Thrown",
+        "reach": "Reach+",
+        "crit19": "Crit 19",
+        "selectedAbilities": "Selected Abilities",
+        "noAbilities": "No abilities selected",
+        "clearAll": "Clear All",
+        "estimatedPrice": "Estimated Price:"
     },
     "typeSection": {
         "title": "Type & Details",
@@ -131,7 +198,11 @@
         "title": "🗡️ Item Details",
         "level": "Level:",
         "type": "Type:",
-        "item": "Item:"
+        "item": "Item:",
+        "ability": "Theme:",
+        "style": "Style:",
+        "visualContextBadge": "🎨 Card BG",
+        "attunementBadge": "🔗 Attunement"
     },
     "editSidebar": {
         "title": "Edit & Design",
@@ -160,7 +231,10 @@
         "abilityName": "Ability Name",
         "mechanics": "Mechanics",
         "lore": "Background & Story (Lore)",
-        "textWidth": "Text Width:"
+        "textWidth": "Text Width:",
+        "positionLabel": "Position:",
+        "price": "Price",
+        "quickDesc": "Short Description"
     },
     "textDesign": {
         "title": "Text Design",
@@ -204,6 +278,9 @@
         "readyMade": "🖼️ Ready-Made Backgrounds",
         "readyMadeLabel": "Ready-Made Backgrounds",
         "scale": "Background Scale",
+        "styleLabel": "Background Style:",
+        "centerFade": "Center Fade",
+        "centerFadeHint": "Fade center to make text readable",
         "selectTitle": "Select Ready-Made Background"
     },
     "footer": {
@@ -329,7 +406,10 @@
         "newBackgroundCreated": "New background created!",
         "errorCreatingBackground": "Error creating background",
         "selectingRandomBg": "Selecting random background...",
-        "surpriseRolling": "Rolling surprise item..."
+        "surpriseRolling": "Rolling surprise item...",
+        "autoLayoutComplete": "Auto layout complete!",
+        "autoLayoutError": "Auto layout error",
+        "layoutApplied": "Layout applied!"
     },
     "cardViewer": {
         "edit": "Edit ✏️",
@@ -382,12 +462,37 @@
         "checkApiKey": "Invalid Key. Please try again with correct GetImg key.",
         "generationError": "Error generating image: {{error}}",
         "portraitUpdated": "Character portrait updated!",
-        "creatingItemFor": "Creating new item for: {{label}}"
+        "creatingItemFor": "Creating new item for: {{label}}",
+        "autoGenerate": "✨ Auto Generate"
     },
     "generator": {
         "noCardForLayout": "No card to adjust",
         "detectingArea": "🔍 Detecting area...",
         "detectingFrame": "🔍 Detecting frame...",
         "calculating": "✨ Calculating..."
+    },
+    "treasureGenerator": {
+        "title": "Treasure Generator",
+        "itemCount": "Item Count",
+        "includeGold": "Include Gold",
+        "surpriseMode": "Surprise Mode",
+        "manualMode": "Manual Mode",
+        "autoMode": "Auto Mode",
+        "enemyType": "Enemy Type",
+        "generateTreasure": "Generate Treasure",
+        "addItem": "Add Item",
+        "rarity": "Rarity",
+        "itemType": "Item Type",
+        "theme": "Theme",
+        "addToList": "Add to List",
+        "treasureList": "Treasure List",
+        "emptyList": "The chest is empty...",
+        "goldAmount": "Gold Amount",
+        "generateAllCards": "Generate All Cards",
+        "preview": "Preview",
+        "goldCoins": "Gold Coins",
+        "notTreasureYet": "No treasure generated yet",
+        "saveAllToGallery": "Save All to Gallery",
+        "clear": "Clear"
     }
 }

@@ -8,7 +8,9 @@
         "about": "אודות",
         "cardCreator": "יוצר קלפים",
         "characterSheet": "דף דמות",
-        "toggleLang": "החלף שפה (EN/HE)"
+        "toggleLang": "החלף שפה (EN/HE)",
+        "assemblyTable": "🧩 שולחן הרכבה",
+        "treasureGenerator": "💎 מחולל אוצר"
     },
     "modal": {
         "confirmTitle": "אישור פעולה",
@@ -131,7 +133,14 @@
         "title": "🗡️ פרטי חפץ",
         "level": "רמה:",
         "type": "סוג:",
-        "item": "חפץ:"
+        "item": "חפץ:",
+        "name": "שם:",
+        "rarity": "נדירות:",
+        "price": "מחיר:",
+        "ability": "נושא:",
+        "style": "סגנון:",
+        "visualContextBadge": "🎨 רקע קלף",
+        "attunementBadge": "🔗 התכווננות"
     },
     "editSidebar": {
         "title": "עריכה ועיצוב",
@@ -160,7 +169,10 @@
         "abilityName": "שם יכולת",
         "mechanics": "מכניקה",
         "lore": "רקע וסיפור (לור)",
-        "textWidth": "רוחב טקסט:"
+        "textWidth": "רוחב טקסט:",
+        "positionLabel": "מיקום:",
+        "price": "מחיר",
+        "quickDesc": "תיאור קצר"
     },
     "textDesign": {
         "title": "עיצוב טקסט",
@@ -204,6 +216,9 @@
         "readyMade": "🖼️ רקעים מוכנים",
         "readyMadeLabel": "רקעים מוכנים",
         "scale": "גודל רקע (Scale)",
+        "styleLabel": "סגנון רקע:",
+        "centerFade": "עמעום מרכז",
+        "centerFadeHint": "הבהר את המרכז לקריאות הטקסט",
         "selectTitle": "בחר רקע מוכן"
     },
     "footer": {
@@ -258,8 +273,10 @@
         "gloves": "כפפות",
         "backpack": "תיק גב",
         "namePlaceholder": "שם הדמות",
+        "namePlaceholderHint": "הקלד שם ולחץ אנטר",
         "itemMoved": "פריט הועבר!",
-        "itemStored": "פריט הועבר לתיק"
+        "itemStored": "פריט הועבר לתיק",
+        "autoGenerate": "✨ יצירה אוטומטית"
     },
     "equipModal": {
         "title": "צייד דמות בחפץ",
@@ -327,7 +344,10 @@
         "newBackgroundCreated": "נוצר רקע חדש!",
         "errorCreatingBackground": "שגיאה ביצירת רקע",
         "selectingRandomBg": "בוחר רקע אקראי...",
-        "surpriseRolling": "מגריל חפץ בהפתעה..."
+        "surpriseRolling": "מגריל חפץ בהפתעה...",
+        "autoLayoutComplete": "כיוונון אוטומטי הושלם!",
+        "autoLayoutError": "שגיאה בכיוונון אוטומטי",
+        "layoutApplied": "פריסה הוחלה!"
     },
     "cardViewer": {
         "edit": "ערוך ✏️",
@@ -387,5 +407,97 @@
         "detectingArea": "🔍 מזהה שטח...",
         "detectingFrame": "🔍 מזהה מסגרת...",
         "calculating": "✨ מחשב..."
+    },
+    "rarity": {
+        "common": "נפוץ",
+        "uncommon": "לא נפוץ",
+        "rare": "נדיר",
+        "veryrare": "נדיר מאוד",
+        "veryRare": "נדיר מאוד",
+        "legendary": "אגדי"
+    },
+    "powerBudget": {
+        "title": "בונה יכולות",
+        "modeAuto": "אוטו",
+        "modeManual": "ידני",
+        "selectRarity": "בחר נדירות:",
+        "attunement": "התכווננות",
+        "cursed": "מקולל",
+        "bonuses": "בונוסים",
+        "extraDamage": "נזק נוסף",
+        "onHitEffects": "אפקטי פגיעה",
+        "specialFeatures": "תכונות מיוחדות",
+        "spells": "לחשים",
+        "selectedAbilities": "יכולות נבחרות",
+        "noAbilities": "אין יכולות נבחרות",
+        "clearAll": "נקה הכל",
+        "estimatedPrice": "מחיר משוער:",
+        "push5": "דחיפה 5'",
+        "push10": "דחיפה 10'",
+        "slow": "האטה",
+        "prone": "הפלה",
+        "bleed": "דימום",
+        "returning": "חזרה",
+        "light": "אור",
+        "thrown": "זריקה",
+        "reach": "טווח+",
+        "crit19": "קריט 19"
+    },
+    "assembly": {
+        "title": "שולחן ההרכבה",
+        "details": "פרטי הקלף",
+        "itemName": "שם הפריט",
+        "namePlaceholder": "לחץ לעריכה...",
+        "flavorText": "טקסט פלאף",
+        "flavorPlaceholder": "תיאור אווירה...",
+        "powerBudget": "תקציב כוח",
+        "generate": "צור קלף",
+        "clear": "נקה הכל",
+        "newItem": "פריט חדש",
+        "statsPlaceholder": "סטטיסטיקות יופיעו כאן",
+        "socketBase": "בסיס פריט",
+        "socketElement": "אלמנט/נזק",
+        "socketRarity": "נדירות/הקסמה",
+        "socketAbility": "יכולות מיוחדות",
+        "dropBase": "גרור בסיס לכאן",
+        "dropElement": "אלמנט",
+        "dropRarity": "נדירות",
+        "dropAbility": "יכולות",
+        "catBase": "בסיס",
+        "catElement": "אלמנט",
+        "catRarity": "נדירות",
+        "catAbility": "יכולות",
+        "selectBase": "בחר פריט בסיס",
+        "generating": "יוצר קלף...",
+        "selectBackground": "בחר רקע קלף",
+        "generateBackground": "צור רקע חדש",
+        "console": "קונסולת פעולות",
+        "summaryEmpty": "בחר רכיבים כדי להתחיל...",
+        "targetRarity": "נדירות יעד:",
+        "dropHint": "גרור חפצים לכאן"
+    },
+    "treasureGenerator": {
+        "title": "מחולל אוצר",
+        "itemCount": "כמות חפצים",
+        "includeGold": "כלול זהב",
+        "surpriseMode": "מצב הפתעה",
+        "manualMode": "מצב ידני",
+        "autoMode": "מצב אוטומטי",
+        "enemyType": "סוג אויב",
+        "generateTreasure": "צור אוצר",
+        "addItem": "הוסף חפץ",
+        "rarity": "נדירות",
+        "itemType": "סוג חפץ",
+        "theme": "נושא",
+        "addToList": "הוסף לרשימה",
+        "treasureList": "רשימת אוצר",
+        "emptyList": "התיבה ריקה...",
+        "goldAmount": "כמות זהב",
+        "generateAllCards": "צור את כל הקלפים",
+        "preview": "תצוגה מקדימה",
+        "goldCoins": "מטבעות זהב",
+        "notTreasureYet": "טרם נוצר אוצר",
+        "saveAllToGallery": "שמור הכל לגלריה",
+        "clear": "נקה"
     }
 }

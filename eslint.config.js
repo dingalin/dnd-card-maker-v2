@@ -40,7 +40,29 @@ export default tseslint.config(
                 requestAnimationFrame: 'readonly',
                 cancelAnimationFrame: 'readonly',
                 performance: 'readonly',
-                crypto: 'readonly'
+                crypto: 'readonly',
+                // Browser UI functions
+                alert: 'readonly',
+                confirm: 'readonly',
+                prompt: 'readonly',
+                // Storage APIs
+                indexedDB: 'readonly',
+                IDBKeyRange: 'readonly',
+                // DOM APIs
+                MutationObserver: 'readonly',
+                ResizeObserver: 'readonly',
+                IntersectionObserver: 'readonly',
+                getComputedStyle: 'readonly',
+                CSS: 'readonly',
+                // Event types
+                MouseEvent: 'readonly',
+                KeyboardEvent: 'readonly',
+                EventListener: 'readonly',
+                DragEvent: 'readonly',
+                // Canvas
+                CanvasRenderingContext2D: 'readonly',
+                ImageData: 'readonly',
+                OffscreenCanvas: 'readonly'
             }
         },
         rules: {

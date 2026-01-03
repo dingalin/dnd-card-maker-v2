@@ -54,7 +54,7 @@ The i18n instance is stored on `window.__i18n_instance` to survive Vite HMR. Alw
 
 ### 4. Large Files Warning
 Files >500 lines are hard to maintain:
-- `gemini-service.js` (998 lines) - Consider splitting by provider
+- `gemini-service.js` (Refactored to Facade) - Delegates to `src/services/gemini/*`
 - `card-renderer.js` (1086 lines) - Consider extracting utilities
 - `GeneratorController.js` (940 lines) - Complex logic
 

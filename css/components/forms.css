@@ -1,5 +1,41 @@
 /* === Forms === */
 
+/* Generic Input Styles */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+select,
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.form-group,
+.control-group {
+    margin-bottom: 1rem;
+}
+
 /* Enhanced checkbox group */
 .checkbox-group {
     display: flex;
