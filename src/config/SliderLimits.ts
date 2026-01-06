@@ -36,7 +36,7 @@ export const FRONT_OFFSET_LIMITS: Record<string, SliderLimit> = {
 export const BACK_OFFSET_LIMITS: Record<string, SliderLimit> = {
     'ability-offset': { min: 0, max: 400, default: 130 },
     'mech-offset': { min: 0, max: 800, default: 295 },
-    'lore-offset': { min: 0, max: 1000, default: 700 },
+    'lore-offset': { min: 0, max: 1200, default: 700 },
     'ability-width': { min: 100, max: 800, default: 550 },
     'lore-width': { min: 100, max: 800, default: 550 },
 };

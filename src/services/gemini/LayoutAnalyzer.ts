@@ -84,7 +84,7 @@ export async function detectTemplateTheme(geminiConfig: GeminiConfig, templateIm
         let data;
         if (useWorker) {
             data = await callViaWorker(password!, 'gemini-generate', {
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash-lite',
                 contents: payload.contents
             });
         } else {
@@ -158,7 +158,7 @@ export async function analyzeCardLayout(
         let data;
         if (useWorker) {
             data = await callViaWorker(password!, 'gemini-generate', {
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash-lite',
                 contents: payload.contents
             });
         } else {

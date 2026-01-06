@@ -379,10 +379,24 @@
 /* ==================== CARD FLIP ANIMATION ==================== */
 .canvas-container {
     perspective: 1200px;
-    transform-style: preserve-3d;
+    /* transform-style: preserve-3d; - Moved to card-rotator */
+    display: flex;
+    /* Ensure centering */
+    justify-content: center;
+    align-items: center;
 }
 
-.canvas-container.flipping {
+.card-rotator {
+    position: relative;
+    width: auto;
+    height: auto;
+    transform-style: preserve-3d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-rotator.flipping {
     animation: flipCard 0.5s ease-in-out;
 }
 

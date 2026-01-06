@@ -1,39 +1,38 @@
 /**
- * FontSizeLimits.ts
- * Centralized min/max limits for all font sizes in the application
- * This is the SINGLE SOURCE OF TRUTH for font size ranges
+ * FontSizeLimits.ts - Re-exports from CardTextConfig.ts
  * 
- * When adding a new text element:
- * 1. Add its limits here
- * 2. The updateFontSize() in state.ts will use these limits
+ * This file exists for BACKWARDS COMPATIBILITY only.
+ * All values are now defined in CardTextConfig.ts
+ * 
+ * DO NOT edit values here - edit CardTextConfig.ts instead!
  */
 
-export interface FontSizeLimit {
-    min: number;
-    max: number;
-    default: number;
-    step?: number;
-}
+import {
+    FONT_SIZE_LIMITS as CONFIG_FONT_SIZE_LIMITS,
+    FRONT_FONT_SIZES,
+    BACK_FONT_SIZES,
+    type SliderLimit as ConfigSliderLimit
+} from './CardTextConfig';
 
-// ==================== FRONT SIDE FONT SIZES ====================
+// Re-export type
+export type FontSizeLimit = ConfigSliderLimit;
+
+// Extract front/back limits for backwards compatibility
 export const FRONT_FONT_LIMITS: Record<string, FontSizeLimit> = {
-    // Element name format: [elementName]Size
-    nameSize: { min: 16, max: 120, default: 64 },       // שם החפץ - large, prominent
-    typeSize: { min: 12, max: 72, default: 24 },        // סוג החפץ
-    raritySize: { min: 12, max: 72, default: 24 },      // נדירות
-    coreStatsSize: { min: 16, max: 96, default: 42 },   // נזק/דרג"ש - important stat
-    statsSize: { min: 12, max: 72, default: 28 },       // תיאור קצר
-    goldSize: { min: 12, max: 72, default: 24 },        // מחיר
+    nameSize: CONFIG_FONT_SIZE_LIMITS.nameSize,
+    typeSize: CONFIG_FONT_SIZE_LIMITS.typeSize,
+    raritySize: CONFIG_FONT_SIZE_LIMITS.raritySize,
+    coreStatsSize: CONFIG_FONT_SIZE_LIMITS.coreStatsSize,
+    statsSize: CONFIG_FONT_SIZE_LIMITS.statsSize,
+    goldSize: CONFIG_FONT_SIZE_LIMITS.goldSize,
 };
 
-// ==================== BACK SIDE FONT SIZES ====================
 export const BACK_FONT_LIMITS: Record<string, FontSizeLimit> = {
-    abilityNameSize: { min: 16, max: 96, default: 36 }, // שם היכולת
-    mechSize: { min: 12, max: 64, default: 24 },        // מכניקה
-    loreSize: { min: 12, max: 64, default: 20 },        // לור/סיפור
+    abilityNameSize: CONFIG_FONT_SIZE_LIMITS.abilityNameSize,
+    mechSize: CONFIG_FONT_SIZE_LIMITS.mechSize,
+    loreSize: CONFIG_FONT_SIZE_LIMITS.loreSize,
 };
 
-// ==================== COMBINED EXPORT ====================
 export const FONT_SIZE_LIMITS = {
     front: FRONT_FONT_LIMITS,
     back: BACK_FONT_LIMITS,
@@ -43,7 +42,7 @@ export const FONT_SIZE_LIMITS = {
  * Helper function to get limits for a font size by key
  */
 export function getFontSizeLimits(key: string): FontSizeLimit | undefined {
-    return FRONT_FONT_LIMITS[key] || BACK_FONT_LIMITS[key];
+    return CONFIG_FONT_SIZE_LIMITS[key];
 }
 
 /**

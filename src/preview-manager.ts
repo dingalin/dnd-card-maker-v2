@@ -20,27 +20,9 @@ export class PreviewManager {
 
     setupFullscreen() {
         console.log("🔍 Setting up Fullscreen/Zoom interactions...");
-        const container = document.querySelector('.canvas-container');
-
-        // Click on container to toggle zoom
-        if (container) {
-            console.log("✅ Canvas container found. Attaching click listener.");
-            container.addEventListener('click', (e) => {
-                console.log("🖱️ Canvas container clicked!");
-                // Prevent click if we are clicking a button inside (unlikely now, but good practice)
-                if (e.target.tagName === 'BUTTON') return;
-
-                if (container.classList.contains('expanded')) {
-                    console.log("📉 Closing fullscreen/zoom");
-                    this.closeFullscreen();
-                } else {
-                    console.log("📈 Opening fullscreen/zoom");
-                    this.openFullscreen();
-                }
-            });
-        } else {
-            console.error("❌ Canvas container NOT found during setup!");
-        }
+        // DISABLED: Click-to-zoom removed per user request
+        // The fullscreen toggle can still be accessed via keyboard shortcuts if enabled
+        console.log("ℹ️ Click-to-zoom is disabled");
 
         // Close on Escape key is handled in setupKeyboardShortcuts
     }

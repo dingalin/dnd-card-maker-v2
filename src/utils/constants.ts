@@ -1,63 +1,43 @@
 /**
  * Card Rendering Constants
- * Centralized values for card layout and defaults
+ * 
+ * NOTE: Font sizes and offsets are now imported from CardTextConfig.ts
+ * Edit that file to change default values!
  */
+
+import {
+    FRONT_FONT_SIZES,
+    BACK_FONT_SIZES,
+    FRONT_POSITIONS,
+    FRONT_WIDTHS,
+    BACK_POSITIONS,
+    BACK_WIDTHS,
+    IMAGE_SETTINGS
+} from '../config/CardTextConfig';
 
 // ============== CARD DIMENSIONS ==============
 export const CARD_WIDTH = 750;
 export const CARD_HEIGHT = 1050;
 
-// ============== DEFAULT FONT SIZES ==============
+// ============== DEFAULT FONT SIZES (from CardTextConfig) ==============
 export const DEFAULT_FONT_SIZES = {
-    front: {
-        nameSize: 64,
-        typeSize: 24,
-        raritySize: 24,
-        statsSize: 32,
-        coreStatsSize: 42,
-        goldSize: 32
-    },
-    back: {
-        abilityNameSize: 52,
-        mechSize: 32,
-        loreSize: 24
-    }
+    front: { ...FRONT_FONT_SIZES },
+    back: { ...BACK_FONT_SIZES }
 };
 
-// ============== DEFAULT OFFSETS ==============
+// ============== DEFAULT OFFSETS (from CardTextConfig) ==============
 export const DEFAULT_OFFSETS = {
     front: {
-        name: 0,
-        type: 0,
-        rarity: 0,
-        stats: 780,
-        coreStats: 680,
-        gold: 0,
-        imageYOffset: 0,
-        imageScale: 1.0,
-        imageRotation: 0,
-        imageFade: 0,
-        imageShadow: 0,
-        backgroundScale: 1.0,
-        centerFade: 0
+        ...FRONT_POSITIONS,
+        ...IMAGE_SETTINGS,
     },
-    back: {
-        abilityName: 140,
-        mech: 220,
-        lore: 880
-    }
+    back: { ...BACK_POSITIONS }
 };
 
-// ============== DEFAULT WIDTHS ==============
+// ============== DEFAULT WIDTHS (from CardTextConfig) ==============
 export const DEFAULT_WIDTHS = {
-    nameWidth: 543,
-    typeWidth: 500,
-    rarityWidth: 500,
-    coreStatsWidth: 500,
-    statsWidth: 500,
-    goldWidth: 500,
-    mechWidth: 600,
-    loreWidth: 550
+    ...FRONT_WIDTHS,
+    ...BACK_WIDTHS,
 };
 
 // ============== DEFAULT STYLE ==============

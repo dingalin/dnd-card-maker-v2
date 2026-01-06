@@ -265,7 +265,8 @@
         "gloves": "Gloves",
         "backpack": "Backpack",
         "itemMoved": "Item moved!",
-        "itemStored": "Item stored in backpack"
+        "itemStored": "Item stored in backpack",
+        "swapConfirm": "Slot is occupied. Replace?"
     },
     "equipModal": {
         "title": "Equip Character with Item",

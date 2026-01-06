@@ -87,25 +87,78 @@ body::before {
     gap: 0.5rem;
 }
 
-/* Sidebar-start - show all buttons without scrolling */
+/* Sidebar-start - show all buttons without scrolling - COMPACT MODE */
 .sidebar-start {
     /* Visuals moved from style.css */
     background: var(--panel-bg);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 12px;
+    padding: 8px;
+    /* Reduced padding */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 
     /* Layout - no scrolling, show all content */
     overflow: visible;
     min-width: 0;
-    padding-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
     position: sticky;
     top: 0;
-    /* Updated: Align to top */
     box-sizing: border-box;
     margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Tight gap */
+}
+
+/* Compact internal elements */
+.sidebar-start h2 {
+    margin: 0 0 4px 0 !important;
+    font-size: 1.2rem !important;
+}
+
+.sidebar-start .mode-toggle-container {
+    margin-bottom: 4px !important;
+    padding: 2px !important;
+}
+
+.sidebar-start .stone-menu {
+    gap: 4px !important;
+}
+
+.sidebar-start .stone-btn {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    margin: 0 !important;
+}
+
+.sidebar-start .actions-container {
+    margin-top: 4px !important;
+    gap: 4px !important;
+}
+
+.sidebar-start .btn-primary,
+.sidebar-start .btn-surprise {
+    margin-bottom: 4px !important;
+    padding: 0.4rem !important;
+    min-height: 36px !important;
+}
+
+.sidebar-start .generation-buttons {
+    gap: 4px !important;
+}
+
+.sidebar-start .generation-buttons button {
+    min-height: 36px !important;
+    padding: 4px !important;
+}
+
+/* Hide help text/labels if needed to save space */
+.sidebar-start .checkbox-group {
+    margin-bottom: 4px !important;
+    padding: 4px !important;
 }
 
 /* Fix sidebar-end to always show footer buttons */
@@ -247,7 +300,7 @@ body.ltr .main-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 2rem;
+    padding: 1.5rem 2rem 1rem 2rem;
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.7));
     border-bottom: 2px solid transparent;
     border-image: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), rgba(241, 196, 15, 0.8), rgba(212, 175, 55, 0.6), transparent) 1;
@@ -273,6 +326,8 @@ body.ltr .main-nav {
     font-family: var(--font-display);
     margin: 0;
     font-size: 2.2rem;
+    line-height: 1.3;
+    padding-top: 0.2rem;
     background: linear-gradient(135deg, #f1c40f 0%, #d4af37 40%, #b8860b 70%, #d4af37 100%);
     background-size: 200% 200%;
     -webkit-background-clip: text;

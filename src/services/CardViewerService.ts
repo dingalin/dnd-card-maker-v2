@@ -25,6 +25,7 @@ interface CardViewerOptions {
 interface CardViewerElements {
     overlay: HTMLElement;
     cardContainer: HTMLElement;
+    flipper: HTMLElement;
     frontFace: HTMLElement;
     backFace: HTMLElement;
     actionsBar: HTMLElement;
@@ -167,32 +168,36 @@ class CardViewerServiceClass {
             width: ${sourceRect.width}px;
             height: ${sourceRect.height}px;
             z-index: 10000;
-            transform-style: preserve-3d;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: default;
         `;
 
+        // Flipper - this is what rotates for 3D flip effect
+        const flipper = document.createElement('div');
+        flipper.className = 'card-viewer-flipper';
+
         // Front Face
         const frontFace = document.createElement('div');
         frontFace.className = 'card-viewer-front';
-        frontFace.innerHTML = `<img src="${this.currentCard!.frontImage}" alt="Card Front" />`;
+        frontFace.innerHTML = `<img src="${this.currentCard!.frontImage}" alt="Card Front" style="width:100%; height:100%; object-fit:cover; border-radius:12px;" />`;
 
         // Back Face
         const backFace = document.createElement('div');
         backFace.className = 'card-viewer-back';
         if (this.currentCard!.backImage) {
-            backFace.innerHTML = `<img src="${this.currentCard!.backImage}" alt="Card Back" />`;
+            backFace.innerHTML = `<img src="${this.currentCard!.backImage}" alt="Card Back" style="width:100%; height:100%; object-fit:cover; border-radius:12px;" />`;
         } else {
             backFace.innerHTML = `<div class="no-back-message">${window.i18n?.t('toasts.noBackSide') || 'אין צד אחורי'}</div>`;
         }
 
-        cardContainer.appendChild(frontFace);
-        cardContainer.appendChild(backFace);
+        flipper.appendChild(frontFace);
+        flipper.appendChild(backFace);
+        cardContainer.appendChild(flipper);
 
         // Actions Bar
         const actionsBar = this._createActionsBar();
 
-        return { overlay, cardContainer, frontFace, backFace, actionsBar, sourceRect };
+        return { overlay, cardContainer, flipper, frontFace, backFace, actionsBar, sourceRect };
     }
 
     /**
@@ -339,10 +344,18 @@ class CardViewerServiceClass {
     private _handleFlip(): void {
         if (!this.elements) return;
         this.isFlipped = !this.isFlipped;
-        // Combine translateX (for centering) with rotateY (for flip)
-        this.elements.cardContainer.style.transform = this.isFlipped
-            ? 'translateX(-50%) rotateY(180deg)'
-            : 'translateX(-50%) rotateY(0deg)';
+
+        console.log('🔄 Flip triggered:', {
+            isFlipped: this.isFlipped,
+            hasBackImage: !!this.currentCard?.backImage
+        });
+
+        // Toggle flipped class on flipper for 3D rotation animation
+        if (this.isFlipped) {
+            this.elements.flipper.classList.add('flipped');
+        } else {
+            this.elements.flipper.classList.remove('flipped');
+        }
     }
 
     /**

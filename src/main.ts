@@ -24,6 +24,7 @@ import powerBudgetController from './controllers/PowerBudgetController.ts';
 import { initAbilitySelector } from './controllers/AbilitySelectorController.ts';
 import { initModeController } from './controllers/ModeController.ts';
 import { initDraggablePositioner } from './utils/DraggablePositioner.ts';
+import { TutorialController } from './controllers/TutorialController.ts';
 
 // i18n (Internationalization)
 import i18n from './i18n.ts';
@@ -199,6 +200,15 @@ async function initApp() {
     const treasureController = new TreasureController(stateManager, uiManager, generatorController);
     window.treasureController = treasureController; // Expose globally
 
+    // Tutorial: Handles guided tutorial through existing UI
+    const tutorialController = new TutorialController();
+    tutorialController.init();
+    window.tutorialController = tutorialController;
+
+    // Setup tutorial trigger button
+    const tutorialTriggerBtn = document.getElementById('wizard-trigger-btn');
+    tutorialTriggerBtn?.addEventListener('click', () => tutorialController.start());
+
     // Power Budget: DISABLED - Replaced by AbilitySelector scroll in #ability-content
     // The old power-budget-panel was conflicting with the new scroll-based ability selector
     // await initPowerBudgetPanel();
@@ -292,14 +302,31 @@ async function initApp() {
     }
 
     // Restore API Keys
-    const savedKey = localStorage.getItem('gemini_api_key');
-    if (savedKey && document.getElementById('api-key')) {
-        document.getElementById('api-key').value = savedKey;
+    // Restore and Listen for API Keys
+    const apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
+    if (apiKeyInput) {
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) apiKeyInput.value = savedKey;
+
+        apiKeyInput.addEventListener('change', (e) => {
+            const val = (e.target as HTMLInputElement).value.trim();
+            if (val) localStorage.setItem('gemini_api_key', val);
+            else localStorage.removeItem('gemini_api_key');
+            showToast(i18n.t('toasts.settingsSaved') || 'Settings saved', 'success');
+        });
     }
 
-    const savedGetImgKey = localStorage.getItem('getimg_api_key');
-    if (savedGetImgKey && document.getElementById('getimg-api-key')) {
-        document.getElementById('getimg-api-key').value = savedGetImgKey;
+    const getImgKeyInput = document.getElementById('getimg-api-key') as HTMLInputElement;
+    if (getImgKeyInput) {
+        const savedGetImgKey = localStorage.getItem('getimg_api_key');
+        if (savedGetImgKey) getImgKeyInput.value = savedGetImgKey;
+
+        getImgKeyInput.addEventListener('change', (e) => {
+            const val = (e.target as HTMLInputElement).value.trim();
+            if (val) localStorage.setItem('getimg_api_key', val);
+            else localStorage.removeItem('getimg_api_key');
+            showToast(i18n.t('toasts.settingsSaved') || 'Settings saved', 'success');
+        });
     }
 
     console.log("✨ Core Systems Online | Architecture Refactored");

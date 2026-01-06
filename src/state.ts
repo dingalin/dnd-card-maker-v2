@@ -461,19 +461,26 @@ export class StateManager {
             console.log('💾 Card saved to localStorage');
         } catch (e) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ((e as any).name === 'QuotaExceededError') {
-                console.warn('💾 localStorage quota exceeded, saving without image');
-                if (saveData.cardData.front) {
-                    saveData.cardData.front.imageUrl = null;
-                }
-                // Also clear root legacy property if exists
+                console.warn('💾 localStorage quota exceeded, attempting cleanup...');
+
+                // 1. Clear image data
+                if (saveData.cardData.front) saveData.cardData.front.imageUrl = null;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if ((saveData.cardData as any).imageUrl) (saveData.cardData as any).imageUrl = null;
 
+                // 2. Clear legacy history from localStorage (should be in IndexedDB by now)
+                if (localStorage.getItem('dnd_card_history')) {
+                    console.log('🧹 Clearing legacy dnd_card_history to free space');
+                    localStorage.removeItem('dnd_card_history');
+                }
+
                 try {
                     localStorage.setItem('dnd_current_card', JSON.stringify(saveData));
+                    console.log('✅ Saved card without image data after cleanup');
                 } catch (e2) {
-                    console.error('💾 Failed to save card:', e2);
+                    console.warn('⚠️ Could not save current card even after cleanup (Storage full)');
                 }
             }
         }

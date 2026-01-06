@@ -48,6 +48,9 @@ export default {
                 case 'kie-zimage':
                     return await handleKieZImage(data, env.KIE_API_KEY);
 
+                case 'fal-zimage':
+                    return await handleFalZImage(data, env.FAL_API_KEY);
+
                 default:
                     return jsonResponse({ error: 'Unknown action' }, 400);
             }
@@ -300,4 +303,68 @@ async function handleKieZImage(data, apiKey) {
     }
 
     return jsonResponse({ error: 'Kie task timeout (60s)' }, 504);
+}
+
+// FAL AI Z-Image Handler
+async function handleFalZImage(data, apiKey) {
+    const { prompt, image_size, num_inference_steps, output_format } = data;
+
+    if (!apiKey) {
+        return jsonResponse({ error: 'FAL_API_KEY not configured' }, 500);
+    }
+
+    // FAL API endpoint for Z-Image Turbo
+    const url = 'https://fal.run/fal-ai/z-image/turbo';
+
+    const body = {
+        prompt,
+        image_size: image_size || 'square_hd',
+        num_inference_steps: num_inference_steps || 8,
+        output_format: output_format || 'jpeg',
+        num_images: 1,
+        enable_safety_checker: true
+    };
+
+    console.log('FAL Z-Image: Sending request with prompt:', prompt.substring(0, 100) + '...');
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Key ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.log('FAL Z-Image: Error response:', JSON.stringify(error));
+        return jsonResponse({ error: `FAL Error (${response.status}): ${error.detail || response.statusText}` }, response.status);
+    }
+
+    const result = await response.json();
+    console.log('FAL Z-Image: Success, images count:', result.images?.length);
+
+    // FAL returns images as URLs, we need to fetch and convert to base64
+    if (result.images && result.images[0] && result.images[0].url) {
+        const imageUrl = result.images[0].url;
+        console.log('FAL Z-Image: Fetching image from:', imageUrl);
+
+        const imageResponse = await fetch(imageUrl);
+        const imageArrayBuffer = await imageResponse.arrayBuffer();
+
+        // Convert to base64 in chunks to avoid stack overflow
+        const bytes = new Uint8Array(imageArrayBuffer);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+        const base64 = btoa(binary);
+
+        return jsonResponse({ image: base64 });
+    }
+
+    return jsonResponse({ error: 'No image in FAL response' }, 500);
 }

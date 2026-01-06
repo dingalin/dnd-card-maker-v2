@@ -243,16 +243,17 @@ export class EditorController {
                 this.state.state.isFlipped = this.isFlipped;
 
                 // Trigger flip animation on canvas container
-                const canvasContainer = document.querySelector('.canvas-container') as HTMLElement;
-                if (canvasContainer) {
+                // Trigger flip animation on card rotator
+                const cardRotator = document.querySelector('.card-rotator') as HTMLElement;
+                if (cardRotator) {
                     // Remove previous animation class
-                    canvasContainer.classList.remove('flipping');
+                    cardRotator.classList.remove('flipping');
 
                     // Force reflow to restart animation
-                    void canvasContainer.offsetWidth;
+                    void cardRotator.offsetWidth;
 
                     // Add animation class
-                    canvasContainer.classList.add('flipping');
+                    cardRotator.classList.add('flipping');
 
                     // At the middle of the animation (90 degrees), update the card content
                     setTimeout(() => {
@@ -261,7 +262,7 @@ export class EditorController {
 
                     // Remove animation class after it completes
                     setTimeout(() => {
-                        canvasContainer.classList.remove('flipping');
+                        cardRotator.classList.remove('flipping');
                     }, 500);
                 } else {
                     this.updateFlipState();
@@ -768,33 +769,16 @@ export class EditorController {
         const noteSubtype = document.getElementById('note-subtype') as HTMLElement | null;
         const subtypeSelect = document.getElementById('item-subtype') as HTMLSelectElement | null;
 
-        // Setup Subtype Listener (once)
-        if (subtypeSelect && noteSubtype) {
-            subtypeSelect.addEventListener('change', (e) => {
-                const target = e.target as HTMLSelectElement;
-                const val = target.value;
-                // Display simple text, store full value
-                noteSubtype.textContent = val ? val.split('(')[0].trim() : '-';
-                noteSubtype.dataset.value = val;
-            });
-        }
+        // Subtype listener removed to avoid conflict with GeneratorUIManager
+
 
         if (typeSelect) {
             typeSelect.addEventListener('change', (e) => {
                 const target = e.target as HTMLSelectElement;
                 const selectedType = target.value;
 
-                // Sync Sticky Note Type
-                if (noteType) {
-                    const typeText = typeSelect.options[typeSelect.selectedIndex].text.split('(')[0].trim();
-                    noteType.textContent = typeText;
-                    noteType.dataset.value = selectedType;
-                }
-                // Reset Sticky Note Subtype
-                if (noteSubtype) {
-                    noteSubtype.textContent = '-';
-                    noteSubtype.dataset.value = '';
-                }
+                // Sticky Note updates removed to avoid conflict with GeneratorUIManager
+
 
                 // Update Subtypes UI (Existing Logic)
                 const subtypeContainer = document.getElementById('subtype-container');

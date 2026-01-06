@@ -301,13 +301,25 @@ export class HistoryController {
 
     async printSelected() {
         const ids = Array.from(this.selectedIds);
-        if (ids.length === 0) return;
+        console.log('🖨️ printSelected() called, selected IDs:', ids);
+
+        if (ids.length === 0) {
+            console.log('🖨️ No cards selected for printing');
+            this.ui.showToast('יש לבחור קלפים תחילה', 'info');
+            return;
+        }
+
         const globals = window as unknown as WindowGlobals;
+        console.log('🖨️ printManager exists?', !!globals.printManager);
 
         if (globals.printManager) {
             const history = await this.state.getHistory();
             const cards = history.filter(item => this.selectedIds.has(item.id));
+            console.log('🖨️ Cards to print:', cards.length, cards);
             globals.printManager.openPrintModal(cards);
+        } else {
+            console.error('🖨️ PrintManager not found on window!');
+            this.ui.showToast('שגיאה: מערכת ההדפסה לא נטענה', 'error');
         }
     }
 

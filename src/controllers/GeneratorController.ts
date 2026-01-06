@@ -99,45 +99,58 @@ export class GeneratorController {
         if (!manager) return;
 
         const currentState = this.state.getState();
-        if (!currentState.cardData) return;
-
-        const container = document.getElementById('custom-visual-prompt') as HTMLTextAreaElement | null;
-        const customPrompt = container?.value?.trim();
-        const prompt = customPrompt || currentState.cardData.visualPrompt || currentState.lastVisualPrompt;
         const i18n = (window as unknown as WindowGlobals).i18n;
 
-        if (!prompt) {
-            this.ui.globalUI.showToast(i18n?.t('toasts.noPromptSaved') || 'No prompt saved', 'warning');
-            return;
-        }
+        // ALWAYS use form params for image generation - this is the "Appearance" button
+        // which should generate an image based on CURRENT form selection, not old cardData
+        const params = this.ui.getGenerationParams();
+        console.log('🖼️ onRegenerateImage - using form params:', params);
 
-        this.ui.setButtonState('regen-image-btn', true);
+        // Check for custom visual prompt override
+        const container = document.getElementById('custom-visual-prompt') as HTMLTextAreaElement | null;
+        const customPrompt = container?.value?.trim();
+
+        // Use imageOnly mode - generates visual prompt via Gemini then creates just the image
+        const imageOnlyParams = {
+            ...params,
+            imageOnly: true,
+            complexityMode: 'simple',
+            overrides: {
+                ...params.overrides,
+                customVisualPrompt: customPrompt || undefined
+            }
+        };
+
+        this.ui.setLoading(true, i18n?.t('preview.creatingPrompt') || 'Creating image...');
 
         try {
-            const imageUrl = await manager.generateImage(prompt);
+            const result = await manager.generateItem(imageOnlyParams, (step: number, pct: number, msg: string) => {
+                this.ui.updateProgress(step, pct, msg);
+            });
 
-            let persistentImageUrl = imageUrl;
-            if (imageUrl.startsWith('blob:')) {
-                const { blobToBase64 } = await import('../utils');
-                persistentImageUrl = await blobToBase64(imageUrl);
-            }
-
-            const newCardData = {
-                ...currentState.cardData,
-                imageUrl: persistentImageUrl,
-                front: {
-                    ...currentState.cardData.front!,
-                    imageUrl: persistentImageUrl
+            // Merge with existing cardData if present, otherwise use new result
+            const newCardData = currentState.cardData
+                ? {
+                    ...currentState.cardData,
+                    imageUrl: result.cardData.imageUrl,
+                    visualPrompt: result.cardData.visualPrompt,
+                    front: {
+                        ...currentState.cardData.front!,
+                        imageUrl: result.cardData.imageUrl
+                    }
                 }
-            };
+                : result.cardData;
 
             this.state.setCardData(newCardData);
+            this.ui.updateProgress(4, 100, i18n?.t('preview.ready') || 'Ready!');
+            await new Promise(r => setTimeout(r, 500));
+            this.ui.setLoading(false);
+
             this.ui.globalUI.showToast(i18n?.t('toasts.newImageCreated') || 'New image created!', 'success');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            this.ui.setLoading(false);
             this.ui.globalUI.showToast(i18n?.t('toasts.errorCreatingImage') || 'Error creating image', 'error');
-        } finally {
-            this.ui.setButtonState('regen-image-btn', false);
         }
     }
 
@@ -305,6 +318,37 @@ export class GeneratorController {
             const frontFontSizes = newSettings.front.fontSizes;
             this.ui.updateFontSizeDisplay(frontFontSizes.nameSize || 64);
 
+            // === UPDATE BACK CARD UI SLIDERS ===
+            const backOffsets = newSettings.back.offsets;
+            const backFontSizes = newSettings.back.fontSizes;
+
+            // Update back card position sliders
+            const setSlider = (id: string, val: number | undefined) => {
+                const el = document.getElementById(id) as HTMLInputElement;
+                if (el && val !== undefined) {
+                    el.value = String(val);
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            };
+
+            setSlider('ability-offset', backOffsets.abilityName);
+            setSlider('mech-offset', backOffsets.mech);
+            setSlider('lore-offset', backOffsets.lore);
+            setSlider('ability-width', backOffsets.mechWidth);
+            setSlider('lore-width', backOffsets.loreWidth);
+
+            // Update back card font size sliders
+            const updateDisplay = (displayId: string, val: number | undefined) => {
+                const el = document.getElementById(displayId);
+                if (el && val !== undefined) {
+                    el.textContent = `${val}px`;
+                }
+            };
+
+            updateDisplay('abilityNameSize-display', backFontSizes.abilityNameSize);
+            updateDisplay('mechSize-display', backFontSizes.mechSize);
+            updateDisplay('loreSize-display', backFontSizes.loreSize);
+
             this.ui.globalUI.showToast(i18n?.t('toasts.autoLayoutComplete') || 'Reset to defaults!', 'success');
         } catch (error) {
             console.error(error);
@@ -361,11 +405,36 @@ export class GeneratorController {
                 manualAC
             });
 
+            // Render both front AND back thumbnails for the equipment slot
+            let thumbnailUrl = result.imageUrl;
+            let backThumbnailUrl: string | null = null;
+
+            try {
+                const { renderCardThumbnail } = await import('../utils/CardThumbnailRenderer.ts');
+                console.log('📸 Auto-equip card data:', {
+                    abilityName: result.abilityName || result.back?.title,
+                    abilityDesc: result.abilityDesc || result.back?.mechanics,
+                    description: result.description || result.back?.lore
+                });
+                const thumbnails = await renderCardThumbnail(result, result.imageUrl, this.state, true);
+                thumbnailUrl = thumbnails.front || result.imageUrl;
+                backThumbnailUrl = thumbnails.back || null;
+                console.log('✅ Card thumbnails rendered for auto-equip - back exists:', backThumbnailUrl ? 'YES' : 'NO');
+            } catch (thumbnailError) {
+                console.warn('Could not render thumbnails, using raw image:', thumbnailError);
+            }
+
+            // Add the thumbnails to the card data
+            result.thumbnail = thumbnailUrl;
+            result.backThumbnail = backThumbnailUrl;
+
             document.dispatchEvent(new CustomEvent('request-character-equip-item', {
                 detail: {
                     cardData: result,
-                    imageUrl: result.imageUrl,
-                    isRenderedCard: false
+                    imageUrl: thumbnailUrl,
+                    backImageUrl: backThumbnailUrl,
+                    isRenderedCard: true,
+                    targetSlotId: detail.slotId // Pass the target slot directly
                 }
             }));
             console.log(`✅ Auto-equip item generated for slot: ${detail.slotId}`);

@@ -1,5 +1,40 @@
 /* === Buttons === */
 
+/* Generation Buttons (פשוט/יצירתי) - Horizontal layout */
+.generation-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+/* Hide generation buttons in manual mode */
+body.mode-manual .generation-buttons,
+body.mode-manual #surprise-btn {
+    display: none !important;
+}
+
+.generation-buttons button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem !important;
+    min-height: 48px;
+    /* קצת יותר גבוה בשביל הנוחות */
+    flex: 1 1 0% !important;
+    /* Force equal width */
+    width: auto !important;
+}
+
+.generation-buttons .icon-img-sm {
+    width: 24px;
+    height: 24px;
+    margin: 0 !important;
+    /* Reset negative margins if any */
+}
+
 /* Primary Action Button (Stone Style) - Optimized */
 .btn-primary {
     width: 100%;

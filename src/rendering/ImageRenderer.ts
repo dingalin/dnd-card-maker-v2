@@ -108,7 +108,11 @@ export const ImageRenderer = {
                     let drawSource = img;
                     if (style === 'no-background') {
                         // Use extracted BackgroundRemover
-                        drawSource = BackgroundRemover.removeWhiteBackground(img, color);
+                        // For no-background images, FLUX generates with white background,
+                        // so target white color for removal, not the card template color
+                        const targetColor = '#ffffff';
+                        console.log('ImageRenderer: Using white target for no-background removal');
+                        drawSource = BackgroundRemover.removeWhiteBackground(img, targetColor);
                     }
 
                     // 2. Draw Image on Temp Canvas with Clipping if needed

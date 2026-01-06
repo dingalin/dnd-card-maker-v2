@@ -2,6 +2,7 @@
 import i18n from '../../i18n.ts';
 import { getTargetSlotsForCard } from './SlotMapping.ts';
 import { autoEquipAllSlots, autoEquipSlot } from './AutoEquipManager.ts';
+import { CardViewerService } from '../../services/CardViewerService.ts';
 
 interface DragData {
     element: HTMLElement;
@@ -43,7 +44,27 @@ export class CharacterEquipmentManager {
         const backpackGrid = document.querySelector('.backpack-grid');
         if (backpackGrid) {
             backpackGrid.addEventListener('click', (e) => this.handleBackpackSlotClick(e));
+            console.log('🎒 Backpack grid click listener attached');
         }
+
+        // Add click handlers for equipment slots (for viewing items)
+        const equipmentGrid = document.querySelector('.equipment-grid');
+        console.log('🎒 Equipment grid found:', equipmentGrid);
+        if (equipmentGrid) {
+            equipmentGrid.addEventListener('click', (e) => this.handleEquipmentSlotClick(e));
+            console.log('🎒 Equipment grid click listener attached');
+        } else {
+            console.warn('🎒 Equipment grid NOT FOUND - click handler not attached!');
+        }
+
+        // Also add click to all existing equipped items
+        document.querySelectorAll('.equipped-item-icon').forEach(img => {
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('🖱️ Direct click on equipped item');
+                this.showCardViewer(img as HTMLImageElement);
+            });
+        });
 
         // Setup equipment slot actions (auto-generate buttons)
         this.setupSlotActions();
@@ -239,6 +260,14 @@ export class CharacterEquipmentManager {
         el.dataset.draggableSetup = 'true';
         el.draggable = true;
 
+        // Add click handler for viewing the card
+        el.addEventListener('click', (e) => {
+            // Only trigger on simple click, not drag
+            e.stopPropagation();
+            console.log('🖱️ Click on equipped item (via makeElementDraggable)');
+            this.showCardViewer(el as HTMLImageElement);
+        });
+
         el.addEventListener('dragstart', (e) => {
             console.log('🎒 Drag started');
             e.stopPropagation();
@@ -401,7 +430,8 @@ export class CharacterEquipmentManager {
                 }
 
                 // Place dragged item in target
-                targetContent.innerHTML = `<img src="${dragData.imageSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                const finalSrc = cardData.thumbnail || dragData.imageSrc;
+                targetContent.innerHTML = `<img src="${finalSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
                 this.makeElementDraggable(targetContent.querySelector('img') as HTMLElement);
 
                 if ((window as any).uiManager) {
@@ -412,8 +442,11 @@ export class CharacterEquipmentManager {
             // Slot is empty - just move the item
             this.clearSourceSlot(dragData);
 
+            // Use thumbnail if available to avoid white background artifact
+            const finalSrc = cardData.thumbnail || dragData.imageSrc;
+
             // Place dragged item in target
-            targetContent.innerHTML = `<img src="${dragData.imageSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+            targetContent.innerHTML = `<img src="${finalSrc}" data-item-name="${dragData.itemName || ''}" data-unique-id="${dragData.uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
             this.makeElementDraggable(targetContent.querySelector('img') as HTMLElement);
 
             if ((window as any).uiManager) {
@@ -477,7 +510,15 @@ export class CharacterEquipmentManager {
         const slot = document.querySelector(`.backpack-slot[data-backpack-slot="${slotIndex}"] .slot-content`);
         if (!slot) return;
 
-        slot.innerHTML = `<img src="${itemData.imageSrc}" data-item-name="${itemData.itemName || ''}" data-unique-id="${itemData.uniqueId}" class="backpack-item-icon" />`;
+        // Use thumbnail if available (need to fetch from registry or assume itemData has it)
+        // If placing from drag drop, we might need to get it from registry
+        let imageToUse = itemData.imageSrc;
+        if (itemData.uniqueId) {
+            const regData = this.itemRegistry.get(itemData.uniqueId);
+            if (regData && regData.thumbnail) imageToUse = regData.thumbnail;
+        }
+
+        slot.innerHTML = `<img src="${imageToUse}" data-item-name="${itemData.itemName || ''}" data-unique-id="${itemData.uniqueId}" class="backpack-item-icon" />`;
 
         // Store in backpack registry
         this.backpackItems.set(slotIndex, itemData);
@@ -509,16 +550,63 @@ export class CharacterEquipmentManager {
         const slot = target.closest('.backpack-slot');
         if (!slot) return;
 
-        const img = slot.querySelector('img');
+        const img = slot.querySelector('img') as HTMLImageElement;
         if (img) {
-            // Show card viewer for backpack item
-            // Using controller to call card viewer
-            if (this.controller.cardViewer) {
-                this.controller.cardViewer.show(img.src);
-            } else if ((window as any).cardViewerService) {
-                (window as any).cardViewerService.show(img.src);
-            }
+            this.showCardViewer(img);
         }
+    }
+
+    /**
+     * Handle click on equipment slot (view item)
+     */
+    handleEquipmentSlotClick(e: Event) {
+        const target = e.target as HTMLElement;
+        console.log('🖱️ Equipment slot click detected', target);
+
+        // Don't trigger on auto-gen button click
+        if (target.closest('.auto-gen-btn')) return;
+
+        const slot = target.closest('.slot[data-slot]');
+        if (!slot) {
+            console.log('🖱️ No slot found');
+            return;
+        }
+
+        const img = slot.querySelector('.slot-content img') as HTMLImageElement;
+        console.log('🖱️ Found img:', img);
+        if (img) {
+            this.showCardViewer(img);
+        }
+    }
+
+    /**
+     * Show card viewer with full card data and actions
+     */
+    async showCardViewer(img: HTMLImageElement) {
+        console.log('📸 showCardViewer called with img:', img.src?.substring(0, 50));
+
+        const uniqueId = img.dataset.uniqueId;
+        const cardData = uniqueId ? this.itemRegistry.get(uniqueId) : null;
+        console.log('📸 Card data found:', cardData ? 'yes' : 'no', 'uniqueId:', uniqueId);
+
+        // Get front image (thumbnail or item image)
+        const frontImage = img.src;
+
+        // Get back image from cardData if available (check both field names)
+        const backImage = cardData?.backThumbnail || cardData?.capturedBackImage || null;
+        console.log('📸 Back image available:', backImage ? 'yes' : 'no');
+
+        console.log('📸 Calling CardViewerService.show()');
+
+        // Show card viewer with both sides
+        CardViewerService.show({
+            frontImage: frontImage,
+            backImage: backImage,
+            cardData: cardData,
+            sourceElement: img
+        });
+
+        console.log('📸 CardViewerService.show() called successfully');
     }
 
     /**

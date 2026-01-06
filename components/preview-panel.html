@@ -42,8 +42,10 @@
 
         <!-- Main card display - Center -->
         <div class="canvas-container">
-            <canvas id="card-canvas" width="600" height="840"></canvas>
-            <canvas id="card-canvas-back" width="600" height="840" class="hidden"></canvas>
+            <div class="card-rotator">
+                <canvas id="card-canvas" width="600" height="840"></canvas>
+                <canvas id="card-canvas-back" width="600" height="840" class="hidden"></canvas>
+            </div>
 
             <!-- Loading Overlay -->
             <div id="loading-overlay" class="hidden">
@@ -107,8 +109,16 @@
                     </div>
                     <div class="note-divider"></div>
                     <div class="note-row">
+                        <span class="note-label" data-i18n="stickyNote.level">רמה:</span>
+                        <span class="note-value" id="note-level">-</span>
+                    </div>
+                    <div class="note-row">
                         <span class="note-label" data-i18n="stickyNote.type">סוג:</span>
                         <span class="note-value" id="note-type">-</span>
+                    </div>
+                    <div class="note-row">
+                        <span class="note-label">חפץ:</span>
+                        <span class="note-value" id="note-subtype">-</span>
                     </div>
                     <div class="note-row">
                         <span class="note-label" data-i18n="stickyNote.rarity">נדירות:</span>

@@ -101,6 +101,8 @@ export async function autoEquipSlot(slotId: string, level = '1-4', complexityMod
         return;
     }
 
+    console.log(`🎲 Auto-equip slot "${slotId}" with config:`, config);
+
     const slotLabel = i18n.t(`characterSheet.${slotId.replace(/\d/g, '')}`) || config.label;
 
     // Only show full-screen progress if doing bulk update, otherwise maybe just spinner on button?

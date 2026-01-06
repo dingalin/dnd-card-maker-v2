@@ -9,7 +9,8 @@ export class PrintManager {
             paperSize: 'a4', // a4, letter
             orientation: 'portrait',
             scale: 1.0,
-            calibration: 1.0
+            calibration: 1.0,
+            doubleSided: false // Front+Back side by side mode
         };
 
         // Wait for components to load
@@ -109,6 +110,37 @@ export class PrintManager {
             this.updateOrientationUI();
             this.renderPreview();
         };
+
+        // Size Preset Buttons
+        document.querySelectorAll('.size-preset-btn').forEach(btn => {
+            btn.onclick = () => {
+                const width = parseFloat(btn.dataset.width);
+                const height = parseFloat(btn.dataset.height);
+
+                this.settings.cardWidth = width;
+                this.settings.cardHeight = height;
+
+                // Sync all inputs
+                this.syncInput('print-card-width', width);
+                this.syncInput('print-card-height', height);
+
+                // Update active state
+                document.querySelectorAll('.size-preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.renderPreview();
+            };
+        });
+
+        // Double-Sided Checkbox
+        const doubleSidedCheckbox = document.getElementById('print-double-sided');
+        if (doubleSidedCheckbox) {
+            doubleSidedCheckbox.addEventListener('change', (e) => {
+                this.settings.doubleSided = e.target.checked;
+                console.log('🃏 Double-sided mode:', this.settings.doubleSided);
+                this.renderPreview();
+            });
+        }
     }
 
     syncInput(baseId, value) {
@@ -174,7 +206,10 @@ export class PrintManager {
         const cH = this.settings.cardHeight * this.settings.scale;
 
         // CSS Grid setup
-        grid.style.gridTemplateColumns = `repeat(auto-fill, ${cW}mm)`;
+        // In double-sided mode, each "unit" is 2 cards wide (front + back)
+        const effectiveCardWidth = this.settings.doubleSided ? cW * 2 : cW;
+
+        grid.style.gridTemplateColumns = `repeat(auto-fill, ${effectiveCardWidth}mm)`;
         grid.style.gridAutoRows = `${cH}mm`;
         grid.style.gap = `${this.settings.gap}mm`;
         grid.style.justifyContent = 'center';
@@ -183,23 +218,62 @@ export class PrintManager {
         // Render Cards
         grid.innerHTML = '';
         this.cards.forEach(card => {
-            const img = document.createElement('img');
-            // Prefer thumbnail (full card) over raw image
-            let src = card.thumbnail;
-            if (!src || src === 'null' || src === 'undefined') {
-                src = card.cardData.imageUrl || 'assets/textures/stone_slab.png';
-            }
-            img.src = src;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover'; // Maintain aspect or fill? Cards should be exact ratio usually.
-            // If user changes ratio via width/height sliders, image might stretch.
-            // Let's allow stretch to fill the "cut line" dim.
-            img.style.backgroundColor = 'black';
-            img.style.border = '1px dashed #ccc'; // Cut line guide
-            img.style.boxSizing = 'border-box';
+            if (this.settings.doubleSided) {
+                // Create a container for front+back pair
+                const pair = document.createElement('div');
+                pair.style.display = 'flex';
+                pair.style.width = `${effectiveCardWidth}mm`;
+                pair.style.height = `${cH}mm`;
+                pair.style.gap = '0';
+                pair.style.border = '1px dashed #ccc';
+                pair.style.boxSizing = 'border-box';
 
-            grid.appendChild(img);
+                // Front image
+                const frontImg = document.createElement('img');
+                let frontSrc = card.thumbnail;
+                if (!frontSrc || frontSrc === 'null' || frontSrc === 'undefined') {
+                    frontSrc = card.cardData?.imageUrl || 'assets/textures/stone_slab.png';
+                }
+                frontImg.src = frontSrc;
+                frontImg.style.width = '50%';
+                frontImg.style.height = '100%';
+                frontImg.style.objectFit = 'cover';
+                frontImg.style.backgroundColor = 'black';
+                frontImg.style.borderRight = '1px dotted #999'; // Fold line
+
+                // Back image
+                const backImg = document.createElement('img');
+                let backSrc = card.backThumbnail || card.cardData?.backThumbnail || card.cardData?.capturedBackImage;
+                if (!backSrc || backSrc === 'null' || backSrc === 'undefined') {
+                    // Fallback: use placeholder or same as front
+                    backSrc = 'assets/textures/stone_slab.png';
+                }
+                backImg.src = backSrc;
+                backImg.style.width = '50%';
+                backImg.style.height = '100%';
+                backImg.style.objectFit = 'cover';
+                backImg.style.backgroundColor = 'black';
+
+                pair.appendChild(frontImg);
+                pair.appendChild(backImg);
+                grid.appendChild(pair);
+            } else {
+                const img = document.createElement('img');
+                // Prefer thumbnail (full card) over raw image
+                let src = card.thumbnail;
+                if (!src || src === 'null' || src === 'undefined') {
+                    src = card.cardData?.imageUrl || 'assets/textures/stone_slab.png';
+                }
+                img.src = src;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.backgroundColor = 'black';
+                img.style.border = '1px dashed #ccc'; // Cut line guide
+                img.style.boxSizing = 'border-box';
+
+                grid.appendChild(img);
+            }
         });
 
         // Calculate fit info

@@ -36,7 +36,17 @@ export async function generateImageGetImg(
 ): Promise<string> {
     const { password } = geminiConfig;
 
-    const styleConfig: FluxStyleConfig = FLUX_STYLE_CONFIGS[style] || FLUX_STYLE_CONFIGS['realistic'];
+    let styleConfig: FluxStyleConfig = FLUX_STYLE_CONFIGS[style] || FLUX_STYLE_CONFIGS['realistic'];
+
+    // Fix for studio artifacts: If 'no-background' is selected, override the 'realistic' style 
+    // to avoid "softbox lighting" and "studio setup" which cause artifacts.
+    if (styleOption === 'no-background' && (style === 'realistic' || !style)) {
+        styleConfig = {
+            primary: 'high quality 3D render, photorealistic digital art, sharp detail',
+            technique: 'neutral lighting, ambient occlusion, ray tracing, sharp focus, digital clear style',
+            finish: 'high resolution, 8k, unreal engine 5 style, clean finish'
+        };
+    }
 
     // Use the smart color description if provided, otherwise fall back to hex lookup
     const colorName = colorDescription || getColorName(userColor);
@@ -56,7 +66,12 @@ export async function generateImageGetImg(
     );
 
     // === BUILD FINAL OPTIMIZED PROMPT ===
-    const compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition';
+    let compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition';
+
+    // Fix for no-background mode: remove photography terms that trigger studio equipment generation
+    if (styleOption === 'no-background') {
+        compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame, complete item fully visible, sharp focus on item, centered composition, 3D render style, clean edges';
+    }
 
     const finalPrompt = [
         styleConfig.primary,
@@ -73,6 +88,11 @@ export async function generateImageGetImg(
 
     console.log(`🎨 ImageGenerator (GetImg/FLUX): Style=${style}, Option=${styleOption}`);
     console.log(`📝 Optimized Prompt: "${finalPrompt.substring(0, 150)}..."`);
+
+    // Handle FAL Z-Image model (lower resolution for cost savings)
+    if (model === 'fal-zimage') {
+        return generateWithFal(password!, finalPrompt);
+    }
 
     // Handle Z-Image model (Kie.ai)
     if (model === 'getimg-zimage') {
@@ -216,7 +236,7 @@ async function buildBackgroundPrompt(
     console.log(`🎨 FLUX Background: styleOption=${styleOption}, colorName=${colorName}`);
 
     if (styleOption === 'no-background') {
-        return 'PURE WHITE BACKGROUND ONLY, solid white #FFFFFF background, product photography on seamless white paper, clean white studio backdrop, no environment, no scenery, white void background';
+        return 'isolated on solid white background, pure white background, simple flat white background, floating in air, shadowless, completely empty background, object isolation';
     } else if (styleOption === 'colored-background') {
         return `isolated on ${colorName} gradient background, soft ambient glow, ${colorName} color tones`;
     } else {
@@ -257,6 +277,38 @@ async function buildBackgroundPrompt(
 
         console.log(`🎨 AI-detected theme for natural background: ${cardTheme}`);
         return themedNaturalBackgrounds[cardTheme] || themedNaturalBackgrounds['Nature'];
+    }
+}
+
+// Generate image via FAL Z-Image (lower resolution for cost savings)
+async function generateWithFal(password: string, finalPrompt: string): Promise<string> {
+    console.log('🖼️ Using FAL Z-Image Turbo (512x512 for items)');
+
+    try {
+        const truncatedPrompt = finalPrompt.length > 1000
+            ? finalPrompt.substring(0, 997) + '...'
+            : finalPrompt;
+
+        console.log(`FAL Z-Image prompt length: ${truncatedPrompt.length} chars`);
+
+        const data = await callViaWorker(password, 'fal-zimage', {
+            prompt: truncatedPrompt,
+            image_size: 'square',  // 512x512 - cheaper than square_hd (1024x1024)
+            num_inference_steps: 8,
+            output_format: 'jpeg'
+        });
+
+        if (data.image) {
+            const imageUrl = `data:image/jpeg;base64,${data.image}`;
+            const blob = await (await fetch(imageUrl)).blob();
+            return BlobURLRegistry.register(URL.createObjectURL(blob));
+        } else if (data.error) {
+            throw new Error(data.error);
+        }
+        throw new Error("No image returned from FAL Z-Image");
+    } catch (error) {
+        console.error('FAL Z-Image Error:', error);
+        throw error;
     }
 }
 

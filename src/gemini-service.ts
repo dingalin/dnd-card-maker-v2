@@ -21,7 +21,7 @@ import { BlobURLRegistry } from './services/blob-registry.ts';
 import { FLUX_STYLE_CONFIGS, getColorName, getElementalEnhancement, getRarityQuality } from './services/style-configs.ts';
 
 // Import new modular services
-import { generateItemDetails as _generateItemDetails } from './services/gemini/ItemGenerator.ts';
+import { generateItemDetails as _generateItemDetails, generateVisualPromptOnly as _generateVisualPromptOnly } from './services/gemini/ItemGenerator.ts';
 import { generateImageGetImg as _generateImageGetImg } from './services/gemini/ImageGenerator.ts';
 import { generateCardBackground as _generateCardBackground } from './services/gemini/BackgroundGenerator.ts';
 import { detectTemplateTheme as _detectTemplateTheme, analyzeCardLayout as _analyzeCardLayout } from './services/gemini/LayoutAnalyzer.ts';
@@ -61,7 +61,7 @@ export default class GeminiService {
             this.useWorker = true;
             console.log("GeminiService: Using Worker proxy mode 🔐");
         }
-        this.baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        this.baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
     }
 
     /**
@@ -140,6 +140,20 @@ export default class GeminiService {
             ability,
             contextImage,
             complexityMode,
+            locale
+        );
+    }
+
+    /**
+     * Generate only a visual prompt for image generation (no item details)
+     */
+    async generateVisualPromptOnly(type: string, subtype: string, rarity: string, ability: string, locale: string = 'he'): Promise<string> {
+        return _generateVisualPromptOnly(
+            this._getConfig(),
+            type,
+            subtype,
+            rarity,
+            ability,
             locale
         );
     }

@@ -276,7 +276,8 @@
         "namePlaceholderHint": "הקלד שם ולחץ אנטר",
         "itemMoved": "פריט הועבר!",
         "itemStored": "פריט הועבר לתיק",
-        "autoGenerate": "✨ יצירה אוטומטית"
+        "autoGenerate": "✨ יצירה אוטומטית",
+        "swapConfirm": "המקום תפוס. האם להחליף?"
     },
     "equipModal": {
         "title": "צייד דמות בחפץ",

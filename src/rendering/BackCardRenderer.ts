@@ -1,6 +1,7 @@
 // @ts-nocheck
 import TextRenderer from './TextRenderer.ts';
 import VisualEffects from './VisualEffects.ts';
+import { BACK_FONT_SIZES } from '../config/CardTextConfig';
 
 export const BackCardRenderer = {
     /**
@@ -21,13 +22,15 @@ export const BackCardRenderer = {
         // 2. Setup Font & Styles
         const fontFamily = options.fontFamily || 'Heebo';
         const styles = options.fontStyles || {};
-        const sizes = options.fontSizes || { abilityNameSize: 36, mechSize: 24, loreSize: 20 };
+        const sizes = options.fontSizes || { ...BACK_FONT_SIZES };
         const offsets = options;
 
         const getFont = (prefix, size) => {
             return TextRenderer.buildFontString(styles, prefix, size, fontFamily);
         };
 
+        // Set RTL direction for Hebrew text - crucial for proper punctuation placement
+        ctx.direction = 'rtl';
         ctx.textAlign = 'center';
 
         // 3. Ability Name (Title)

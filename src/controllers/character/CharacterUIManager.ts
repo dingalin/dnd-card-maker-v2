@@ -6,6 +6,7 @@ interface CharacterController {
     updatePortrait(url: string): void;
     exportAllToGallery(): void;
     autoEquipAllSlots(): void;
+    generateCharacter(): Promise<void>;
 }
 
 export class CharacterUIManager {
@@ -27,6 +28,17 @@ export class CharacterUIManager {
             if (nameInput.value) this.displayCharacterName(nameInput.value);
         }
 
+        // Also handle the character-name input (from sidebar form)
+        const charNameInput = document.getElementById('character-name') as HTMLInputElement;
+        if (charNameInput) {
+            charNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.displayCharacterName(charNameInput.value);
+                }
+            });
+        }
+
         // Portrait Upload
         const uploadBtn = document.getElementById('upload-portrait-btn');
         const fileInput = document.getElementById('portrait-file-input') as HTMLInputElement;
@@ -46,10 +58,25 @@ export class CharacterUIManager {
             });
         }
 
+        // Create Character Button
+        const createBtn = document.getElementById('create-character-btn');
+        if (createBtn) {
+            createBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.controller.generateCharacter();
+            });
+        }
+
         // Export Button
         const exportBtn = document.getElementById('export-character-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.controller.exportAllToGallery());
+        }
+
+        // Export All to Gallery Button
+        const exportAllBtn = document.getElementById('export-all-gallery-btn');
+        if (exportAllBtn) {
+            exportAllBtn.addEventListener('click', () => this.controller.exportAllToGallery());
         }
 
         // Auto Equip Button
@@ -109,10 +136,24 @@ export class CharacterUIManager {
      * @param {boolean} isLoading
      */
     setLoading(isLoading: boolean) {
+        // Show/hide loading overlay
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
             if (isLoading) overlay.classList.remove('hidden');
             else overlay.classList.add('hidden');
+        }
+
+        // Show/hide generation status message
+        const genStatus = document.getElementById('generation-status');
+        if (genStatus) {
+            if (isLoading) genStatus.classList.remove('hidden');
+            else genStatus.classList.add('hidden');
+        }
+
+        // Disable/enable create button
+        const createBtn = document.getElementById('create-character-btn') as HTMLButtonElement;
+        if (createBtn) {
+            createBtn.disabled = isLoading;
         }
     }
 

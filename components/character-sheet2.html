@@ -1,0 +1,164 @@
+<!-- Character Sheet V2 - Parchment Style Layout -->
+<div class="character-sheet-v2">
+    <!-- Equipment Grid - uses CSS background for the image -->
+    <div class="equipment-grid equipment-slots-v2">
+        <!-- Row 1: Ranged, Necklace, Helmet, Cape -->
+        <div class="slot v2-slot" data-slot="ranged">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="necklace">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="helmet">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="cape">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+
+        <!-- Row 2: Offhand (shield), Portrait center, Mainhand (sword) -->
+        <div class="slot v2-slot" data-slot="offhand">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <!-- Portrait spans 2x2 in center -->
+        <div class="slot v2-slot character-portrait-slot" data-slot="portrait">
+            <div class="character-name-display" id="character-name-display"></div>
+            <div class="slot-content portrait-placeholder">
+                <img id="character-portrait-img" class="hidden" alt="Character Portrait"
+                    style="width:100%; height:100%; object-fit:cover; border-radius:8px;" />
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="mainhand">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+
+        <!-- Row 3: Armor (chest), Portrait continues, Gloves -->
+        <div class="slot v2-slot" data-slot="armor">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="gloves">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+
+        <!-- Row 4: Ring1, Belt, Boots, Ring2 -->
+        <div class="slot v2-slot" data-slot="ring1">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="belt">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="boots">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+        <div class="slot v2-slot" data-slot="ring2">
+            <div class="slot-content"></div>
+            <div class="slot-actions">
+                <button class="slot-action-btn auto-gen-btn" title="צור אוטומטי">🎲</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Actions -->
+    <div class="sheet-actions">
+        <button id="export-sheet-btn" class="action-btn export-btn" title="הורד להדפסה A4">
+            🖨️ הורד להדפסה
+        </button>
+    </div>
+
+    <!-- Backpack Inventory Grid -->
+    <div class="backpack-container">
+        <div class="backpack-header">
+            <span class="backpack-icon">🎒</span>
+            <span class="backpack-title" data-i18n="characterSheet.backpack">תיק גב</span>
+        </div>
+        <div class="backpack-grid">
+            <div class="backpack-slot" data-backpack-slot="0">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="1">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="2">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="3">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="4">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="5">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="6">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="7">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="8">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="9">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="10">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="11">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="12">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="13">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="14">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="15">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="16">
+                <div class="slot-content"></div>
+            </div>
+            <div class="backpack-slot" data-backpack-slot="17">
+                <div class="slot-content"></div>
+            </div>
+        </div>
+    </div>
+</div>

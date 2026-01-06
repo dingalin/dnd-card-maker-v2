@@ -74,7 +74,7 @@ export class TabManager {
             // Load Sheet (Central Grid)
             const sheetContainer = document.getElementById('character-sheet-placeholder');
             if (sheetContainer) {
-                const response = await fetch('./components/character-sheet.html');
+                const response = await fetch('./components/character-sheet2.html');
                 sheetContainer.innerHTML = await response.text();
             }
 

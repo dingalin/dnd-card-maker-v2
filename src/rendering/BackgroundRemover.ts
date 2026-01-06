@@ -108,20 +108,20 @@ export function removeWhiteBackground(img, targetColor = '#ffffff') {
     };
 
     // Threshold for PURE WHITE backgrounds
-    // 60 is balanced: catches light grays from FLUX but protects item colors
+    // 40 is stricter: only catches pure white/very light gray, protects item highlights
     const isStartColor = (idx) => {
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
-        return colorDistance(r, g, b) < 60; // Catches white and light gray
+        return colorDistance(r, g, b) < 40; // Only pure white and very light gray
     };
 
-    // Expansion threshold - slightly higher to fill gaps
+    // Expansion threshold - slightly higher but still conservative
     const isCloseToTarget = (idx) => {
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
-        return colorDistance(r, g, b) < 70; // Expand through light areas but stop at item
+        return colorDistance(r, g, b) < 50; // Conservative expansion - preserve item details
     };
 
     // 1. Collect start points from ALL borders (every pixel on edge)
@@ -219,13 +219,13 @@ export function removeWhiteBackground(img, targetColor = '#ffffff') {
 
             const dist = colorDistance(r, g, b);
 
-            // Fallback threshold - balanced
-            if (dist < 50) {
-                // White/very light gray - fully transparent
+            // Fallback threshold - conservative to protect item
+            if (dist < 35) {
+                // Pure white - fully transparent
                 data[i + 3] = 0;
-            } else if (dist < 80) {
-                // Light colors - gradual feathering for smooth edges
-                const alpha = Math.round(((dist - 50) / 30) * 255);
+            } else if (dist < 60) {
+                // Very light colors - gradual feathering for smooth edges
+                const alpha = Math.round(((dist - 35) / 25) * 255);
                 data[i + 3] = Math.min(data[i + 3], alpha);
             }
         }

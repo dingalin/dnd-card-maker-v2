@@ -816,9 +816,9 @@ export default class TreasureController {
             // Back side render options from stateManager
             const renderOptions = {
                 fontSizes: {
-                    abilityNameSize: bs.abilityNameSize || 52,
-                    mechSize: bs.mechSize || 32,
-                    loreSize: bs.loreSize || 24,
+                    abilityNameSize: bs.abilityNameSize || 62,
+                    mechSize: bs.mechSize || 50,
+                    loreSize: bs.loreSize || 46,
                     ...bs // spread remaining
                 },
                 offsets: {

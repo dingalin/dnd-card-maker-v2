@@ -7,6 +7,25 @@
         <h2 style="color: #d4af37; font-family: var(--font-display); margin-top: 0;" data-i18n="printModal.title">הגדרות
             הדפסה</h2>
 
+        <!-- Card Size Presets -->
+        <div class="form-group">
+            <label data-i18n="printModal.sizePresets">גודל קלף מוכן</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn-secondary size-preset-btn active" data-width="63" data-height="88"
+                    style="flex: 1; margin: 0; font-size: 0.8rem; padding: 0.4rem;">
+                    📦 רגיל<br><small>63×88mm</small>
+                </button>
+                <button class="btn-secondary size-preset-btn" data-width="44" data-height="63"
+                    style="flex: 1; margin: 0; font-size: 0.8rem; padding: 0.4rem;">
+                    🃏 מיני<br><small>44×63mm</small>
+                </button>
+                <button class="btn-secondary size-preset-btn" data-width="57" data-height="89"
+                    style="flex: 1; margin: 0; font-size: 0.8rem; padding: 0.4rem;">
+                    🎴 אמריקאי<br><small>57×89mm</small>
+                </button>
+            </div>
+        </div>
+
         <div class="form-group">
             <label data-i18n="printModal.cardWidth">רוחב קלף (מ"מ)</label>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -64,6 +83,22 @@
             <label data-i18n="printModal.scale">קנה מידה (זום)</label>
             <input type="range" id="print-scale-slider" min="0.8" max="1.2" step="0.01" value="1.0">
             <div style="text-align: center; color: #888; font-size: 0.8rem;" id="print-scale-display">100%</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Double-Sided Print Mode -->
+        <div class="form-group" style="background: #2a2a2a; padding: 0.75rem; border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="print-double-sided"
+                    style="width: 18px; height: 18px; accent-color: #d4af37;">
+                <label for="print-double-sided" style="margin: 0; font-weight: bold; color: #ffdea0;"
+                    data-i18n="printModal.doubleSided">🃏 הדפסה דו-צדדית (קדמי+אחורי)</label>
+            </div>
+            <div style="font-size: 0.75rem; color: #888; margin-top: 6px; margin-right: 26px;"
+                data-i18n="printModal.doubleSidedHelp">
+                הצד הקדמי והאחורי יודפסו זה לצד זה. גזור, קפל והדבק.
+            </div>
         </div>
 
         <div class="divider"></div>

@@ -110,9 +110,15 @@ export function getSlotMapping(): Record<string, SlotMappingItem> {
  * @returns {string[]} - Array of compatible slot IDs
  */
 export function getTargetSlotsForCard(cardData: any): string[] {
-    const type = (cardData.type || '').toLowerCase();
-    const subtype = (cardData.subtype || cardData.itemType || '').toLowerCase();
-    const name = (cardData.name || '').toLowerCase();
+    const frontType = cardData.front?.type || '';
+    const rootType = cardData.type || '';
+
+    // Combine types for check (lower case)
+    const type = (rootType || frontType).toLowerCase();
+
+    // Subtype often contains the specific "Plate", "Shield", etc.
+    const subtype = (cardData.subtype || cardData.itemType || frontType || '').toLowerCase();
+    const name = (cardData.name || cardData.front?.title || '').toLowerCase();
 
     // Weapon detection
     if (type === 'weapon' || type === 'נשק' ||
@@ -134,10 +140,11 @@ export function getTargetSlotsForCard(cardData: any): string[] {
         return ['offhand'];
     }
 
-    // Armor detection
-    if (type === 'armor' || type === 'שריון' ||
+    // Armor detection (including Hebrew 'עור' = leather)
+    if (type === 'armor' || type === 'שריון' || type === 'עור' ||
         subtype.includes('armor') || subtype.includes('plate') ||
-        subtype.includes('שריון') || subtype.includes('leather')) {
+        subtype.includes('שריון') || subtype.includes('leather') ||
+        subtype.includes('עור')) {
         return ['armor'];
     }
 

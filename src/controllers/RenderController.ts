@@ -99,6 +99,12 @@ export class RenderController {
                     await this.backRenderer.templateReady;
                 }
                 this.currentBackgroundUrl = state.settings.style.cardBackgroundUrl as string;
+
+                // Set context for AI visual generation
+                if (window.stateManager && state.settings.style.cardBackgroundUrl) {
+                    window.stateManager.setLastContext(state.settings.style.cardBackgroundUrl);
+                }
+
                 console.log("RenderController: New background loaded, proceeding with render");
             }
 
@@ -646,7 +652,22 @@ export class RenderController {
                                     const style = currentSettings.style || {};
                                     const backSettings = currentSettings.back || { fontSizes: {} as any, fontStyles: {}, offsets: {} as any };
 
-                                    await this.backRenderer.render(cardData, {
+                                    // NORMALIZE V2 -> V1 for renderer (same as in render() method)
+                                    const raw = cardData as any;
+                                    const renderData = raw.front ? {
+                                        ...raw,
+                                        name: raw.front.title,
+                                        typeHe: raw.front.type,
+                                        rarityHe: raw.front.rarity,
+                                        gold: raw.front.gold,
+                                        imageUrl: raw.front.imageUrl,
+                                        quickStats: raw.front.quickStats,
+                                        abilityName: raw.back?.title,
+                                        abilityDesc: raw.back?.mechanics,
+                                        description: raw.back?.lore
+                                    } : raw;
+
+                                    await this.backRenderer.render(renderData, {
                                         ...backSettings.offsets,
                                         backgroundScale: currentSettings.front?.offsets?.backgroundScale ?? 1.0, // Use FRONT's backgroundScale
                                         fontSizes: backSettings.fontSizes,

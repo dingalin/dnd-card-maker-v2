@@ -2,6 +2,7 @@
 import TextRenderer from './TextRenderer.ts';
 import VisualEffects from './VisualEffects.ts';
 import ImageRenderer from './ImageRenderer.ts';
+import { FRONT_FONT_SIZES } from '../config/CardTextConfig';
 
 export const FrontCardRenderer = {
     /**
@@ -129,11 +130,12 @@ export const FrontCardRenderer = {
     renderText(ctx, canvas, data, offsets) {
         const width = canvas.width;
         const sizes = {
-            nameSize: 48,
-            typeSize: 24,
-            raritySize: 24,
-            statsSize: 28,
-            goldSize: 24,
+            nameSize: FRONT_FONT_SIZES.nameSize,
+            typeSize: FRONT_FONT_SIZES.typeSize,
+            raritySize: FRONT_FONT_SIZES.raritySize,
+            statsSize: FRONT_FONT_SIZES.statsSize,
+            coreStatsSize: FRONT_FONT_SIZES.coreStatsSize,
+            goldSize: FRONT_FONT_SIZES.goldSize,
             ...(offsets.fontSizes || {})
         };
 
@@ -156,6 +158,8 @@ export const FrontCardRenderer = {
         // 1. Rarity
         ctx.font = getFont('rarity', sizes.raritySize);
         ctx.fillStyle = '#2c1810';
+        // Set RTL direction for Hebrew text - crucial for proper punctuation placement
+        ctx.direction = 'rtl';
         ctx.textAlign = 'center';
         TextRenderer.drawStyledText(
             ctx,
@@ -265,21 +269,23 @@ export const FrontCardRenderer = {
 
         // Weapon Damage
         if (data.weaponDamage && data.weaponDamage !== 'null') {
-            const LTR = '\u200E';
-            const baseDamage = `${LTR}${data.weaponDamage}`;
+            const locale = window.i18n?.getLocale() || 'he';
+            let baseDamage = data.weaponDamage;
+
+            // Keep dice notation as-is since canvas draws LTR
+            // Just format: "1d6+1 דוקר" - damage first, then type
             const damageType = data.damageType || '';
 
             if (data.versatileDamage) {
-                const RLM = '\u200F';
-                text = `${RLM}${baseDamage} (🤲${data.versatileDamage}) ${damageType}${RLM}`;
+                const versatile = data.versatileDamage;
+                text = `${baseDamage} (🤲${versatile}) ${damageType}`;
             } else {
-                const RLM = '\u200F';
-                text = `${RLM}${baseDamage} ${damageType}${RLM}`;
+                text = `${baseDamage} ${damageType}`;
             }
 
             if (data.weaponProperties?.length > 0) {
                 const props = data.weaponProperties.filter(p => p !== 'רב-שימושי');
-                if (props.length > 0) text += ` (${props.join(', ')})`;
+                if (props.length > 0) text += `\n(${props.join(', ')})`;
             }
         }
 

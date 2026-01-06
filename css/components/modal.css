@@ -14,6 +14,7 @@
     backdrop-filter: blur(5px);
 }
 
+/* Default modal content - small for confirmations */
 .modal-content {
     background: rgba(30, 30, 30, 0.95);
     border: 2px solid #d4af37;
@@ -38,38 +39,26 @@
     }
 }
 
-/* Fix for large content: Ensure modal doesn't overflow screen */
-.modal-content {
-    background: rgba(30, 30, 30, 0.95);
-    border: 2px solid #d4af37;
-    border-radius: 12px;
-    padding: 2rem;
+/* Large modal content - for gallery and full-size modals */
+.modal-content.modal-large {
     max-width: 900px;
-    /* Increased width for gallery */
-    width: 90%;
     max-height: 85vh;
-    /* Prevent going off screen */
     overflow-y: auto;
-    /* Enable scrolling if content is too tall */
-    text-align: center;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-    animation: modalPop 0.3s ease;
-
     /* Scrollbar Styling */
     scrollbar-width: thin;
     scrollbar-color: #d4af37 rgba(0, 0, 0, 0.3);
 }
 
-.modal-content::-webkit-scrollbar {
+.modal-content.modal-large::-webkit-scrollbar {
     width: 8px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.modal-content.modal-large::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.modal-content.modal-large::-webkit-scrollbar-thumb {
     background-color: #d4af37;
     border-radius: 4px;
 }

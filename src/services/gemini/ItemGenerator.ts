@@ -226,7 +226,7 @@ export async function generateItemDetails(
 
         if (useWorker) {
             data = await callViaWorker(password!, 'gemini-generate', {
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash-lite',
                 contents: payload.contents,
                 generationConfig: payload.generationConfig
             });
@@ -267,6 +267,9 @@ export async function generateItemDetails(
         const text = data.candidates[0].content.parts[0].text;
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsedResult = JSON.parse(jsonStr);
+
+        // Fix RTL issues with dice notation in Hebrew text
+        fixDiceNotationRTL(parsedResult);
 
         // Validate and adjust price
         validateAndAdjustPrice(parsedResult, rarity);
@@ -554,7 +557,7 @@ function buildOutputStructure(isHebrew: boolean): string {
     "weaponDamage": "COMPLETE damage string in HEBREW",
     "damageType": "Always null (deprecated)",
     "armorClass": "AC value (number) if armor, else null",
-    "quickStats": "EXTREMELY CONCISE essence (1-3 words MAX)",
+    "quickStats": "HEBREW ONLY - EXTREMELY CONCISE essence (1-3 Hebrew words MAX, e.g. נגטות רעל, +2 התקפה)",
     "visualPrompt": "CRITICAL: A SHORT, CONCISE ENGLISH description (max 18 words) for image generation"
   }` : `{
     "name": "STRICT RULES: 1-3 English words MAX. Use ONLY creative nicknames.",
@@ -630,4 +633,141 @@ function validateAndAdjustPrice(parsedResult: ItemGenerationResult, rarity: stri
     }
 }
 
-export default { generateItemDetails };
+/**
+ * Fix RTL issues in Hebrew text:
+ * 1. Dice notation and game terms using Bidi Isolate
+ * 2. Punctuation placement using RLE/PDF marks
+ */
+function fixDiceNotationRTL(result: ItemGenerationResult): void {
+    // Unicode Bidi characters
+    const LRI = '\u2066'; // Left-To-Right Isolate
+    const PDI = '\u2069'; // Pop Directional Isolate
+    const RLM = '\u200F'; // Right-To-Left Mark - helps punctuation stay with RTL text
+
+    // Patterns to isolate (LTR content in RTL context):
+    const ltrPatterns = [
+        /(\d+d\d+(?:[+\-]\d+)?)/g,  // Dice: 1d4, 2d6+2
+        /(DC\s*\d+)/gi,              // DC values: DC 13
+        /(\d+\s*(?:מטר|רגל|feet|ft))/g,  // Distances: 18 מטר
+    ];
+
+    const fixText = (text: string): string => {
+        if (!text) return text;
+
+        let result = text;
+
+        // 1. Isolate LTR content (dice, DC values)
+        for (const pattern of ltrPatterns) {
+            result = result.replace(pattern, `${LRI}$1${PDI}`);
+        }
+
+        // 2. Fix punctuation at wrong position
+        // Add RLM before punctuation that follows Hebrew text to keep it on the correct side
+        result = result.replace(/([א-ת])([.,!?;:])/g, `$1${RLM}$2`);
+
+        // 3. Fix punctuation that appears at beginning of line (wrong side)
+        // This happens when punctuation "floats" to LTR position
+        result = result.replace(/^([.,!?;:])(\s*)/gm, `$2$1`);
+
+        return result;
+    };
+
+    // Fix relevant fields
+    if (result.abilityDesc) {
+        result.abilityDesc = fixText(result.abilityDesc);
+    }
+    if (result.weaponDamage) {
+        result.weaponDamage = fixText(result.weaponDamage);
+    }
+    if (result.quickStats) {
+        result.quickStats = fixText(result.quickStats);
+    }
+    if (result.description) {
+        result.description = fixText(result.description);
+    }
+}
+
+/**
+ * Generate only a visual prompt for image generation (no item details)
+ * Used when user wants to generate just an image from form settings
+ */
+export async function generateVisualPromptOnly(
+    geminiConfig: GeminiConfig,
+    type: string,
+    subtype: string,
+    rarity: string,
+    ability: string,
+    locale: string = 'he'
+): Promise<string> {
+    const { apiKey, password, useWorker, baseUrl } = geminiConfig;
+    const isHebrew = locale === 'he';
+
+    const prompt = `You are a D&D 5e visual artist assistant.
+Generate a SHORT, CONCISE English description (max 20 words) for an item image.
+
+Item Details:
+- Type: ${subtype || type}
+- Category: ${type}
+- Rarity: ${rarity}
+- Theme/Ability: ${ability || 'Fantasy magical item'}
+
+RULES:
+1. Output ONLY the visual prompt text, nothing else.
+2. Use English regardless of locale.
+3. Focus on the physical appearance of the item.
+4. Include the style: fantasy, detailed, game item artwork
+5. For ${type}: describe the specific item type correctly (sword for weapon, armor for armor, etc.)
+
+Examples:
+- "A glowing blue longsword with ice crystals, fantasy game item, detailed"
+- "An ornate golden ring with ruby gem, magical aura, fantasy artwork"
+- "A dark leather armor with dragon scales, epic fantasy, detailed"
+
+Generate the visual prompt now:`;
+
+    const payload = {
+        contents: [{
+            parts: [{ text: prompt }]
+        }]
+    };
+
+    try {
+        let data;
+
+        if (useWorker) {
+            data = await callViaWorker(password!, 'gemini-generate', {
+                model: 'gemini-2.5-flash-lite',
+                contents: payload.contents
+            });
+        } else {
+            const response = await fetch(`${baseUrl}?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Gemini API Failed (${response.status})`);
+            }
+
+            data = await response.json();
+        }
+
+        if (!data.candidates || !data.candidates[0]) {
+            throw new Error("No response from Gemini");
+        }
+
+        const visualPrompt = data.candidates[0].content.parts[0].text.trim();
+        console.log('🎨 Generated visual prompt:', visualPrompt);
+
+        return visualPrompt;
+    } catch (error: any) {
+        console.error("Visual prompt generation error:", error);
+        // Fallback: create a basic prompt from the inputs
+        const fallbackPrompt = `A ${rarity.toLowerCase()} fantasy ${subtype || type}${ability ? `, ${ability}` : ''}, detailed game item artwork`;
+        console.log('Using fallback prompt:', fallbackPrompt);
+        return fallbackPrompt;
+    }
+}
+
+export default { generateItemDetails, generateVisualPromptOnly };

@@ -21,6 +21,40 @@ export class GeneratorUIManager {
         if (surpriseBtn) surpriseBtn.addEventListener('click', (e) => this.controller.onSurprise(e));
         if (autoLayoutBtn) autoLayoutBtn.addEventListener('click', () => this.controller.onAutoLayout());
         if (lassoBtn) lassoBtn.addEventListener('click', () => this.controller.onLassoTool());
+
+        this.setupFormListeners();
+    }
+
+    setupFormListeners() {
+        // Real-time updates for Sticky Note
+        const levelSelect = document.getElementById('item-level');
+        const typeSelect = document.getElementById('item-type');
+        const subtypeSelect = document.getElementById('item-subtype');
+        const abilityInput = document.getElementById('item-ability');
+
+        const updateSticky = () => {
+            const level = levelSelect?.value || '';
+            const type = typeSelect?.value || '';
+            const subtype = subtypeSelect?.value || '';
+
+            // Get selected text for subtype to show Hebrew name if available
+            let subtypeText = subtype;
+            if (subtypeSelect && subtypeSelect.selectedIndex >= 0) {
+                subtypeText = subtypeSelect.options[subtypeSelect.selectedIndex].text;
+            }
+
+            const ability = abilityInput?.value?.trim() || '';
+
+            this.updateNoteUI({ level, type, subtype, subtypeText, ability });
+        };
+
+        if (levelSelect) levelSelect.addEventListener('change', updateSticky);
+        if (typeSelect) typeSelect.addEventListener('change', () => {
+            // Wait briefly for subtypes to populate if type changes
+            setTimeout(updateSticky, 100);
+        });
+        if (subtypeSelect) subtypeSelect.addEventListener('change', updateSticky);
+        if (abilityInput) abilityInput.addEventListener('input', updateSticky);
     }
 
     getApiKey() {
@@ -38,15 +72,21 @@ export class GeneratorUIManager {
         const form = document.getElementById('generator-form');
         const formData = new FormData(form);
 
-        // Read Sticky Note (Source of Truth)
+        // Read from form inputs directly (priority), then fallback to Sticky Note
+        const itemTypeSelect = document.getElementById('item-type');
+        const itemSubtypeSelect = document.getElementById('item-subtype');
+        const itemLevelSelect = document.getElementById('item-level');
+
+        // Sticky Note (fallback for when form elements might be empty)
         const noteLevel = document.getElementById('note-level');
         const noteType = document.getElementById('note-type');
         const noteSubtype = document.getElementById('note-subtype');
 
-        const type = noteType?.dataset.value || formData.get('type');
-        const subtype = noteSubtype?.dataset.value || formData.get('subtype');
-        const level = noteLevel?.dataset.value || formData.get('level');
-        const ability = formData.get('ability');
+        // Priority: Form input > Sticky Note > FormData
+        const type = itemTypeSelect?.value || noteType?.dataset?.value || formData.get('type');
+        const subtype = itemSubtypeSelect?.value || noteSubtype?.dataset?.value || formData.get('subtype');
+        const level = itemLevelSelect?.value || noteLevel?.dataset?.value || formData.get('level');
+        const ability = document.getElementById('item-ability')?.value?.trim() || formData.get('ability');
 
         // Determine mode
         const submitterId = e?.submitter ? e.submitter.id : 'generate-creative-btn';
@@ -79,7 +119,7 @@ export class GeneratorUIManager {
 
     updateNoteUI(options) {
         // Support both old signature (level, type, subtype) and new object signature
-        let level, type, subtype, ability, style, attunement, damage, armorClass;
+        let level, type, subtype, subtypeText, ability, style, attunement, damage, armorClass;
 
         if (typeof options === 'string') {
             // Old signature: updateNoteUI(level, type, subtype)
@@ -87,33 +127,76 @@ export class GeneratorUIManager {
             type = arguments[1];
             subtype = arguments[2];
         } else {
-            // New signature: updateNoteUI({ level, type, subtype, ability, style, attunement, damage, armorClass })
-            ({ level, type, subtype, ability, style, attunement, damage, armorClass } = options);
+            // New signature: updateNoteUI({ level, type, subtype, subtypeText, ability, style, attunement, damage, armorClass })
+            ({ level, type, subtype, subtypeText, ability, style, attunement, damage, armorClass } = options);
         }
+
+        console.log('📝 updateNoteUI called with:', { level, type, subtype, subtypeText });
+
+        console.log('📝 updateNoteUI called with:', { level, type, subtype, subtypeText });
 
         const noteLevel = document.getElementById('note-level');
         const noteType = document.getElementById('note-type');
         const noteSubtype = document.getElementById('note-subtype');
+        const i18n = window.i18n;
 
         if (noteLevel && level) {
             noteLevel.textContent = level;
             noteLevel.dataset.value = level;
         }
         if (noteType && type) {
-            noteType.textContent = type;
+            // Try to translate type using i18n or fallback map
+            let displayType = type.toUpperCase();
+            if (i18n) {
+                const translated = i18n.t(`typeSection.${type}`);
+                // Only use translation if it returns a real string and not the key
+                if (translated && !translated.startsWith('typeSection.')) {
+                    displayType = translated.toUpperCase(); // Ensure uppercase for style
+                }
+            }
+
+            // Fallback map for Hebrew if i18n fails or isn't loaded yet
+            if (i18n?.getLocale() === 'he') {
+                const hebrewTypes = {
+                    'weapon': 'נשק', 'armor': 'שריון', 'wondrous': 'חפץ פלא',
+                    'potion': 'שיקוי', 'ring': 'טבעת', 'scroll': 'מגילה',
+                    'staff': 'מטה', 'wand': 'שרביט'
+                };
+                if (hebrewTypes[type]) displayType = hebrewTypes[type];
+            }
+
+            noteType.textContent = displayType;
             noteType.dataset.value = type;
         }
-        if (noteSubtype && subtype !== undefined) {
-            // Display clean name (remove parentheses)
-            noteSubtype.textContent = (subtype || '-').split('(')[0].trim();
+        if (noteSubtype) {
+            // Use subtypeText if provided (contains Hebrew), otherwise fallback to subtype value
+            // Also clean up parentheses if present (e.g. "Plate Armor (Full Plate)" -> "Plate Armor")
+            const rawText = subtypeText || subtype || '-';
+            console.log('Raw subtype text:', rawText);
+
+            // If text contains Hebrew characters, prioritize it
+            const hasHebrew = /[א-ת]/.test(rawText);
+
+            let displayText = rawText;
+            if (hasHebrew) {
+                // If it has Hebrew, it might be "Hebrew (English)" format
+                // We want to keep the Hebrew part usually, or just show it as is
+                displayText = rawText.split('(')[0].trim();
+            } else {
+                // English only - try to translate or show as is
+                displayText = rawText.split('(')[0].trim();
+            }
+
+            console.log('Final subtype display:', displayText);
+            noteSubtype.textContent = (displayText === '-- בחר חפץ --' || !displayText) ? '-' : displayText;
             noteSubtype.dataset.value = subtype || '';
         }
 
         // Update extended fields via globalUI
+        // NOTE: Do NOT pass type/subtype here as we already set them with localized values above
         this.globalUI.updateStickyNote({
             level,
-            type,
-            subtype,
+            // type and subtype are already set directly above with Hebrew translations
             ability,
             style,
             attunement,

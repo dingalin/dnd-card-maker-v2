@@ -14,7 +14,7 @@ export class GenerationManager {
      * Standard Single Item Generation
      */
     async generateItem(params, onProgress) {
-        const { type, subtype, level, ability, complexityMode, useVisualContext, overrides, skipImage, existingImageUrl } = params;
+        const { type, subtype, level, ability, complexityMode, useVisualContext, overrides, skipImage, existingImageUrl, imageOnly } = params;
 
         const locale = window.i18n?.getLocale() || 'he';
 
@@ -52,21 +52,46 @@ export class GenerationManager {
             }
         }
 
-        console.log(`GenerationManager: Level=${level}, Rarity=${rarity}, Mode=${effectiveComplexity}, Subtype=${finalSubtype}`);
+        console.log(`GenerationManager: Level=${level}, Rarity=${rarity}, Mode=${effectiveComplexity}, Subtype=${finalSubtype}, ImageOnly=${imageOnly}`);
 
-        // 4. Generate Text via Gemini
-        onProgress?.(2, 30, window.i18n?.t('preview.writingStory') || 'Writing story...');
+        let itemDetails;
 
-        const itemDetails = await this.gemini.generateItemDetails(
-            level,
-            type,
-            finalSubtype,
-            rarity,
-            ability,
-            contextImage,
-            effectiveComplexity,
-            locale
-        );
+        if (imageOnly) {
+            // Image-only mode: generate just the visual prompt, skip text details
+            onProgress?.(2, 30, window.i18n?.t('preview.creatingPrompt') || 'Creating image prompt...');
+
+            const visualPrompt = await this.gemini.generateVisualPromptOnly(
+                type,
+                finalSubtype,
+                rarity,
+                ability,
+                locale
+            );
+
+            itemDetails = {
+                name: '',
+                type: type,
+                subtype: finalSubtype,
+                rarity: rarity,
+                rarityHe: '',
+                gold: '',
+                visualPrompt: visualPrompt
+            };
+        } else {
+            // 4. Generate Text via Gemini
+            onProgress?.(2, 30, window.i18n?.t('preview.writingStory') || 'Writing story...');
+
+            itemDetails = await this.gemini.generateItemDetails(
+                level,
+                type,
+                finalSubtype,
+                rarity,
+                ability,
+                contextImage,
+                effectiveComplexity,
+                locale
+            );
+        }
 
         // 5. Enrich & Backfill
         enrichItemDetails(itemDetails, type, finalSubtype, locale);
@@ -96,11 +121,16 @@ export class GenerationManager {
         if (!skipImage) {
             onProgress?.(3, 60, window.i18n?.t('preview.drawing') || 'Drawing...');
             const imageUrl = await this.generateImage(finalVisualPrompt);
-            persistentImageUrl = imageUrl;
 
-            if (imageUrl.startsWith('blob:')) {
-                onProgress?.(3, 80, window.i18n?.t('preview.savingImage') || 'Saving image...');
-                persistentImageUrl = await blobToBase64(imageUrl);
+            if (imageUrl) {
+                persistentImageUrl = imageUrl;
+
+                if (imageUrl.startsWith('blob:')) {
+                    onProgress?.(3, 80, window.i18n?.t('preview.savingImage') || 'Saving image...');
+                    persistentImageUrl = await blobToBase64(imageUrl);
+                }
+            } else {
+                console.warn("GenerationManager: Image generation skipped due to missing API key");
             }
         }
 
@@ -169,8 +199,8 @@ export class GenerationManager {
         const finalVisualPrompt = itemDetails.visualPrompt || `${type} ${subtype || ''}`;
         const imageUrl = await this.generateImage(finalVisualPrompt);
 
-        let persistentImageUrl = imageUrl;
-        if (imageUrl.startsWith('blob:')) {
+        let persistentImageUrl = imageUrl; // Can be null
+        if (imageUrl && imageUrl.startsWith('blob:')) {
             persistentImageUrl = await blobToBase64(imageUrl);
         }
 
@@ -256,7 +286,7 @@ export class GenerationManager {
         const imageUrl = await this.generateImage(visualPrompt);
 
         let persistentImageUrl = imageUrl;
-        if (imageUrl.startsWith('blob:')) {
+        if (imageUrl && imageUrl.startsWith('blob:')) {
             onProgress?.(3, 80, window.i18n?.t('preview.savingImage') || 'Saving image...');
             persistentImageUrl = await blobToBase64(imageUrl);
         }
@@ -272,10 +302,14 @@ export class GenerationManager {
 
     async generateImage(prompt) {
         const bgUrl = this.state.getState()?.settings?.style?.cardBackgroundUrl;
+        let cardColor = '#ffffff';
+        let colorDesc = null;
 
         try {
             if (bgUrl) {
-                const { hex: cardColor, description: colorDesc } = await sampleCardBackgroundColor(bgUrl);
+                const result = await sampleCardBackgroundColor(bgUrl);
+                cardColor = result.hex;
+                colorDesc = result.description;
                 // Store for renderer
                 this.state.updateStyle('imageColor', cardColor);
             }
@@ -284,14 +318,19 @@ export class GenerationManager {
         }
 
         const getImgKey = localStorage.getItem('getimg_api_key');
-        if (!getImgKey) throw new Error("Missing GetImg API key");
+        if (!getImgKey) {
+            console.warn("GenerationManager: Missing GetImg API key, skipping image generation");
+            return null;
+        }
 
         const style = document.getElementById('image-style')?.value || 'realistic';
         const styleOption = document.getElementById('image-style-option')?.value || 'natural';
         const model = document.getElementById('image-model')?.value || 'getimg-flux';
 
-        // GeminiService.generateImage expects: (prompt, model, style, apiKey, styleOption)
-        return await this.gemini.generateImage(prompt, model, style, getImgKey, styleOption);
+        console.log('🖼️ GenerationManager.generateImage - styleOption:', styleOption, 'style:', style, 'model:', model);
+
+        // Pass all parameters including templateImageUrl for theme-aware background generation
+        return await this.gemini.generateImage(prompt, model, style, getImgKey, styleOption, cardColor, colorDesc, bgUrl);
     }
 
     async generateBackground(theme, style, model, getImgKey) {

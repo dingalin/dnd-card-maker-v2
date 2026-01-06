@@ -233,13 +233,38 @@ body.mode-auto .ability-scroll-panel {
 /* === SPLIT VIEW LAYOUT === */
 .canvas-container.split-view {
     display: flex;
-    flex-direction: row;
-    gap: 1.5rem;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    /* Changed to column so buttons are below */
+    gap: 1rem;
+    justify-content: flex-start;
+    align-items: center;
     width: 100%;
     max-width: 90vw;
     /* Allow wider container */
+}
+
+/* Card rotator needs to display as flex row in split view */
+.canvas-container.split-view .card-rotator {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+/* Preview controls in split view - centered below both cards */
+.canvas-container.split-view .preview-controls {
+    order: 1;
+    /* Ensure it comes after card-rotator */
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    width: auto;
+    transform: none;
+    /* Override the default scale */
 }
 
 .canvas-container.split-view canvas {
@@ -249,6 +274,14 @@ body.mode-auto .ability-scroll-panel {
     transition: all 0.3s ease;
     border: 2px solid transparent;
     border-radius: 12px;
+}
+
+/* CRITICAL: Override absolute positioning for back canvas in split view */
+.canvas-container.split-view #card-canvas-back {
+    position: static !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
 }
 
 /* Active Canvas Highlight (Golden Glow) */

@@ -123,23 +123,23 @@ export class LayoutCalculator {
         result.fontSizes.name = this.calculateNameFontSize(name);
 
         // === CALCULATE OFFSETS ===
-        // USER'S OPTIMAL VALUES (saved from manual tuning)
+        // Values from CardTextConfig.ts via SLIDER_MIDPOINTS
 
         // Header elements
-        result.offsets.rarity = 0;     // Rarity at base position
-        result.offsets.type = 74;      // Type pushed down
-        result.offsets.name = 135;     // Name pushed down significantly
+        result.offsets.rarity = this.SLIDER_MIDPOINTS.rarity;
+        result.offsets.type = this.SLIDER_MIDPOINTS.type;
+        result.offsets.name = this.SLIDER_MIDPOINTS.name;
 
         // Image positioning
-        result.offsets.imageYOffset = -117;  // Image pulled up
-        result.imageSettings.scale = 1.5;    // Zoom 1.5x
+        result.offsets.imageYOffset = this.SLIDER_MIDPOINTS.imageYOffset;
+        result.imageSettings.scale = this.SLIDER_MIDPOINTS.imageScale;
 
         // Stats positions (absolute Y values)
-        result.offsets.coreStats = hasStats ? 730 : 0;   // Damage/AC
-        result.offsets.stats = 498;                       // Quick stats
+        result.offsets.coreStats = hasStats ? this.SLIDER_MIDPOINTS.coreStats : 0;
+        result.offsets.stats = this.SLIDER_MIDPOINTS.stats;
 
         // Gold
-        result.offsets.gold = -8;  // Slightly up
+        result.offsets.gold = this.SLIDER_MIDPOINTS.gold;
 
         return result;
     }
@@ -246,12 +246,12 @@ export class LayoutCalculator {
         // Tweaked for better separation based on user feedback
         const RATIOS = {
             rarity: 0.03,      // 3% 
-            type: 0.135,       // 13.5%
-            name: 0.23,        // 23% (Moved up slightly)
-            imageCenter: 0.48, // 48% (Moved up slightly)
-            coreStats: 0.83,   // 83% (Moved down slightly)
-            quickStats: 0.92,  // 92%
-            gold: 0.99         // 99%
+            type: 0.20,        // 20% (Pushed down)
+            name: 0.26,        // 26% (Pushed down)
+            imageCenter: 0.45, // 45% (Centered)
+            coreStats: 1.1,    // 110% (Below safe area - Damage)
+            quickStats: 1.2,   // 120% (Below damage)
+            gold: 1.25         // 125% (Bottom)
         };
 
         // === CALCULATE ABSOLUTE Y POSITIONS ===

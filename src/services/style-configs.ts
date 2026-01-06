@@ -12,9 +12,9 @@ export interface FluxStyleConfig {
 
 export const FLUX_STYLE_CONFIGS: { [key: string]: FluxStyleConfig } = {
     'realistic': {
-        primary: 'ultra-realistic professional product photography, photorealistic render',
-        technique: 'studio lighting setup, softbox lighting, professional DSLR camera shot, sharp focus throughout',
-        finish: 'high resolution, commercial photography quality, clean studio backdrop'
+        primary: 'ultra-realistic professional product photography, photorealistic render, 8k resolution',
+        technique: 'perfect lighting, sharp focus throughout, ray tracing, physically based rendering',
+        finish: 'high resolution, commercial quality, highly detailed, clean finish'
     },
     'watercolor': {
         primary: 'beautiful watercolor painting, traditional watercolor artwork, hand-painted watercolor illustration',

@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { GetImgService } from '../services/GetImgService.ts';
+import { FalService } from '../services/FalService.ts';
 import i18n from '../i18n.ts';
 import { CharacterUIManager } from './character/CharacterUIManager.ts';
 import { CharacterEquipmentManager } from './character/CharacterEquipmentManager.ts';
+import { CharacterSheetExporter } from '../services/CharacterSheetExporter.ts';
 
 interface WindowGlobals {
     i18n?: any;
@@ -18,6 +19,7 @@ export class CharacterController {
     public ui: CharacterUIManager;
     public equipment: CharacterEquipmentManager;
     private localeListenerRegistered: boolean = false;
+    private initialized: boolean = false;
 
     constructor(stateManager: any) {
         this.state = stateManager;     // Reference to global state
@@ -34,13 +36,34 @@ export class CharacterController {
     }
 
     init() {
-        console.log("CharacterController: Initializing...");
+        // Prevent duplicate initialization (can happen when TabManager calls init again)
+        if (this.initialized) {
+            console.log("🎭 CharacterController: Already initialized, skipping duplicate init");
+            return;
+        }
+        this.initialized = true;
+        console.log("🎭 CharacterController: Initializing at", new Date().toISOString());
 
         // Initialize UI and Equipment systems
         this.ui.setupListeners();
         this.ui.populateOptions();
         this.equipment.initBackpack();
         this.equipment.setupDragDrop();
+
+        // Listen for equip requests from GeneratorController
+        document.addEventListener('request-character-equip-item', (e: any) => {
+            console.log("CharacterController: Received equip request", e.detail);
+            if (e.detail?.cardData) {
+                // IMPORTANT: Merge the captured canvas images into cardData
+                // e.detail.imageUrl is the full card canvas capture from RenderController
+                const itemData = {
+                    ...e.detail.cardData,
+                    thumbnail: e.detail.imageUrl,        // Full card capture (front)
+                    backThumbnail: e.detail.backImageUrl // Full card capture (back)
+                };
+                this.handleEquipRequest(itemData, e.detail.targetSlotId);
+            }
+        });
 
         // Register locale change listener
         if (!this.localeListenerRegistered) {
@@ -49,6 +72,33 @@ export class CharacterController {
                 this.ui.populateOptions();
             });
         }
+
+        // Setup Export button listener
+        this.setupExportListener();
+    }
+
+    /**
+     * Setup listener for export button
+     */
+    setupExportListener() {
+        document.addEventListener('click', async (e: any) => {
+            const exportBtn = e.target.closest('#export-sheet-btn');
+            if (exportBtn) {
+                e.preventDefault();
+                console.log('🖨️ Export button clicked');
+
+                const uiManager = (window as any).uiManager;
+                if (uiManager) uiManager.showToast('מייצא להדפסה...', 'info');
+
+                try {
+                    await CharacterSheetExporter.exportEquipmentSheet();
+                    if (uiManager) uiManager.showToast('הקובץ הורד בהצלחה!', 'success');
+                } catch (err) {
+                    console.error('Export failed:', err);
+                    if (uiManager) uiManager.showToast('שגיאה בייצוא', 'error');
+                }
+            }
+        });
     }
 
     // ============================================
@@ -95,7 +145,8 @@ export class CharacterController {
         this.ui.setLoading(true);
 
         try {
-            const service = new GetImgService(apiKey);
+            // Use FAL AI Z-Image Turbo for fast generation
+            const service = new FalService(apiKey);
             const b64Image = await service.generateImage(prompt);
             const imageUrl = `data:image/jpeg;base64,${b64Image}`;
 
@@ -177,25 +228,50 @@ export class CharacterController {
     }
 
     /**
-     * Handle Equip Request (from RenderController)
+     * Handle Equip Request (from RenderController or GeneratorController)
+     * @param itemData - The card/item data
+     * @param targetSlotId - Optional specific slot to place the item in
      */
-    handleEquipRequest(itemData: any) {
+    handleEquipRequest(itemData: any, targetSlotId?: string) {
         // Ensure card is in registry (or add it)
         const uniqueId = itemData.uniqueId || Date.now().toString();
         // Enrich if necessary
         if (!itemData.uniqueId) itemData.uniqueId = uniqueId;
 
-        this.itemRegistry.set(uniqueId, itemData);
+        // Normalize image field (GeneratorController uses imageUrl, RenderController uses image)
+        if (!itemData.image && itemData.imageUrl) {
+            itemData.image = itemData.imageUrl;
+        }
 
-        // Simulate a drag data object for auto-slotting
+        this.itemRegistry.set(uniqueId, itemData);
+        console.log('📦 Item registered with backThumbnail:', itemData.backThumbnail ? 'yes' : 'no');
+
+        const imageSrc = itemData.thumbnail || itemData.imageUrl || itemData.image;
+
+        // If targetSlotId is provided, place item directly in that slot
+        if (targetSlotId) {
+            const targetSlot = document.querySelector(`.slot[data-slot="${targetSlotId}"]`) as HTMLElement;
+            if (targetSlot) {
+                const targetContent = targetSlot.querySelector('.slot-content') as HTMLElement;
+                if (targetContent) {
+                    targetContent.innerHTML = `<img src="${imageSrc}" data-item-name="${itemData.name || ''}" data-unique-id="${uniqueId}" class="equipped-item-icon" style="width:100%; height:100%; object-fit:contain;" />`;
+                    this.equipment.makeElementDraggable(targetContent.querySelector('img') as HTMLElement);
+                    console.log(`CharacterController: Item "${itemData.name}" placed directly in slot: ${targetSlotId}`);
+                    return;
+                }
+            }
+        }
+
+        // Fallback: use auto-slot detection
         const dragData = {
             uniqueId: uniqueId,
             itemName: itemData.name,
-            imageSrc: itemData.image || itemData.thumbnail,
-            sourceType: 'generated', // New source type
+            imageSrc: imageSrc,
+            sourceType: 'generated',
             sourceId: 'generator'
         };
 
+        console.log("CharacterController: Auto-slotting item", itemData.name, "with image:", imageSrc?.substring(0, 50));
         this.equipment.handleAutoSlotFromBackpack(dragData);
     }
 }
