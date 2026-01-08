@@ -1,5 +1,5 @@
 // @ts-nocheck
-import './storage/StorageManager.js';
+import './storage/StorageManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { I18nService } from './i18n';
 import { SLIDER_DEFAULTS } from './config/SliderDefaults';

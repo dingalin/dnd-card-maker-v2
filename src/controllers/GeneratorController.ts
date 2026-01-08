@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { GeneratorUIManager } from './generator/GeneratorUIManager.js';
-import { GenerationManager } from './generator/GenerationManager.js';
-import { AutoLayoutManager } from './generator/AutoLayoutManager.js';
+import { GeneratorUIManager } from './generator/GeneratorUIManager';
+import { GenerationManager } from './generator/GenerationManager';
+import { AutoLayoutManager } from './generator/AutoLayoutManager';
 import { StateManager } from '../state';
 import { I18nService } from '../i18n';
 
