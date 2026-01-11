@@ -118,126 +118,96 @@ export function getInitialState(): AppState {
 /**
  * Main state reducer
  */
+import { produce } from 'immer';
+
+/**
+ * Main state reducer
+ */
 export function stateReducer(state: AppState, action: StateAction): AppState {
-    switch (action.type) {
-        case ActionType.SET_CARD_DATA: {
-            const migratedData = migrateToV2(action.payload);
-            return {
-                ...state,
-                cardData: migratedData
-            };
-        }
-
-        case ActionType.UPDATE_CARD_FIELD: {
-            if (!state.cardData) return state;
-
-            const { path, value } = action.payload;
-            const newCardData = { ...state.cardData };
-
-            // Handle dot notation for nested updates
-            if (path.includes('.')) {
-                const keys = path.split('.');
-                let current: any = newCardData;
-
-                // Traverse to parent
-                for (let i = 0; i < keys.length - 1; i++) {
-                    if (!current[keys[i]]) current[keys[i]] = {};
-                    current = current[keys[i]];
-                }
-
-                // Set value
-                current[keys[keys.length - 1]] = value;
-            } else {
-                // Flat key
-                (newCardData as any)[path] = value;
+    return produce(state, (draft) => {
+        switch (action.type) {
+            case ActionType.SET_CARD_DATA: {
+                draft.cardData = migrateToV2(action.payload);
+                break;
             }
 
-            return {
-                ...state,
-                cardData: newCardData
-            };
-        }
+            case ActionType.UPDATE_CARD_FIELD: {
+                if (!draft.cardData) return;
 
-        case ActionType.UPDATE_OFFSET: {
-            const { key, value } = action.payload;
-            const side = action.payload.side || getSideForKey(key);
+                const { path, value } = action.payload;
 
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    [side]: {
-                        ...state.settings[side],
-                        offsets: {
-                            ...state.settings[side].offsets,
-                            [key]: value
-                        }
+                // Handle dot notation for nested updates
+                if (path.includes('.')) {
+                    const keys = path.split('.');
+                    let current: any = draft.cardData;
+
+                    // Traverse to parent
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        if (!current[keys[i]]) current[keys[i]] = {};
+                        current = current[keys[i]];
                     }
+
+                    // Set value
+                    current[keys[keys.length - 1]] = value;
+                } else {
+                    // Flat key
+                    (draft.cardData as any)[path] = value;
                 }
-            };
-        }
+                break;
+            }
 
-        case ActionType.UPDATE_FONT_SIZE: {
-            const { key, change } = action.payload;
-            const side = getSideForFontSizeKey(key);
-            const currentFontSizes = state.settings[side].fontSizes as any;
-            const current = currentFontSizes?.[key] || 24;
-            const rawSize = current + (change * 2);
-            const newSize = clampFontSize(key, rawSize);
+            case ActionType.UPDATE_OFFSET: {
+                const { key, value } = action.payload;
+                const side = action.payload.side || getSideForKey(key);
 
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    [side]: {
-                        ...state.settings[side],
-                        fontSizes: {
-                            ...state.settings[side].fontSizes,
-                            [key]: newSize
-                        }
+                // Ensure helper works or define fallback if side is missing
+                if (side) {
+                    draft.settings[side].offsets[key] = value;
+                }
+                break;
+            }
+
+            case ActionType.UPDATE_BATCH_OFFSETS: {
+                const updates = action.payload;
+                updates.forEach(({ key, value, side: sideOverride }) => {
+                    const side = sideOverride || getSideForKey(key);
+                    if (side) {
+                        draft.settings[side].offsets[key] = value;
                     }
-                }
-            };
-        }
+                });
+                break;
+            }
 
-        case ActionType.UPDATE_FONT_STYLE: {
-            const { key, value } = action.payload;
-            const side = getSideForFontStyleKey(key);
+            case ActionType.UPDATE_FONT_SIZE: {
+                const { key, change } = action.payload;
+                const side = getSideForFontSizeKey(key);
 
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    [side]: {
-                        ...state.settings[side],
-                        fontStyles: {
-                            ...state.settings[side].fontStyles,
-                            [key]: value
-                        }
-                    }
-                }
-            };
-        }
+                // Safely access current size
+                const currentFontSizes = draft.settings[side].fontSizes as Record<string, number>;
+                const current = currentFontSizes[key] || 24;
+                const rawSize = current + (change * 2);
 
-        case ActionType.UPDATE_STYLE: {
-            const { key, value } = action.payload;
+                currentFontSizes[key] = clampFontSize(key, rawSize);
+                break;
+            }
 
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    style: {
-                        ...state.settings.style,
-                        [key]: value
-                    }
-                }
-            };
-        }
+            case ActionType.UPDATE_FONT_STYLE: {
+                const { key, value } = action.payload;
+                const side = getSideForFontStyleKey(key);
 
-        case ActionType.RESET_TO_DEFAULTS: {
-            return {
-                ...state,
-                settings: {
+                draft.settings[side].fontStyles[key] = value;
+                break;
+            }
+
+            case ActionType.UPDATE_STYLE: {
+                const { key, value } = action.payload;
+                // @ts-ignore - Dynamic key access on defined type is tricky without index signature
+                draft.settings.style[key] = value;
+                break;
+            }
+
+            case ActionType.RESET_TO_DEFAULTS: {
+                draft.settings = {
                     front: {
                         fontSizes: { ...SLIDER_DEFAULTS.front.fontSizes },
                         offsets: { ...SLIDER_DEFAULTS.front.offsets },
@@ -250,90 +220,65 @@ export function stateReducer(state: AppState, action: StateAction): AppState {
                         fontStyles: { ...SLIDER_DEFAULTS.back.fontStyles },
                         customStyles: {}
                     },
-                    style: state.settings.style
+                    style: state.settings.style // Preserve style options
+                };
+                break;
+            }
+
+            case ActionType.SET_FLIPPED: {
+                draft.isFlipped = action.payload;
+                break;
+            }
+
+            case ActionType.SET_LAST_CONTEXT: {
+                draft.lastContext = action.payload;
+                break;
+            }
+
+            case ActionType.SET_LAST_VISUAL_PROMPT: {
+                draft.lastVisualPrompt = action.payload;
+                break;
+            }
+
+            case ActionType.LOAD_STATE: {
+                const { cardData, settings } = action.payload;
+
+                if (cardData) {
+                    draft.cardData = migrateToV2(cardData);
                 }
-            };
-        }
 
-        case ActionType.SET_FLIPPED: {
-            return {
-                ...state,
-                isFlipped: action.payload
-            };
-        }
-
-        case ActionType.SET_LAST_CONTEXT: {
-            return {
-                ...state,
-                lastContext: action.payload
-            };
-        }
-
-        case ActionType.SET_LAST_VISUAL_PROMPT: {
-            return {
-                ...state,
-                lastVisualPrompt: action.payload
-            };
-        }
-
-        case ActionType.LOAD_STATE: {
-            const { cardData, settings } = action.payload;
-            return {
-                ...state,
-                cardData: cardData ? migrateToV2(cardData) : state.cardData,
-                settings: settings ? {
-                    ...state.settings,
-                    ...settings,
-                    front: {
-                        ...state.settings.front,
-                        ...(settings.front || {}),
-                        offsets: { ...state.settings.front.offsets, ...(settings.front?.offsets || {}) },
-                        fontSizes: { ...state.settings.front.fontSizes, ...(settings.front?.fontSizes || {}) },
-                        fontStyles: { ...state.settings.front.fontStyles, ...(settings.front?.fontStyles || {}) }
-                    },
-                    back: {
-                        ...state.settings.back,
-                        ...(settings.back || {}),
-                        offsets: { ...state.settings.back.offsets, ...(settings.back?.offsets || {}) },
-                        fontSizes: { ...state.settings.back.fontSizes, ...(settings.back?.fontSizes || {}) },
-                        fontStyles: { ...state.settings.back.fontStyles, ...(settings.back?.fontStyles || {}) },
-                        customStyles: { ...state.settings.back.customStyles, ...(settings.back?.customStyles || {}) }
-                    },
-                    style: {
-                        ...state.settings.style,
-                        ...(settings.style || {})
+                if (settings) {
+                    // Deep merge settings
+                    if (settings.front) {
+                        Object.assign(draft.settings.front.offsets, settings.front.offsets);
+                        Object.assign(draft.settings.front.fontSizes, settings.front.fontSizes);
+                        Object.assign(draft.settings.front.fontStyles, settings.front.fontStyles);
                     }
-                } : state.settings
-            };
-        }
-
-        case ActionType.UPDATE_CUSTOM_STYLE: {
-            const { key, value } = action.payload;
-            const side = action.payload.side || getSideForKey(key);
-
-            return {
-                ...state,
-                settings: {
-                    ...state.settings,
-                    [side]: {
-                        ...state.settings[side],
-                        customStyles: {
-                            ...state.settings[side].customStyles,
-                            [key]: value
-                        }
+                    if (settings.back) {
+                        Object.assign(draft.settings.back.offsets, settings.back.offsets);
+                        Object.assign(draft.settings.back.fontSizes, settings.back.fontSizes);
+                        Object.assign(draft.settings.back.fontStyles, settings.back.fontStyles);
+                        Object.assign(draft.settings.back.customStyles, settings.back.customStyles);
+                    }
+                    if (settings.style) {
+                        Object.assign(draft.settings.style, settings.style);
                     }
                 }
-            };
-        }
+                break;
+            }
 
-        case ActionType.TOGGLE_EDIT_MODE: {
-            return {
-                ...state,
-                isEditMode: !state.isEditMode
-            };
-        }
+            case ActionType.UPDATE_CUSTOM_STYLE: {
+                const { key, value } = action.payload;
+                const side = action.payload.side || getSideForKey(key);
 
-        default:
-            return state;
-    }
+                draft.settings[side].customStyles[key] = value;
+                break;
+            }
+
+            case ActionType.TOGGLE_EDIT_MODE: {
+                draft.isEditMode = !draft.isEditMode;
+                break;
+            }
+        }
+    });
 }

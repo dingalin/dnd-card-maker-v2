@@ -59,10 +59,10 @@ function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
     };
 
     // Helper for transforms
-    const getTransformValue = (key: string, defaultValue: number) => {
+    const getTransformValue = (key: string, defaultValue: number): number => {
         const offsets = state.settings[side]?.offsets || {};
-        // @ts-ignore
-        return offsets[key] !== undefined ? offsets[key] : defaultValue;
+        const val = offsets[key];
+        return (val !== undefined && typeof val === 'number') ? val : defaultValue;
     };
 
     const updateStyle = (prop: string, value: any) => {
@@ -124,6 +124,40 @@ function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
                         />
                         <span>{getTransformValue('imageRotation', 0)}°</span>
                     </div>
+                </div>
+            </div>
+
+            {/* Mask Shape Selection */}
+            <div className="panel-section">
+                <div className="control-row" style={{ marginBottom: '8px' }}>
+                    <label style={{ width: 'auto', fontWeight: 'bold' }}>צורת חיתוך (Mask)</label>
+                </div>
+                <div className="shape-selector" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    {[
+                        { id: 'square', label: '⬛', title: 'Square' },
+                        { id: 'rounded', label: '▢', title: 'Rounded' },
+                        { id: 'circle', label: '●', title: 'Circle' },
+                        { id: 'diamond', label: '◆', title: 'Diamond' }
+                    ].map(shape => (
+                        <button
+                            key={shape.id}
+                            onClick={() => updateStyle('maskShape', shape.id)}
+                            title={shape.title}
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                fontSize: '18px',
+                                background: getStyleValue('maskShape', 'square') === shape.id ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                                border: getStyleValue('maskShape', 'square') === shape.id ? '1px solid #3498db' : '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                color: 'white'
+                            }}
+                        >
+                            {shape.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 

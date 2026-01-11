@@ -1,41 +1,18 @@
 import { useRef, useState, useEffect } from 'react';
-import { Stage, Layer, Rect, Text, Image as KonvaImage, Transformer, Group } from 'react-konva';
+import { Stage, Layer, Rect, Image as KonvaImage, Group, Circle, RegularPolygon } from 'react-konva';
 import FloatingStylePanel from './FloatingStylePanel';
 import FloatingImagePanel from './FloatingImagePanel';
+import { BackgroundLayer } from './Layers/BackgroundLayer';
+import { TextLayer } from './Layers/TextLayer';
+import { OverlayLayer } from './Layers/OverlayLayer';
 import { useCardContext } from '../../store';
+import { LAYOUT, CARD_WIDTH, CARD_HEIGHT } from './utils/canvasUtils';
 import './CardCanvas.css';
 
-// =========================
-// CARD DIMENSIONS
-// =========================
-const CARD_WIDTH = 750;
-const CARD_HEIGHT = 1050;
 const SCALE = 0.4;
 
-// =========================
-// LAYOUT POSITIONS (Y coordinates out of 1050)
-// Adjust these values to move elements on the card
-// =========================
-const LAYOUT = {
-    // Header section (top of card)
-    RARITY_Y: 50,      // Rarity text (e.g., "נפוץ", "נדיר")
-    TYPE_Y: 90,        // Item type (e.g., "נשק", "שריון")
-    TITLE_Y: 140,      // Item name (large title)
-
-    // Image section (center of card)
-    IMAGE_CENTER_Y: 450,  // Center point for item image
-
-    // Footer section (bottom of card)
-    STATS_Y: 700,      // Stats/damage text (e.g., "1d8 חותך") - MOVED UP for visibility
-    GOLD_Y: 800,       // Gold price (e.g., "150 זהב") - MOVED UP
-
-    // Boundaries
-    MIN_Y: 20,         // Top boundary for dragging
-    MAX_Y: 1000,       // Bottom boundary for dragging (leaves room for text height)
-};
-
 function CardCanvas() {
-    const { state, updateOffset, updateCardField } = useCardContext();
+    const { state, updateOffset, updateCardField, updateBatchOffsets } = useCardContext();
     const stageRef = useRef<any>(null);
     const itemImageGroupRef = useRef<any>(null);
     const [isFlipped, setIsFlipped] = useState(false);
@@ -73,6 +50,7 @@ function CardCanvas() {
         'back.lore': cardData.back?.lore,
         description: cardData.description
     });
+
 
 
 
@@ -194,6 +172,38 @@ function CardCanvas() {
         }
     }, [isEditMode]);
 
+    // Handle Outside Clicks (Global Listener)
+    useEffect(() => {
+        const handleGlobalClick = (e: MouseEvent) => {
+            // If we are not editing, nothing to do
+            if (!isEditMode && !selectedId) return;
+
+            // Check if the click target is within the CardCanvas container
+            // The container includes the Stage, the Floating Panels, and everything related to the card editor.
+            const target = e.target as HTMLElement;
+            const isInsideCanvas = target.closest('.card-canvas-container');
+
+            // If the click is OUTSIDE the canvas container, deselect.
+            // This covers clicking on the sidebar, the empty page background, etc.
+            if (!isInsideCanvas) {
+                console.log('[CardCanvas] Global click outside detected. Deselecting.');
+                setIsEditMode(false);
+                selectShape(null);
+                setEditingId(null);
+                if (transformerRef.current) {
+                    transformerRef.current.nodes([]);
+                }
+            }
+        };
+
+        // Use mousedown to capture the interaction early just like Konva
+        document.addEventListener('mousedown', handleGlobalClick);
+
+        return () => {
+            document.removeEventListener('mousedown', handleGlobalClick);
+        };
+    }, [isEditMode, selectedId]);
+
     const handleSelect = (e: any, id: string) => {
         console.log('[CardCanvas] handleSelect called:', { id });
         e.cancelBubble = true;
@@ -299,10 +309,12 @@ function CardCanvas() {
 
         const scaleX = node.scaleX();
 
-        updateOffset('imageXOffset', node.x() - BASE_X, 'front');
-        updateOffset('imageYOffset', node.y() - BASE_Y, 'front');
-        updateOffset('imageScale', scaleX, 'front');
-        updateOffset('imageRotation', node.rotation(), 'front');
+        updateBatchOffsets([
+            { key: 'imageXOffset', value: node.x() - BASE_X, side: 'front' },
+            { key: 'imageYOffset', value: node.y() - BASE_Y, side: 'front' },
+            { key: 'imageScale', value: scaleX, side: 'front' },
+            { key: 'imageRotation', value: node.rotation(), side: 'front' }
+        ]);
     };
 
 
@@ -358,50 +370,57 @@ function CardCanvas() {
 
     // Effect to handle caching for Alpha Masking
     // We ALWAYS cache the inner group so it behaves as a single bitmap shape.
-    // This allows the Outer Group (itemImage) to cast a native shadow from this shape.
+    // This allows the Shadow to be applied to the final masked shape.
     useEffect(() => {
-        // Dependencies are now just checking if we need to RE-cache (e.g. fade changed, image changed).
-        // Shadow props changes DO NOT need re-cache because they are on the Outer Group!
-        // But Fade changes DO need re-cache because mask changes.
-
-        // const fade = getCustomStyle('itemImage', 'fade', 0);
-
         if (itemImageGroupRef.current && itemImage) {
             try {
-                // Cache the Inner Group (Image + Mask).
-                // No padding needed because Shadow is on the Outer Group.
-                // We cache the exact size of the image.
+                // Determine padding based on shadow size to avoid clipping
+                // We access the current styles directly or via helpers if needed, 
+                // but here we can just use the dependency values if we extracted them, 
+                // or re-read from state since we are in an effect.
+                const shadowBlur = getCustomStyle('itemImage', 'shadowBlur', 0);
+                const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
+                const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
+
+                // Calculate safe padding: Blur spreads in all directions. Offset shifts it.
+                // We add a healthy margin (multiplier 3 for blur) to be safe.
+                const padding = (shadowBlur * 3) + Math.max(Math.abs(shadowOffsetX), Math.abs(shadowOffsetY)) + 40;
+
+                // Cache the Inner Group (Mask + Image)
+                // We MUST include padding in the cache area to capture the shadow!
                 itemImageGroupRef.current.cache({
-                    x: 0,
-                    y: 0,
-                    width: itemImage.width,
-                    height: itemImage.height,
-                    pixelRatio: 1 // Standard quality is sufficient and safer
+                    x: -padding,
+                    y: -padding,
+                    width: itemImage.width + (padding * 2),
+                    height: itemImage.height + (padding * 2),
+                    pixelRatio: 1
                 });
             } catch (e) {
                 console.warn('Failed to cache image group', e);
-                itemImageGroupRef.current.clearCache();
+                itemImageGroupRef.current?.clearCache();
             }
         }
     }, [
         state.settings.front?.customStyles?.itemImage_fade,
         state.settings.back?.customStyles?.itemImage_fade,
-        // We only need to re-cache if the CONTENT of the inner group changes.
-        // Shadow props are on Outer Loop, so they don't affect cache!
-        itemImage
+        state.settings.front?.customStyles?.itemImage_maskShape,
+        state.settings.back?.customStyles?.itemImage_maskShape,
+        // Shadow deps need to be here to trigger re-cache
+        state.settings.front?.customStyles?.itemImage_shadowBlur,
+        state.settings.back?.customStyles?.itemImage_shadowBlur,
+        state.settings.front?.customStyles?.itemImage_shadowOffsetX,
+        state.settings.back?.customStyles?.itemImage_shadowOffsetX,
+        state.settings.front?.customStyles?.itemImage_shadowOffsetY,
+        state.settings.back?.customStyles?.itemImage_shadowOffsetY,
+        state.settings.front?.customStyles?.itemImage_shadowColor,
+        state.settings.back?.customStyles?.itemImage_shadowColor,
+        itemImage,
+        isFlipped
     ]);
 
-    // Constrain dragging to stay within card boundaries
-    // For centered text (width=CARD_WIDTH), X should stay at 0
-    // Y is constrained between top and bottom of card
-    const dragBoundFunc = (pos: any) => {
-        return {
-            x: 0,  // Keep centered text at x=0
-            y: Math.max(1, Math.min(pos.y, CARD_HEIGHT - 50))
-        };
+    const handleDragEndWrapper = (e: any, key: string, side: 'front' | 'back' = 'front') => {
+        handleDragEnd(e, key, side);
     };
-
-
 
     return (
         <div className="card-canvas-container">
@@ -433,349 +452,151 @@ function CardCanvas() {
                             ctx.closePath();
                         }}
                     >
-                        <Rect
-                            name="card-background"
+                        <BackgroundLayer
                             width={CARD_WIDTH}
                             height={CARD_HEIGHT}
-                            fill="#f5f0e1"
+                            backgroundImage={backgroundImage}
+                            backgroundScale={getOffset('backgroundScale') || 1}
                             onMouseDown={checkDeselect}
-                            onTouchStart={checkDeselect}
                         />
-                        {backgroundImage && (
-                            <KonvaImage
-                                name="card-background-image"
-                                image={backgroundImage}
-                                width={CARD_WIDTH}
-                                height={CARD_HEIGHT}
-                                // Scale from center
-                                x={CARD_WIDTH / 2}
-                                y={CARD_HEIGHT / 2}
-                                offsetX={CARD_WIDTH / 2}
-                                offsetY={CARD_HEIGHT / 2}
-                                scaleX={getOffset('backgroundScale') || 1}
-                                scaleY={getOffset('backgroundScale') || 1}
-                                listening={false}
-                            />
-                        )}
 
-                        {!isFlipped ? (
-                            <>
+                        <TextLayer
+                            cardData={cardData}
+                            isFlipped={isFlipped}
+                            isEditMode={isEditMode}
+                            getOffset={getOffset}
+                            getCustomStyle={getCustomStyle}
+                            getTextStyles={getTextStyles}
+                            onSelect={handleSelect}
+                            onDblClick={handleTextDblClick}
+                            onDragEnd={handleDragEndWrapper}
+                        />
 
+                        {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) - FRONT ONLY */}
+                        {!isFlipped && itemImage && (() => {
+                            // Safe reference for TS
+                            const img = itemImage!;
+                            const fade = getCustomStyle('itemImage', 'fade', 0);
+                            const shadowBlur = getCustomStyle('itemImage', 'shadowBlur', 0);
+                            const shadowColor = getCustomStyle('itemImage', 'shadowColor', '#000000');
+                            const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
+                            const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
 
-                                {/* 1. RARITY - Top of card */}
-                                <Text
-                                    id="rarity"
-                                    text={cardData.front?.rarity || cardData.rarityHe || 'נדירות'}
-                                    x={0}
-                                    y={LAYOUT.RARITY_Y + getOffset('rarity')}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('rarity', 'fontSize', 28)}
-                                    fontFamily={getCustomStyle('rarity', 'fontFamily', 'Arial')}
-                                    fill={getCustomStyle('rarity', 'fill', '#d4af37')}
-                                    {...getTextStyles('rarity', 'front')}
+                            return (
+                                <Group
+                                    // OUTER GROUP: Position, Scale, Interactions
+                                    id="itemImage"
+                                    x={imgX}
+                                    y={imgY}
+                                    scaleX={imgScale}
+                                    scaleY={imgScale}
+                                    rotation={imgRotation}
                                     draggable={isEditMode}
-                                    dragBoundFunc={dragBoundFunc}
-                                    onClick={(e) => handleSelect(e, 'rarity')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'rarity')}
+                                    dragBoundFunc={(pos) => ({ x: pos.x, y: pos.y })} // Allow free movement
+                                    onClick={(e) => handleSelect(e, 'itemImage')}
+                                    onDragEnd={handleImageDragEnd}
+                                    onTransformEnd={handleImageTransformEnd}
                                     onMouseEnter={(e) => { if (isEditMode) e.target.getStage()!.container().style.cursor = 'move'; }}
                                     onMouseLeave={(e) => { e.target.getStage()!.container().style.cursor = 'default'; }}
-                                />
+                                >
+                                    {/* INNER GROUP (Cached for Masking) */}
+                                    <Group
+                                        ref={(node) => {
+                                            if (node) itemImageGroupRef.current = node;
+                                        }}
+                                        // Shadow applied to Inner Group (baked into cache)
+                                        shadowColor={shadowColor}
+                                        shadowBlur={shadowBlur}
+                                        shadowOffsetX={shadowOffsetX}
+                                        shadowOffsetY={shadowOffsetY}
+                                        shadowOpacity={1}
+                                        shadowEnabled={true}
+                                    >
+                                        <KonvaImage
+                                            image={img}
+                                            width={img.width}
+                                            height={img.height}
+                                        />
+                                        {(() => {
+                                            const maskShape = getCustomStyle('itemImage', 'maskShape', 'square');
+                                            const center = { x: img.width / 2, y: img.height / 2 };
 
-                                {/* 2. TYPE (subtype) - Below rarity */}
-                                <Text
-                                    id="type"
-                                    text={cardData.subtype || cardData.front?.type || cardData.typeHe || 'סכין'}
-                                    x={0}
-                                    y={LAYOUT.TYPE_Y + getOffset('type')}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('type', 'fontSize', 30)}
-                                    fontFamily={getCustomStyle('type', 'fontFamily', 'Arial')}
-                                    fontStyle="italic"
-                                    fill={getCustomStyle('type', 'fill', '#555555')}
-                                    {...getTextStyles('type', 'front')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={dragBoundFunc}
-                                    onClick={(e) => handleSelect(e, 'type')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'type')}
-                                    onMouseEnter={(e) => { if (isEditMode) e.target.getStage()!.container().style.cursor = 'move'; }}
-                                    onMouseLeave={(e) => { e.target.getStage()!.container().style.cursor = 'default'; }}
-                                />
+                                            // Gradient Logic
+                                            // For Square/Diamond, we want the gradient to cover the corners if fade is low
+                                            // For Circle, we want it to match the edges
+                                            const endRadius = maskShape === 'circle'
+                                                ? Math.max(img.width, img.height) * 0.5
+                                                : Math.sqrt(Math.pow(img.width, 2) + Math.pow(img.height, 2)) * 0.5;
 
-                                {/* 3. TITLE/NAME - Large and prominent, centered */}
-                                <Text
-                                    id="title"
-                                    text={cardData.front?.title || cardData.name || 'שם הפריט'}
-                                    x={0}
-                                    y={LAYOUT.TITLE_Y + getOffset('title')}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('title', 'fontSize', 60)}
-                                    fontFamily={getCustomStyle('title', 'fontFamily', 'Arial')}
-                                    fontStyle="bold"
-                                    fill={getCustomStyle('title', 'fill', '#2c1810')}
-                                    {...getTextStyles('title', 'front')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={(pos) => {
-                                        return { x: 0, y: Math.max(30, Math.min(pos.y, CARD_HEIGHT - 100)) };
-                                    }}
-                                    onClick={(e) => handleSelect(e, 'title')}
-                                    onDblClick={(e) => handleTextDblClick(e, 'title', cardData.front?.title || cardData.name || '')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'title')}
-                                    onMouseEnter={(e) => {
-                                        if (isEditMode) e.target.getStage()!.container().style.cursor = 'move';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'default';
-                                    }}
-                                />
+                                            const gradientProps = {
+                                                fillRadialGradientStartRadius: 0,
+                                                fillRadialGradientEndRadius: endRadius,
+                                                fillRadialGradientColorStops: [
+                                                    0, 'rgba(0,0,0,1)',
+                                                    Math.max(0, 1 - (fade / 100)), 'rgba(0,0,0,1)',
+                                                    1, 'rgba(0,0,0,0)'
+                                                ],
+                                                globalCompositeOperation: "destination-in" as const
+                                            };
 
-                                {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) */}
-                                {itemImage && (() => {
-                                    const fade = getCustomStyle('itemImage', 'fade', 0);
-                                    const shadowBlur = getCustomStyle('itemImage', 'shadowBlur', 0);
-                                    const shadowColor = getCustomStyle('itemImage', 'shadowColor', '#000000');
-                                    const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
-                                    const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
+                                            switch (maskShape) {
+                                                case 'circle':
+                                                    return (
+                                                        <Circle
+                                                            x={center.x}
+                                                            y={center.y}
+                                                            radius={Math.min(img.width, img.height) / 2}
+                                                            fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+                                                            fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                                                            {...gradientProps}
+                                                        />
+                                                    );
+                                                case 'diamond':
+                                                    return (
+                                                        <RegularPolygon
+                                                            x={center.x}
+                                                            y={center.y}
+                                                            sides={4}
+                                                            radius={Math.min(img.width, img.height) / 2}
+                                                            fillRadialGradientStartPoint={{ x: 0, y: 0 }}
+                                                            fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+                                                            rotation={0}
+                                                            {...gradientProps}
+                                                        />
+                                                    );
+                                                case 'rounded':
+                                                    return (
+                                                        <Rect
+                                                            width={img.width}
+                                                            height={img.height}
+                                                            cornerRadius={Math.min(img.width, img.height) * 0.15}
+                                                            fillRadialGradientStartPoint={center}
+                                                            fillRadialGradientEndPoint={center}
+                                                            {...gradientProps}
+                                                        />
+                                                    );
+                                                case 'square':
+                                                default:
+                                                    return (
+                                                        <Rect
+                                                            width={img.width}
+                                                            height={img.height}
+                                                            fillRadialGradientStartPoint={center}
+                                                            fillRadialGradientEndPoint={center}
+                                                            {...gradientProps}
+                                                        />
+                                                    );
+                                            }
+                                        })()}
+                                    </Group>
+                                </Group>
+                            );
+                        })()}
 
-                                    return (
-                                        <Group
-                                            // OUTER GROUP: Position, Scale, Interactions
-                                            id="itemImage"
-                                            x={imgX}
-                                            y={imgY}
-                                            scaleX={imgScale}
-                                            scaleY={imgScale}
-                                            rotation={imgRotation}
-                                            draggable={isEditMode}
-                                            onClick={(e) => handleSelect(e, 'itemImage')}
-                                            onMouseEnter={(e) => { if (isEditMode) e.target.getStage()!.container().style.cursor = 'move'; }}
-                                            onMouseLeave={(e) => { e.target.getStage()!.container().style.cursor = 'default'; }}
-                                            onDragEnd={handleImageDragEnd}
-                                            onTransformEnd={handleImageTransformEnd}
-
-                                            // IF FADE IS ACTIVE: Apply Shadow to Outer Group (so it casts from the inner cached shape)
-                                            {...(fade > 0 ? {
-                                                shadowEnabled: shadowBlur > 0,
-                                                shadowColor: shadowColor,
-                                                shadowBlur: shadowBlur,
-                                                shadowOpacity: 1,
-                                                shadowOffsetX: shadowOffsetX,
-                                                shadowOffsetY: shadowOffsetY,
-                                            } : {})}
-                                        >
-                                            {fade > 0 ? (
-                                                // MODE A: FADE ACTIVE (Complex Nested Group)
-                                                <Group
-                                                    ref={(node) => {
-                                                        if (node) itemImageGroupRef.current = node;
-                                                    }}
-                                                >
-                                                    <KonvaImage
-                                                        image={itemImage}
-                                                        opacity={getCustomStyle('itemImage', 'opacity', 1)}
-                                                    />
-                                                    <Rect
-                                                        width={itemImage.width}
-                                                        height={itemImage.height}
-                                                        fillRadialGradientStartPoint={{ x: itemImage.width / 2, y: itemImage.height / 2 }}
-                                                        fillRadialGradientStartRadius={0}
-                                                        fillRadialGradientEndPoint={{ x: itemImage.width / 2, y: itemImage.height / 2 }}
-                                                        fillRadialGradientEndRadius={Math.max(itemImage.width, itemImage.height) * 0.5}
-                                                        fillRadialGradientColorStops={[
-                                                            0, 'rgba(0,0,0,1)',
-                                                            Math.max(0, 1 - (fade / 100)), 'rgba(0,0,0,1)',
-                                                            1, 'rgba(0,0,0,0)'
-                                                        ]}
-                                                        globalCompositeOperation="destination-in"
-                                                    />
-                                                </Group>
-                                            ) : (
-                                                // MODE B: NO FADE (Simple Native Image)
-                                                <KonvaImage
-                                                    image={itemImage}
-                                                    opacity={getCustomStyle('itemImage', 'opacity', 1)}
-                                                    // Apply Shadow directly to Image for best native performance
-                                                    shadowEnabled={shadowBlur > 0}
-                                                    shadowColor={shadowColor}
-                                                    shadowBlur={shadowBlur}
-                                                    shadowOpacity={1}
-                                                    shadowOffsetX={shadowOffsetX}
-                                                    shadowOffsetY={shadowOffsetY}
-                                                />
-                                            )}
-                                        </Group>
-                                    );
-                                })()}
-
-                                {/* 5. STATS - Weapon damage / AC / Stats */}
-                                <Text
-                                    id="stats"
-                                    text={(() => {
-                                        const statsText = cardData.weaponDamage || cardData.quickStats || (cardData.armorClass ? `AC ${cardData.armorClass}` : '') || cardData.front?.quickStats || '';
-                                        console.log('[CardCanvas] Stats text:', statsText);
-                                        return statsText;
-                                    })()}
-                                    x={0}
-                                    y={LAYOUT.STATS_Y}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('stats', 'fontSize', 40)}
-                                    fontFamily={getCustomStyle('stats', 'fontFamily', 'Arial')}
-                                    fontStyle="bold"
-                                    fill={getCustomStyle('stats', 'fill', '#1a1a1a')}
-                                    {...getTextStyles('stats', 'front')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={dragBoundFunc}
-                                    onClick={(e) => handleSelect(e, 'stats')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'stats')}
-                                    onMouseEnter={(e) => { if (isEditMode) e.target.getStage()!.container().style.cursor = 'move'; }}
-                                    onMouseLeave={(e) => { e.target.getStage()!.container().style.cursor = 'default'; }}
-                                />
-
-                                {/* 6. GOLD - Bottom of card */}
-                                <Text
-                                    id="gold"
-                                    text={(() => {
-                                        const goldText = cardData.gold ? `${cardData.gold} זהב` : (cardData.front?.gold || '');
-                                        console.log('[CardCanvas] Gold text:', goldText);
-                                        return goldText;
-                                    })()}
-                                    x={0}
-                                    y={LAYOUT.GOLD_Y + getOffset('gold')}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('gold', 'fontSize', 40)}
-                                    fontFamily={getCustomStyle('gold', 'fontFamily', 'Arial')}
-                                    fontStyle="bold"
-                                    fill={getCustomStyle('gold', 'fill', '#d4af37')}
-                                    {...getTextStyles('gold', 'front')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={dragBoundFunc}
-                                    onClick={(e) => handleSelect(e, 'gold')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'gold')}
-                                    onMouseEnter={(e) => { if (isEditMode) e.target.getStage()!.container().style.cursor = 'move'; }}
-                                    onMouseLeave={(e) => { e.target.getStage()!.container().style.cursor = 'default'; }}
-                                />
-                            </>
-                        ) : (
-                            /* Back Side Elements */
-                            <>
-                                {/* Ability Name (Back) - Centered */}
-                                <Text
-                                    id="abilityName"
-                                    text={(cardData.back?.title && cardData.back.title.length > 0)
-                                        ? cardData.back.title
-                                        : (cardData.abilityName || 'שם היכולת')}
-                                    x={0}
-                                    y={Math.max(60, 80 + getOffset('abilityName', 'back'))}
-                                    width={CARD_WIDTH}
-                                    align="center"
-                                    fontSize={getCustomStyle('abilityName', 'fontSize', 52, 'back')}
-                                    fontFamily={getCustomStyle('abilityName', 'fontFamily', 'Arial', 'back')}
-                                    fontStyle="bold"
-                                    fill={getCustomStyle('abilityName', 'fill', '#2c1810', 'back')}
-                                    {...getTextStyles('abilityName', 'back')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={(pos) => ({ x: 0, y: Math.max(30, Math.min(pos.y, CARD_HEIGHT - 100)) })}
-                                    onClick={(e) => handleSelect(e, 'abilityName')}
-                                    onDblClick={(e) => handleTextDblClick(e, 'abilityName', cardData.back?.title || '')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'abilityName', 'back')}
-                                    onMouseEnter={(e) => {
-                                        if (isEditMode) e.target.getStage()!.container().style.cursor = 'move';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'default';
-                                    }}
-                                />
-
-                                {/* Mechanics - Centered */}
-                                <Text
-                                    id="mech"
-                                    text={(cardData.back?.mechanics && cardData.back.mechanics.length > 0)
-                                        ? cardData.back.mechanics
-                                        : (cardData.abilityDesc || 'תיאור היכולת...')}
-                                    x={0}
-                                    y={Math.max(180, 200 + getOffset('mech', 'back'))}
-                                    width={CARD_WIDTH}
-                                    padding={getCustomStyle('mech', 'padding', 40, 'back')}
-                                    fontSize={getCustomStyle('mech', 'fontSize', 36, 'back')}
-                                    fontFamily={getCustomStyle('mech', 'fontFamily', 'Arial', 'back')}
-                                    fill={getCustomStyle('mech', 'fill', '#2c1810', 'back')}
-                                    {...getTextStyles('mech', 'back')}
-                                    align="center"
-                                    lineHeight={getCustomStyle('mech', 'lineHeight', 1.5, 'back')}
-                                    letterSpacing={getCustomStyle('mech', 'letterSpacing', 0, 'back')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={(pos) => ({ x: 0, y: Math.max(30, Math.min(pos.y, CARD_HEIGHT - 100)) })}
-                                    onClick={(e) => handleSelect(e, 'mech')}
-                                    onDblClick={(e) => handleTextDblClick(e, 'mech', cardData.back?.mechanics || '')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'mech', 'back')}
-                                    onMouseEnter={(e) => {
-                                        if (isEditMode) e.target.getStage()!.container().style.cursor = 'move';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'default';
-                                    }}
-                                />
-
-                                {/* Lore - Centered, always shown */}
-                                <Text
-                                    id="lore"
-                                    text={(cardData.back?.lore && cardData.back.lore.length > 0)
-                                        ? cardData.back.lore
-                                        : (cardData.description || '')}
-                                    x={0}
-                                    y={550}
-                                    width={CARD_WIDTH}
-                                    padding={getCustomStyle('lore', 'padding', 40, 'back')}
-                                    fontSize={getCustomStyle('lore', 'fontSize', 32, 'back')}
-                                    fontFamily={getCustomStyle('lore', 'fontFamily', 'Arial', 'back')}
-                                    fontStyle="italic"
-                                    fill={getCustomStyle('lore', 'fill', '#666666', 'back')}
-                                    {...getTextStyles('lore', 'back')}
-                                    align="center"
-                                    lineHeight={getCustomStyle('lore', 'lineHeight', 1.4, 'back')}
-                                    letterSpacing={getCustomStyle('lore', 'letterSpacing', 0, 'back')}
-                                    draggable={isEditMode}
-                                    dragBoundFunc={(pos) => ({ x: 0, y: Math.max(30, Math.min(pos.y, CARD_HEIGHT - 50)) })}
-                                    onClick={(e) => handleSelect(e, 'lore')}
-                                    onDblClick={(e) => handleTextDblClick(e, 'lore', cardData.back?.lore || '')}
-                                    onDragEnd={(e) => handleDragEnd(e, 'lore', 'back')}
-                                    onMouseEnter={(e) => {
-                                        if (isEditMode) e.target.getStage()!.container().style.cursor = 'move';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'default';
-                                    }}
-                                />
-                            </>
-                        )
-                        }
-
-                        {/* Transformer - Only show for image, text elements are just draggable */}
-                        {isEditMode && selectedId === 'itemImage' && (
-                            <Transformer
-                                ref={transformerRef}
-                                boundBoxFunc={(oldBox, newBox) => {
-                                    if (newBox.width < 20 || newBox.height < 20) {
-                                        return oldBox;
-                                    }
-                                    return newBox;
-                                }}
-                                enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
-                                rotateEnabled={true}
-                                padding={2}
-                                borderStroke="#007bff"
-                                borderStrokeWidth={2}
-                                anchorSize={10}
-                                anchorStroke="#007bff"
-                                anchorFill="#fff"
-                            />
-                        )}
-                    </Layer >
-                </Stage >
+                        {/* Overlay Layer for Selection/Transform */}
+                        <OverlayLayer selectedId={selectedId} isEditMode={isEditMode} />
+                    </Layer>
+                </Stage>
             </div>
 
             {/* Canvas Controls */}

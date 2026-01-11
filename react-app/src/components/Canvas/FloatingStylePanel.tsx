@@ -91,6 +91,35 @@ function FloatingStylePanel({ selectedElement, side, onClose }: FloatingStylePan
                     />
                 </div>
             </div>
+            {/* Alignment Controls */}
+            <div className="panel-section">
+                <div className="control-row">
+                    <label>יישור</label>
+                    <div className="btn-group">
+                        <button
+                            className={`tool-btn ${getStyleValue('align', 'center') === 'right' ? 'active' : ''}`}
+                            onClick={() => updateStyle('align', 'right')}
+                            title="יישור לימין"
+                        >
+                            ➡️
+                        </button>
+                        <button
+                            className={`tool-btn ${getStyleValue('align', 'center') === 'center' ? 'active' : ''}`}
+                            onClick={() => updateStyle('align', 'center')}
+                            title="מרכז"
+                        >
+                            ⬇️
+                        </button>
+                        <button
+                            className={`tool-btn ${getStyleValue('align', 'center') === 'left' ? 'active' : ''}`}
+                            onClick={() => updateStyle('align', 'left')}
+                            title="יישור לשמאל"
+                        >
+                            ⬅️
+                        </button>
+                    </div>
+                </div>
+            </div>
 
 
 

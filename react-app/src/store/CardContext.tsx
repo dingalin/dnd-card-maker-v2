@@ -18,6 +18,7 @@ interface CardContextValue {
     setCardData: (data: CardData) => void;
     updateCardField: (path: string, value: any) => void;
     updateOffset: (key: string, value: number, side?: 'front' | 'back') => void;
+    updateBatchOffsets: (updates: Array<{ key: string; value: number; side?: 'front' | 'back' }>) => void;
     updateFontSize: (key: string, change: number) => void;
     updateFontStyle: (key: string, value: boolean) => void;
     updateCustomStyle: (key: string, value: any, side?: 'front' | 'back') => void;
@@ -54,6 +55,10 @@ export function CardProvider({ children }: CardProviderProps) {
 
     const updateOffset = useCallback((key: string, value: number, side?: 'front' | 'back') => {
         dispatch({ type: ActionType.UPDATE_OFFSET, payload: { key, value, side } });
+    }, []);
+
+    const updateBatchOffsets = useCallback((updates: Array<{ key: string; value: number; side?: 'front' | 'back' }>) => {
+        dispatch({ type: ActionType.UPDATE_BATCH_OFFSETS, payload: updates });
     }, []);
 
     const updateFontSize = useCallback((key: string, change: number) => {
@@ -171,6 +176,7 @@ export function CardProvider({ children }: CardProviderProps) {
         setCardData,
         updateCardField,
         updateOffset,
+        updateBatchOffsets,
         updateFontSize,
         updateFontStyle,
         updateCustomStyle,

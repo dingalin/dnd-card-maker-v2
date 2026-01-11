@@ -13,10 +13,8 @@ function ItemCreationForm() {
     const { setCardData, state, updateOffset } = useCardContext();
     const { generateItem, isLoading: isGenerating, error: genError } = useGemini();
     const { generateImage, isGenerating: isGeneratingImage, error: imageError } = useImageGenerator();
-    const { generateBackground, isGenerating: isGeneratingBg, error: bgError, themes } = useBackgroundGenerator();
+    const { generateBackground, isGenerating: isGeneratingBg, error: bgError } = useBackgroundGenerator();
     const { password, isConfigured, savePassword } = useWorkerPassword();
-
-    const [bgTheme, setBgTheme] = useState('Nature');
 
     const [showPasswordInput, setShowPasswordInput] = useState(false);
     const [tempPassword, setTempPassword] = useState('');
@@ -34,7 +32,11 @@ function ItemCreationForm() {
     const [attunement, setAttunement] = useState(false);
     const [subtype, setSubtype] = useState('');
 
-
+    // Collapsible sections state
+    const [openSection, setOpenSection] = useState<string | null>('basic');
+    const toggleSection = (section: string) => {
+        setOpenSection(prev => prev === section ? null : section);
+    };
 
     // Image generation options
     const [imageModel, setImageModel] = useState<'flux' | 'z-image' | 'fal-zimage'>(() => {
@@ -43,6 +45,7 @@ function ItemCreationForm() {
     const [imageStyle, setImageStyle] = useState<'realistic' | 'watercolor' | 'oil' | 'sketch' | 'dark_fantasy' | 'epic_fantasy' | 'anime' | 'pixel' | 'stained_glass' | 'simple_icon' | 'ink_drawing' | 'silhouette' | 'synthwave'>('realistic');
     const [backgroundOption, setBackgroundOption] = useState<'natural' | 'colored' | 'no-background'>('no-background');
     const [imageTheme, setImageTheme] = useState('Nature');
+    const [cardTheme, setCardTheme] = useState('Arcane');
 
     const handleCreate = async () => {
         if (!isConfigured) {
@@ -122,7 +125,7 @@ function ItemCreationForm() {
             // Step 3: Generate Background
             console.log('🎨 Step 3/3: Generating background...');
             try {
-                const bgUrl = await generateBackground(password, bgTheme, imageStyle, imageModel);
+                const bgUrl = await generateBackground(password, imageTheme, imageStyle, imageModel);
                 if (bgUrl) {
                     newCard = { ...newCard, backgroundUrl: bgUrl };
                     setCardData(newCard);
@@ -278,11 +281,11 @@ function ItemCreationForm() {
         }
 
         try {
-            console.log(`🎨 Generating ${bgTheme} background...`);
+            console.log(`🎨 Generating ${cardTheme} background...`);
 
             console.log(`Using model: ${imageModel}`);
 
-            const bgUrl = await generateBackground(password, bgTheme, imageStyle, imageModel);
+            const bgUrl = await generateBackground(password, cardTheme, imageStyle, imageModel);
 
             if (bgUrl) {
                 if (state.cardData) {
@@ -335,9 +338,8 @@ function ItemCreationForm() {
 
     return (
         <div className="item-creation-form">
+            {/* Scrollable Form Content */}
             <div className="form-scroll-content">
-
-
                 {showPasswordInput && (
                     <div className="api-key-setup">
                         <h3>🔑 Enter Password</h3>
@@ -361,138 +363,196 @@ function ItemCreationForm() {
                     </div>
                 )}
 
-                {/* Section: Basic Info */}
-
-                <div className="section-content open">
-                    <div className="form-group">
-                        <label>Type</label>
-                        <select value={type} onChange={(e) => setType(e.target.value)}>
-                            <option value="נשק">נשק (Weapon)</option>
-                            <option value="שריון">שריון (Armor)</option>
-                            <option value="שיקוי">שיקוי (Potion)</option>
-                            <option value="טבעת">טבעת (Ring)</option>
-                            <option value="פריט נפלא">פריט נפלא (Wondrous)</option>
-                        </select>
-                    </div>
-
-                    {/* Subtype Dropdown - shows for all types that have subtypes */}
-                    {TYPE_TO_SUBTYPES[type] && (
+                {/* Collapsible Section: Basic Info */}
+                <div className="section-header" onClick={() => toggleSection('basic')}>
+                    <span className="section-title">📋 Basic Info</span>
+                    <span className="section-icon">{openSection === 'basic' ? '▼' : '▶'}</span>
+                </div>
+                {openSection === 'basic' && (
+                    <div className="section-content">
                         <div className="form-group">
-                            <label>חפץ ספציפי (Specific Item)</label>
-                            <select value={subtype} onChange={(e) => setSubtype(e.target.value)}>
-                                <option value="">-- בחר חפץ --</option>
-                                {Object.entries(TYPE_TO_SUBTYPES[type]).map(([category, items]) => (
-                                    <optgroup key={category} label={category}>
-                                        {items.map((item) => (
-                                            <option key={item} value={item}>
-                                                {item}
-                                            </option>
-                                        ))}
-                                    </optgroup>
-                                ))}
+                            <label>Type</label>
+                            <select value={type} onChange={(e) => setType(e.target.value)}>
+                                <option value="נשק">נשק (Weapon)</option>
+                                <option value="שריון">שריון (Armor)</option>
+                                <option value="שיקוי">שיקוי (Potion)</option>
+                                <option value="טבעת">טבעת (Ring)</option>
+                                <option value="פריט נפלא">פריט נפלא (Wondrous)</option>
                             </select>
                         </div>
-                    )}
+
+                        {/* Subtype Dropdown - shows for all types that have subtypes */}
+                        {TYPE_TO_SUBTYPES[type] && (
+                            <div className="form-group">
+                                <label>חפץ ספציפי (Specific Item)</label>
+                                <select value={subtype} onChange={(e) => setSubtype(e.target.value)}>
+                                    <option value="">-- בחר חפץ --</option>
+                                    {Object.entries(TYPE_TO_SUBTYPES[type]).map(([category, items]) => (
+                                        <optgroup key={category} label={category}>
+                                            {items.map((item) => (
+                                                <option key={item} value={item}>
+                                                    {item}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
 
-
-                    {/* Independent Rarity Panel */}
-                    <div className="rarity-independent-panel">
-                        <label>
-                            RARITY
-                            <span className={`rarity-label ${rarity === 'נפוץ' ? 'common' : rarity === 'לא נפוץ' ? 'uncommon' : rarity === 'נדיר' ? 'rare' : rarity === 'נדיר מאוד' ? 'very-rare' : 'legendary'}`}>
-                                {{
-                                    'נפוץ': 'נפוץ (Common)',
-                                    'לא נפוץ': 'לא נפוץ (Uncommon)',
-                                    'נדיר': 'נדיר (Rare)',
-                                    'נדיר מאוד': 'נדיר מאוד (Very Rare)',
-                                    'אגדי': 'אגדי (Legendary)'
-                                }[rarity] || rarity}
-                            </span>
-                        </label>
-                        <div className="rarity-slider-container">
-                            <input
-                                type="range"
-                                min="0"
-                                max="4"
-                                step="1"
-                                value={Math.max(0, ['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'].indexOf(rarity))}
-                                onChange={(e) => {
-                                    const rarities = ['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'];
-                                    setRarity(rarities[parseInt(e.target.value)]);
-                                }}
-                                className="rarity-range"
-                            />
-                            <div className="rarity-ticks">
-                                <span>C</span>
-                                <span>U</span>
-                                <span>R</span>
-                                <span>V</span>
-                                <span>L</span>
+                        <div className="form-group rarity-slider-group">
+                            <label>Rarity</label>
+                            <div className="rarity-slider-container">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="4"
+                                    step="1"
+                                    value={['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'].indexOf(rarity)}
+                                    onChange={(e) => {
+                                        const rarities = ['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'];
+                                        setRarity(rarities[parseInt(e.target.value)]);
+                                    }}
+                                    className="rarity-slider"
+                                />
+                                <div className="rarity-diamonds">
+                                    <span
+                                        className={`rarity-diamond common ${rarity === 'נפוץ' ? 'active' : ''}`}
+                                        onClick={() => setRarity('נפוץ')}
+                                        data-tooltip="(Common) נפוץ"
+                                    >◆</span>
+                                    <span
+                                        className={`rarity-diamond uncommon ${rarity === 'לא נפוץ' ? 'active' : ''}`}
+                                        onClick={() => setRarity('לא נפוץ')}
+                                        data-tooltip="(Uncommon) לא נפוץ"
+                                    >◆</span>
+                                    <span
+                                        className={`rarity-diamond rare ${rarity === 'נדיר' ? 'active' : ''}`}
+                                        onClick={() => setRarity('נדיר')}
+                                        data-tooltip="(Rare) נדיר"
+                                    >◆</span>
+                                    <span
+                                        className={`rarity-diamond very-rare ${rarity === 'נדיר מאוד' ? 'active' : ''}`}
+                                        onClick={() => setRarity('נדיר מאוד')}
+                                        data-tooltip="(Very Rare) נדיר מאוד"
+                                    >◆</span>
+                                    <span
+                                        className={`rarity-diamond legendary ${rarity === 'אגדי' ? 'active' : ''}`}
+                                        onClick={() => setRarity('אגדי')}
+                                        data-tooltip="(Legendary) אגדי"
+                                    >◆</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                        <input
-                            type="checkbox"
-                            id="attunement"
-                            checked={attunement}
-                            onChange={(e) => setAttunement(e.target.checked)}
-                        />
-                        <label htmlFor="attunement" style={{ margin: 0 }}>Requires Attunement</label>
+
+
+                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                                type="checkbox"
+                                id="attunement"
+                                checked={attunement}
+                                onChange={(e) => setAttunement(e.target.checked)}
+                            />
+                            <label htmlFor="attunement" style={{ margin: 0 }}>Requires Attunement</label>
+                        </div>
                     </div>
+                )}
+
+
+
+
+
+                {/* Collapsible Section: Image Options */}
+                <div className="section-header" onClick={() => toggleSection('image')}>
+                    <span className="section-title">🎨 Image Options</span>
+                    <span className="section-icon">{openSection === 'image' ? '▼' : '▶'}</span>
                 </div>
-
-                <div className="section-content open">
-                    <div className="form-group">
-                        <label>Image Model</label>
-                        <select
-                            value={imageModel}
-                            onChange={(e) => {
-                                const val = e.target.value as any;
-                                setImageModel(val);
-                                localStorage.setItem('dnd_image_model', val);
-                            }}
-                        >
-                            <option value="flux">FLUX Schnell (Fast)</option>
-                            <option value="z-image">Z-Image Turbo (Faster)</option>
-                            <option value="fal-zimage">FAL Z-Image (Budget)</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Style</label>
-                        <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value as any)}>
-                            <option value="realistic">Realistic</option>
-                            <option value="watercolor">Watercolor</option>
-                            <option value="oil">Oil Painting</option>
-                            <option value="sketch">Pencil Sketch</option>
-                            <option value="dark_fantasy">Dark Fantasy</option>
-                            <option value="epic_fantasy">Epic Fantasy</option>
-                            <option value="anime">Anime</option>
-                            <option value="pixel">Pixel Art</option>
-                            <option value="stained_glass">Stained Glass</option>
-                            <option value="simple_icon">Flat Icon</option>
-                            <option value="ink_drawing">Ink Drawing</option>
-                            <option value="silhouette">Silhouette</option>
-                            <option value="synthwave">Synthwave</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Background</label>
-                        <select value={backgroundOption} onChange={(e) => setBackgroundOption(e.target.value as any)}>
-                            <option value="no-background">No Background (Clean)</option>
-                            <option value="natural">Natural Bokeh (Blurred)</option>
-                            <option value="colored">Colored Gradient</option>
-                        </select>
-                    </div>
-
-                    {backgroundOption === 'natural' && (
+                {openSection === 'image' && (
+                    <div className="section-content">
                         <div className="form-group">
-                            <label>Theme (for natural backgrounds)</label>
-                            <select value={imageTheme} onChange={(e) => setImageTheme(e.target.value)}>
+                            <label>Image Model</label>
+                            <select
+                                value={imageModel}
+                                onChange={(e) => {
+                                    const val = e.target.value as any;
+                                    setImageModel(val);
+                                    localStorage.setItem('dnd_image_model', val);
+                                }}
+                            >
+                                <option value="flux">FLUX Schnell (Fast)</option>
+                                <option value="z-image">Z-Image Turbo (Faster)</option>
+                                <option value="fal-zimage">FAL Z-Image (Budget)</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Style</label>
+                            <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value as any)}>
+                                <option value="realistic">Realistic</option>
+                                <option value="watercolor">Watercolor</option>
+                                <option value="oil">Oil Painting</option>
+                                <option value="sketch">Pencil Sketch</option>
+                                <option value="dark_fantasy">Dark Fantasy</option>
+                                <option value="epic_fantasy">Epic Fantasy</option>
+                                <option value="anime">Anime</option>
+                                <option value="pixel">Pixel Art</option>
+                                <option value="stained_glass">Stained Glass</option>
+                                <option value="simple_icon">Flat Icon</option>
+                                <option value="ink_drawing">Ink Drawing</option>
+                                <option value="silhouette">Silhouette</option>
+                                <option value="synthwave">Synthwave</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Item Image Background</label>
+                            <select value={backgroundOption} onChange={(e) => setBackgroundOption(e.target.value as any)}>
+                                <option value="no-background">No Background (Clean)</option>
+                                <option value="natural">Natural Bokeh (Blurred)</option>
+                                <option value="colored">Colored Gradient</option>
+                            </select>
+                        </div>
+
+                        {/* Item Image Theme - Only relevant if background is natural */}
+                        {backgroundOption === 'natural' && (
+                            <div className="form-group">
+                                <label>Item Theme (for natural backgrounds)</label>
+                                <select value={imageTheme} onChange={(e) => setImageTheme(e.target.value)}>
+                                    <option value="Nature">🌲 Nature</option>
+                                    <option value="Fire">🔥 Fire</option>
+                                    <option value="Ice">❄️ Ice</option>
+                                    <option value="Lightning">⚡ Lightning</option>
+                                    <option value="Arcane">🔮 Arcane</option>
+                                    <option value="Divine">✨ Divine</option>
+                                    <option value="Necrotic">💀 Necrotic</option>
+                                    <option value="Ocean">🌊 Ocean</option>
+                                    <option value="Shadow">🌑 Shadow</option>
+                                    <option value="Celestial">🌌 Celestial</option>
+                                    <option value="Blood">🩸 Blood</option>
+                                    <option value="Industrial">⚙️ Industrial</option>
+                                    <option value="Iron">🔨 Iron/Forge</option>
+                                    <option value="Old Scroll">📜 Ancient Library</option>
+                                    <option value="Elemental">💫 Elemental Chaos</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div style={{ margin: '1rem 0', borderTop: '1px solid rgba(255,255,255,0.1)' }}></div>
+
+                        {/* Card Background Theme - Always Visible */}
+                        <div className="form-group">
+                            <label style={{ color: '#d4af37' }}>Card Background Theme</label>
+                            <select
+                                value={cardTheme}
+                                onChange={(e) => {
+                                    setCardTheme(e.target.value);
+                                    // Also update image theme if it wasn't manually set? 
+                                    // For now keep them independent but maybe default them to be same 
+                                    // on initial separate load if we wanted.
+                                }}
+                            >
                                 <option value="Nature">🌲 Nature</option>
                                 <option value="Fire">🔥 Fire</option>
                                 <option value="Ice">❄️ Ice</option>
@@ -509,28 +569,30 @@ function ItemCreationForm() {
                                 <option value="Old Scroll">📜 Ancient Library</option>
                                 <option value="Elemental">💫 Elemental Chaos</option>
                             </select>
+                            <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7em', marginTop: '4px', display: 'block' }}>
+                                Used when clicking "BG" button below
+                            </small>
                         </div>
-                    )}
 
-                    <div className="form-group" style={{ marginTop: '0.5rem' }}>
-                        <label>זום רקע (Background Zoom)</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <input
-                                type="range"
-                                min="1.0"
-                                max="1.5"
-                                step="0.05"
-                                value={state.settings?.front?.offsets?.backgroundScale ?? 1}
-                                onChange={(e) => updateOffset('backgroundScale', parseFloat(e.target.value), 'front')}
-                                style={{ flex: 1 }}
-                            />
-                            <span style={{ minWidth: '40px', textAlign: 'right' }}>
-                                {(state.settings?.front?.offsets?.backgroundScale ?? 1).toFixed(2)}x
-                            </span>
+                        <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                            <label>זום רקע (Background Zoom)</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <input
+                                    type="range"
+                                    min="1.0"
+                                    max="1.5"
+                                    step="0.05"
+                                    value={state.settings?.front?.offsets?.backgroundScale ?? 1}
+                                    onChange={(e) => updateOffset('backgroundScale', parseFloat(e.target.value), 'front')}
+                                    style={{ flex: 1 }}
+                                />
+                                <span style={{ minWidth: '40px', textAlign: 'right' }}>
+                                    {(state.settings?.front?.offsets?.backgroundScale ?? 1).toFixed(2)}x
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-
+                )}
                 {bgError && (
                     <div className="error-message">
                         ⚠️ {bgError}
@@ -552,38 +614,27 @@ function ItemCreationForm() {
 
             {/* Sticky Action Buttons - Always visible at bottom */}
             <div className="sticky-buttons">
-                <div className="bg-gen-row">
+                <div className="button-row-3">
                     <button
                         onClick={handleGenerateBackground}
-                        className="generate-btn bg-btn"
+                        className="generate-btn bg-btn compact"
                         disabled={isGeneratingBg}
                     >
-                        {isGeneratingBg ? '🔄...' : '🖼️ BG'}
-                    </button>
-                    <select
-                        value={bgTheme}
-                        onChange={(e) => setBgTheme(e.target.value)}
-                        className="bg-theme-select"
-                    >
-                        {themes.map(theme => (
-                            <option key={theme} value={theme}>{theme}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="button-row">
-                    <button
-                        onClick={handleGenerateImage}
-                        className="generate-btn image-btn"
-                        disabled={isGeneratingImage}
-                    >
-                        {isGeneratingImage ? '🔄...' : '🎨 Image'}
+                        {isGeneratingBg ? '🔄' : '🖼️ BG'}
                     </button>
                     <button
                         onClick={handleGenerateWithAI}
-                        className="generate-btn ai-text-btn"
+                        className="generate-btn ai-text-btn compact"
                         disabled={isGenerating}
                     >
-                        {isGenerating ? '🔄...' : '🤖 AI Text'}
+                        {isGenerating ? '🔄' : '🤖 AI'}
+                    </button>
+                    <button
+                        onClick={handleGenerateImage}
+                        className="generate-btn image-btn compact"
+                        disabled={isGeneratingImage}
+                    >
+                        {isGeneratingImage ? '🔄' : '🎨 IMG'}
                     </button>
                 </div>
                 <button onClick={handleCreate} className="create-btn full-width">

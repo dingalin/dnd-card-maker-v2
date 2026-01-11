@@ -19,6 +19,7 @@ export const ActionType = {
     SET_LAST_CONTEXT: 'SET_LAST_CONTEXT',
     SET_LAST_VISUAL_PROMPT: 'SET_LAST_VISUAL_PROMPT',
     LOAD_STATE: 'LOAD_STATE',
+    UPDATE_BATCH_OFFSETS: 'UPDATE_BATCH_OFFSETS',
     TOGGLE_EDIT_MODE: 'TOGGLE_EDIT_MODE',
 } as const;
 
@@ -35,4 +36,5 @@ export type StateAction =
     | { type: typeof ActionType.SET_LAST_CONTEXT; payload: unknown }
     | { type: typeof ActionType.SET_LAST_VISUAL_PROMPT; payload: string | null }
     | { type: typeof ActionType.LOAD_STATE; payload: { cardData?: CardData; settings?: AppSettings } }
+    | { type: typeof ActionType.UPDATE_BATCH_OFFSETS; payload: Array<{ key: string; value: number; side?: 'front' | 'back' }> }
     | { type: typeof ActionType.TOGGLE_EDIT_MODE };

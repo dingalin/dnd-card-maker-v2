@@ -85,12 +85,14 @@ export interface FrontFontSizes {
     statsSize: number;
     coreStatsSize: number;
     goldSize: number;
+    [key: string]: number;
 }
 
 export interface BackFontSizes {
     abilityNameSize: number;
     mechSize: number;
     loreSize: number;
+    [key: string]: number;
 }
 
 export type FontSizes = Partial<FrontFontSizes & BackFontSizes>;
@@ -119,6 +121,7 @@ export interface FrontOffsets {
     statsWidth: number;
     goldWidth: number;
     template?: string;
+    [key: string]: number | string | undefined;
 }
 
 export interface BackOffsets {
@@ -128,6 +131,7 @@ export interface BackOffsets {
     mechWidth: number;
     loreWidth: number;
     template?: string;
+    [key: string]: number | string | undefined;
 }
 
 export type Offsets = Partial<FrontOffsets & BackOffsets>;
@@ -145,6 +149,7 @@ export interface StyleSettings {
     textBackdropEnabled: boolean;
     textBackdropOpacity: number;
     cardBackgroundUrl?: string;
+    [key: string]: string | number | boolean | undefined;
 }
 
 // ============== FONT STYLES ==============
