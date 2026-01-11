@@ -1,0 +1,172 @@
+/* ============================================
+   DESIGN TOOLS - Mimic Vault Theme
+   ============================================ */
+
+.design-tools {
+    padding: var(--space-md);
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    direction: rtl;
+}
+
+.design-tools h2 {
+    font-family: var(--font-display);
+    margin: 0 0 var(--space-lg) 0;
+    color: var(--accent-gold);
+    font-size: 1rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.tool-section {
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.tool-section:last-child {
+    border-bottom: none;
+}
+
+.tool-section h3 {
+    font-family: var(--font-display);
+    margin: 0 0 var(--space-md) 0;
+    color: var(--accent-purple);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.no-card-msg {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: var(--space-md);
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: var(--space-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: var(--space-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: all var(--transition-fast);
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.button-group button {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.button-group button:hover {
+    background: rgba(100, 116, 139, 0.3);
+    color: var(--text-primary);
+}
+
+.button-group button.active {
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.6) 0%, rgba(168, 85, 247, 0.4) 100%);
+    color: white;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+/* Slider Group */
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.slider-group input[type="range"] {
+    flex: 1;
+}
+
+.slider-value {
+    min-width: 45px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+/* Color Input */
+.form-group input[type="color"] {
+    width: 50px;
+    height: 30px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 2px;
+    background: var(--bg-input);
+}
+
+/* Checkbox Group */
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-cyan);
+}
+
+/* Dual Slider */
+.dual-slider {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.dual-slider input[type="range"] {
+    width: 100%;
+}

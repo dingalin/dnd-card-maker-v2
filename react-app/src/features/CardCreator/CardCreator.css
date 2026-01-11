@@ -1,0 +1,286 @@
+/* ============================================
+   CARD CREATOR - Mimic Vault Theme
+   ============================================ */
+
+.card-creator {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main Layout: 1fr (Content) + 320px (Sidebar) */
+.creator-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    /* Sidebar (Start/Right in RTL) + Content (End/Left in RTL) */
+    gap: 0;
+    flex: 1;
+    padding: 0;
+    max-width: 100%;
+    margin: 0;
+    overflow: visible;
+    /* Required for sticky positioning */
+}
+
+/* Visually center the card relative to screen 
+   (Balancing Nav Rail 110px vs Right Panel 320px) 
+   Now relying on Flexbox centering in the 1fr column.
+*/
+/* Visually center the card relative to screen 
+   (Balancing Nav Rail 110px vs Right Panel 320px) 
+*/
+
+/* Sidebar Panels (Left & Right) */
+/* Sidebar Panels (Left & Right) */
+.sidebar {
+    background: var(--bg-panel);
+    border-radius: var(--radius-lg);
+    /* Padding removed to allow sticky footer to reach edges. 
+       Child containers will handle padding. */
+    padding: 0;
+
+    /* Layout: Flex column to support Sticky Footer */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Prevent sidebar itself from scrolling */
+
+    height: 100%;
+    position: relative;
+}
+
+/* Decorative Claws (Corners) */
+.sidebar::before,
+.sidebar::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--accent-gold);
+    pointer-events: none;
+    transition: all var(--transition-normal);
+    opacity: 0.7;
+}
+
+.sidebar::before {
+    top: -1px;
+    left: -1px;
+    border-right: none;
+    border-bottom: none;
+    border-radius: var(--radius-lg) 0 0 0;
+}
+
+.sidebar::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: none;
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) 0;
+}
+
+/* Mimic Eye (Top Center) */
+/* Mimic Eye (Top Center) */
+.mimic-eye-container {
+    position: absolute;
+    top: -35px;
+    /* Adjusted for smaller size */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: none;
+    filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.4));
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.mimic-eye-img {
+    width: 110px;
+    /* Reduced to half size */
+    max-width: 80%;
+    height: auto;
+    object-fit: contain;
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Mimic Maw (Delete Zone) */
+.mimic-maw-container {
+    position: absolute;
+    bottom: -30px;
+    /* Moved up from -50px */
+    right: -30px;
+    /* Moved left from -50px */
+    width: 120px;
+    height: 120px;
+    z-index: 20;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mimic-maw-img {
+    width: 100%;
+    height: auto;
+    opacity: 0.8;
+    transition: all var(--transition-normal);
+}
+
+.mimic-maw-container:hover {
+    transform: scale(1.15) rotate(-5deg);
+}
+
+.mimic-maw-container:hover .mimic-maw-img {
+    opacity: 1;
+    filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.6));
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Canvas Header - Removed as requested */
+
+.sidebar:last-child {
+    border-right: none;
+}
+
+
+.sidebar h2 {
+    font-family: var(--font-display);
+    margin: 0 0 var(--space-md) 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.sidebar h2::before {
+    content: '✦';
+    color: var(--accent-gold);
+    font-size: 0.7rem;
+}
+
+/* Preview Area (Center) */
+/* Preview Area (Center) */
+.preview-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center horizontally, start vertically */
+    justify-content: flex-start;
+    padding: var(--space-md);
+    width: 100%;
+    /* Allow it to grow with content if needed */
+    height: auto;
+    min-height: 100%;
+}
+
+.card-preview {
+    /* Fixed Positioning to float above page scroll */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    /* Full width - let Flexbox center it in the viewport */
+    right: 0;
+
+    width: 100%;
+    height: 100vh;
+    z-index: 5;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+
+    /* Push down slightly to clear the top golden line */
+    padding-top: 40px;
+
+    /* Allow clicks to pass through empty areas */
+    pointer-events: none;
+}
+
+/* Re-enable interactions for ALL content inside the preview (Card, Buttons, Modals) */
+.card-preview>* {
+    pointer-events: auto;
+}
+
+.card-preview h2 {
+    display: none;
+}
+
+/* Card canvas */
+.card-preview canvas {
+    max-width: 90%;
+    /* Ensure it fits in viewport */
+    max-height: 85vh;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 1;
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Buttons container */
+.card-preview .button-group {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.canvas-placeholder {
+    background: var(--bg-panel);
+    border: 1px dashed var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    min-width: 180px;
+    max-width: 250px;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.debug-info {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .creator-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        height: auto;
+    }
+
+    .sidebar {
+        max-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-preview canvas {
+        max-width: 90%;
+        max-height: 50vh;
+    }
+}

@@ -16,27 +16,29 @@
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="./css/base/reset.css">
   <link rel="stylesheet" href="./css/base/variables.css">
+  <link rel="stylesheet" href="./css/themes/mimic-vault.css">
   <link rel="stylesheet" href="./style.css?v=4">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components/buttons.css?v=nuclear">
   <link rel="stylesheet" href="./css/components/canvas.css?v=nuclear">
   <link rel="stylesheet" href="./css/components/navigation.css?v=nuclear">
   <link rel="stylesheet" href="./css/components/panels.css?v=nuclear">
-  <link rel="stylesheet" href="./css/components/toast.css">
-  <link rel="stylesheet" href="./css/components/scroll-menu.css">
-  <link rel="stylesheet" href="./css/components/forms.css">
-  <link rel="stylesheet" href="./css/components/modal.css">
-  <link rel="stylesheet" href="./css/components/character-sheet.css">
-  <link rel="stylesheet" href="./css/components/character-sheet2.css">
-  <link rel="stylesheet" href="./css/components/card-viewer.css">
-  <link rel="stylesheet" href="./css/components/treasure-generator.css">
-  <link rel="stylesheet" href="./css/components/power-budget.css">
+  <link rel="stylesheet" href="./css/components/toast.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/scroll-menu.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/forms.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/modal.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/character-sheet.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/character-sheet2.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/card-viewer.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/treasure-generator.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/power-budget.css?v=nuclear">
 
-  <link rel="stylesheet" href="./css/components/ability-selector.css">
-  <link rel="stylesheet" href="./css/components/gallery.css">
-  <link rel="stylesheet" href="./css/components/tutorial.css">
-  <link rel="stylesheet" href="./css/utilities.css">
-  <link rel="stylesheet" href="./css/mobile.css">
+  <link rel="stylesheet" href="./css/components/ability-selector.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/direct-edit.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/gallery.css?v=nuclear">
+  <link rel="stylesheet" href="./css/components/tutorial.css?v=nuclear">
+  <link rel="stylesheet" href="./css/utilities.css?v=nuclear">
+  <link rel="stylesheet" href="./css/mobile.css?v=nuclear">
 
 </head>
 
@@ -47,15 +49,6 @@
   <div id="app">
     <!-- Header Component -->
     <div id="header-placeholder"></div>
-
-    <!-- Gallery Component -->
-    <div id="gallery-placeholder"></div>
-
-    <!-- Print Modal Component -->
-    <div id="print-modal-placeholder"></div>
-
-    <!-- Equip Modal Component -->
-    <div id="equip-modal-placeholder"></div>
 
     <!-- Navigation Scroll Menu (Hidden by default) -->
     <div id="scroll-content-area" class="scroll-content-area">
@@ -106,18 +99,6 @@
 
 
 
-    <!-- Custom Confirmation Modal -->
-    <div id="confirmation-modal" class="modal-overlay hidden">
-      <div class="modal-content glass-panel">
-        <h3 class="modal-title" data-i18n="modal.confirmTitle">אישור פעולה</h3>
-        <p class="modal-message" data-i18n="modal.confirmMessage">האם אתה בטוח?</p>
-        <div class="modal-actions">
-          <button id="confirm-cancel-btn" class="btn-secondary" data-i18n="modal.cancel">ביטול</button>
-          <button id="confirm-ok-btn" class="btn-primary" data-i18n="modal.confirm">אישור</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Mobile Bottom Bar -->
     <div class="mobile-bottom-bar" id="mobile-bottom-bar">
       <button id="mobile-menu-start" class="mobile-bar-btn">
@@ -139,7 +120,12 @@
   </div>
 
   <!-- Scripts - main.js is the single entry point for Vite -->
-  <script type="module" src="./src/main.ts?v=35"></script>
+  <script type="module" src="./src/main.ts?v=36"></script>
+
+  <!-- Modals moved to root to avoid stacking context issues -->
+  <div id="gallery-placeholder"></div>
+  <div id="print-modal-placeholder"></div>
+  <div id="equip-modal-placeholder"></div>
 </body>
 
 </html>

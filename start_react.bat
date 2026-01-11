@@ -1,0 +1,9 @@
+@echo off
+echo Starting D&D Card Creator (React V2.0)...
+cd react-app
+echo Installing dependencies if needed...
+call npm install
+echo Starting development server...
+start http://localhost:5173
+npm run dev
+pause

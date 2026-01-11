@@ -1,0 +1,39 @@
+/* ============================================
+   APP LAYOUT - Mimic Vault
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* App Container */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Main Layout - Navigation Rail + Content */
+.app-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  direction: ltr;
+  /* Force sidebar to be on the left */
+}
+
+/* Main Content Area */
+.app-main {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+  /* Restore direction based on root attribute, since parent forces LTR */
+  direction: ltr;
+}
+
+:root[dir="rtl"] .app-main {
+  direction: rtl;
+}
+
+/* Old nav-tab styles removed - using NavigationRail now */

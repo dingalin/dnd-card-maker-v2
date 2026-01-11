@@ -43,16 +43,8 @@ export interface ItemDetails {
     [key: string]: any;
 }
 
-declare global {
-    interface Window {
-        OFFICIAL_ITEMS?: {
-            weapon?: { [key: string]: string[] };
-            armor?: { [key: string]: string[] };
-            [key: string]: any;
-        };
-        ITEM_STATS?: { [key: string]: OfficialStats };
-    }
-}
+// Global declaration removed to fix modifier mismatch
+// Types are used via direct access or assumed global in legacy context
 
 // ==================== TRANSLATION CONSTANTS ====================
 
@@ -216,12 +208,12 @@ function extractSpecificType(finalSubtype: string, isHebrew: boolean): string {
  * Find official stats by matching subtype against ITEM_STATS keys
  */
 function findOfficialStats(finalSubtype: string): OfficialStats | null {
-    if (!window.ITEM_STATS || !finalSubtype) return null;
+    if (!(window as any).ITEM_STATS || !finalSubtype) return null;
 
     // Try direct match first
-    if (window.ITEM_STATS[finalSubtype]) {
+    if ((window as any).ITEM_STATS[finalSubtype]) {
         console.log("ItemEnrichment: Direct match found:", finalSubtype);
-        return window.ITEM_STATS[finalSubtype];
+        return (window as any).ITEM_STATS[finalSubtype];
     }
 
     // Normalize the subtype for matching
@@ -237,7 +229,7 @@ function findOfficialStats(finalSubtype: string): OfficialStats | null {
     const hebrewName = hebrewMatch?.[1]?.trim() || '';
 
     // Search for partial match with multiple strategies
-    const statsKeys = Object.keys(window.ITEM_STATS);
+    const statsKeys = Object.keys((window as any).ITEM_STATS);
     const matchingKey = statsKeys.find(key => {
         const keyLower = key.toLowerCase();
         const keyEnglish = key.includes('(') ? key.split('(')[0].trim().toLowerCase() : keyLower;
@@ -266,7 +258,7 @@ function findOfficialStats(finalSubtype: string): OfficialStats | null {
 
     if (matchingKey) {
         console.log("ItemEnrichment: Match found:", matchingKey, "for:", finalSubtype);
-        return window.ITEM_STATS[matchingKey];
+        return (window as any).ITEM_STATS[matchingKey];
     }
 
     console.warn("ItemEnrichment: No stats found for:", finalSubtype,
@@ -314,7 +306,7 @@ function cleanDamageString(str: string, isHebrew: boolean): string {
  * @param {string} locale - 'he' or 'en'
  */
 export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalSubtype: string, locale: 'he' | 'en' = 'he'): void {
-    if (!window.OFFICIAL_ITEMS) return;
+    if (!(window as any).OFFICIAL_ITEMS) return;
 
     const isHebrew = locale === 'he';
 
@@ -325,14 +317,14 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
         const t = (key: string) => CATEGORY_TRANSLATIONS[key]?.[isHebrew ? 'he' : 'en'] || key;
 
         // === WEAPONS ===
-        if (type === 'weapon' && window.OFFICIAL_ITEMS.weapon) {
+        if (type === 'weapon' && (window as any).OFFICIAL_ITEMS.weapon) {
             let weaponPrefix = t('weapon');
-            const cats = window.OFFICIAL_ITEMS.weapon;
+            const cats = (window as any).OFFICIAL_ITEMS.weapon;
 
             // Check if item exactly matches one in the category
             const checkCategory = (category: string) => {
                 if (!cats[category]) return false;
-                return cats[category].some(item => {
+                return cats[category].some((item: string) => {
                     // Exact match
                     if (item === finalSubtype) return true;
                     // Check if item key matches (e.g., "Handaxe (גרזן יד)" matches "Handaxe")
@@ -362,17 +354,17 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
         }
 
         // === ARMOR ===
-        else if (type === 'armor' && window.OFFICIAL_ITEMS.armor) {
-            const cats = window.OFFICIAL_ITEMS.armor;
+        else if (type === 'armor' && (window as any).OFFICIAL_ITEMS.armor) {
+            const cats = (window as any).OFFICIAL_ITEMS.armor;
             let armorCategory = "";
 
-            if ((cats["Light Armor"] || []).some(x => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
+            if ((cats["Light Armor"] || []).some((x: string) => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
                 armorCategory = t('light');
-            } else if ((cats["Medium Armor"] || []).some(x => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
+            } else if ((cats["Medium Armor"] || []).some((x: string) => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
                 armorCategory = t('medium');
-            } else if ((cats["Heavy Armor"] || []).some(x => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
+            } else if ((cats["Heavy Armor"] || []).some((x: string) => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
                 armorCategory = t('heavy');
-            } else if ((cats["Shield"] || []).some(x => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
+            } else if ((cats["Shield"] || []).some((x: string) => x.includes(finalSubtype) || finalSubtype?.includes(x.split(' ')[0]))) {
                 armorCategory = t('shield');
             }
 

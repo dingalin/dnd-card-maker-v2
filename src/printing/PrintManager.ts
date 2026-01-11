@@ -3,9 +3,6 @@ declare global {
     interface Window {
         printManager: PrintManager;
         areComponentsLoaded?: boolean;
-        i18n?: {
-            t: (key: string) => string;
-        };
     }
 }
 
@@ -91,7 +88,7 @@ export class PrintManager {
             el.addEventListener('input', (e: Event) => {
                 const target = e.target as HTMLInputElement;
                 const val = isNumber ? parseFloat(target.value) : target.value;
-                (this.settings as Record<string, unknown>)[settingKey] = val;
+                (this.settings as any)[settingKey] = val;
 
                 // --- Aspect Ratio Logic ---
                 const lockCheckbox = document.getElementById('print-lock-ratio') as HTMLInputElement | null;
@@ -219,9 +216,32 @@ export class PrintManager {
 
     openPrintModal(cards: CardToPrint[]): void {
         this.cards = cards;
-        if (!this.modal) return;
 
-        this.modal.classList.remove('hidden');
+        // Lazy init if modal missing
+        if (!this.modal) {
+            this.modal = document.getElementById('print-modal');
+        }
+
+        if (!this.modal) {
+            console.error("❌ PrintManager: #print-modal not found in DOM when trying to open!");
+            return;
+        }
+
+        // Ensure it is a direct child of body (fixes stacking context)
+        if (document.body !== this.modal.parentNode) {
+            document.body.appendChild(this.modal);
+        }
+
+        // Force Accessibility & Visibility
+        // Use inline styles to override any potential CSS conflicts
+        this.modal.style.display = 'flex';
+        this.modal.style.opacity = '1';
+        this.modal.style.visibility = 'visible';
+        this.modal.style.zIndex = '99999';
+        this.modal.style.pointerEvents = 'auto'; // FIX: Ensure interactions are enabled
+
+        console.log("🖨️ Print Modal Opened");
+
         this.renderPreview();
     }
 
@@ -289,9 +309,11 @@ export class PrintManager {
                 const frontImg = document.createElement('img');
                 let frontSrc = card.thumbnail;
                 if (!frontSrc || frontSrc === 'null' || frontSrc === 'undefined') {
-                    frontSrc = card.cardData?.imageUrl || 'assets/textures/stone_slab.png';
+                    // Check front.imageUrl (New) -> imageUrl (Legacy) -> Fallback
+                    const data = card.cardData as any;
+                    frontSrc = data?.front?.imageUrl || data?.imageUrl || 'assets/textures/stone_slab.png';
                 }
-                frontImg.src = frontSrc;
+                frontImg.src = frontSrc || '';
                 frontImg.style.width = '50%';
                 frontImg.style.height = '100%';
                 frontImg.style.objectFit = 'cover';
@@ -300,9 +322,26 @@ export class PrintManager {
 
                 // Back image
                 const backImg = document.createElement('img');
-                let backSrc = card.backThumbnail || card.cardData?.backThumbnail || card.cardData?.capturedBackImage;
+                const data = card.cardData as any;
+
+                // Enhanced lookup for back image
+                const backSrcs = {
+                    rootThumb: card.backThumbnail,
+                    dataThumb: card.cardData?.backThumbnail,
+                    captured: card.cardData?.capturedBackImage,
+                    v2Back: data?.back?.imageUrl,
+                    legacyBack: data?.backImageUrl
+                };
+                console.log('🖨️ Resolving back for:', card.cardData?.name || 'Unknown', backSrcs);
+
+                let backSrc = card.backThumbnail ||
+                    card.cardData?.backThumbnail ||
+                    card.cardData?.capturedBackImage ||
+                    data?.back?.imageUrl ||       // Check standard structure
+                    data?.backImageUrl;           // Check flat structure
+
                 if (!backSrc || backSrc === 'null' || backSrc === 'undefined') {
-                    // Fallback: use placeholder or same as front
+                    // Fallback: use generic texture ONLY if nothing else found
                     backSrc = 'assets/textures/stone_slab.png';
                 }
                 backImg.src = backSrc;
@@ -319,9 +358,11 @@ export class PrintManager {
                 // Prefer thumbnail (full card) over raw image
                 let src = card.thumbnail;
                 if (!src || src === 'null' || src === 'undefined') {
-                    src = card.cardData?.imageUrl || 'assets/textures/stone_slab.png';
+                    // Check front.imageUrl (New) -> imageUrl (Legacy) -> Fallback
+                    const data = card.cardData as any;
+                    src = data?.front?.imageUrl || data?.imageUrl || 'assets/textures/stone_slab.png';
                 }
-                img.src = src;
+                img.src = src || '';
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';

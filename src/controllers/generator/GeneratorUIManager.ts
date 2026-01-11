@@ -106,6 +106,32 @@ export class GeneratorUIManager {
         });
         if (subtypeSelect) subtypeSelect.addEventListener('change', updateSticky);
         if (abilityInput) abilityInput.addEventListener('input', updateSticky);
+
+        // Sync Image Style/Model with Background Generation settings
+        const imageStyle = document.getElementById('image-style') as HTMLSelectElement | null;
+        const bgStyle = document.getElementById('bg-style-select') as HTMLSelectElement | null;
+        const imageModel = document.getElementById('image-model') as HTMLSelectElement | null;
+        const bgModel = document.getElementById('bg-model-select') as HTMLSelectElement | null;
+
+        if (imageStyle && bgStyle) {
+            imageStyle.addEventListener('change', () => {
+                // Check if background select has this option before setting it
+                if (bgStyle.querySelector(`option[value="${imageStyle.value}"]`)) {
+                    bgStyle.value = imageStyle.value;
+                    bgStyle.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        if (imageModel && bgModel) {
+            imageModel.addEventListener('change', () => {
+                // Check if background select has this option before setting it
+                if (bgModel.querySelector(`option[value="${imageModel.value}"]`)) {
+                    bgModel.value = imageModel.value;
+                    bgModel.dispatchEvent(new Event('change'));
+                }
+            });
+        }
     }
 
     getApiKey(): string | null {

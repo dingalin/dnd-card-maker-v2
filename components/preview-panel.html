@@ -45,6 +45,8 @@
             <div class="card-rotator">
                 <canvas id="card-canvas" width="600" height="840"></canvas>
                 <canvas id="card-canvas-back" width="600" height="840" class="hidden"></canvas>
+                <!-- Konva.js editing overlay (shown in edit mode) -->
+                <div id="konva-container" class="konva-edit-overlay hidden"></div>
             </div>
 
             <!-- Loading Overlay -->
@@ -81,6 +83,10 @@
 
             <!-- Preview Controls (Inside canvas-container to stay with card) -->
             <div class="preview-controls">
+                <button id="edit-mode-btn" class="edit-mode-btn" data-i18n-title="preview.editMode" title="מצב עריכה">
+                    <span class="icon">✏️</span>
+                    <span data-i18n="preview.editMode">עריכה ישירה</span>
+                </button>
                 <button id="equip-item-btn" class="btn-primary" data-i18n-title="preview.equipCharacter"
                     title="צייד דמות" style="background: linear-gradient(135deg, #e67e22, #d35400);">
                     <span data-i18n="preview.equipCharacter">🗡️ צייד דמות</span>

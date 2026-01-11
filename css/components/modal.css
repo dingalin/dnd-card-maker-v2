@@ -14,6 +14,24 @@
     backdrop-filter: blur(5px);
 }
 
+/* Fullscreen Modal (for Print/Gallery) */
+.fullscreen-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 5000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen-modal.hidden {
+    display: none !important;
+}
+
 /* Default modal content - small for confirmations */
 .modal-content {
     background: rgba(30, 30, 30, 0.95);

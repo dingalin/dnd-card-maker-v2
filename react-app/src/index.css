@@ -1,0 +1,31 @@
+body[dir="rtl"] {
+  text-align: right;
+}
+
+body[dir="rtl"] .app-title {
+  flex-direction: row-reverse;
+}
+
+body[dir="rtl"] .header-actions {
+  flex-direction: row-reverse;
+}
+
+body[dir="rtl"] .nav-tab {
+  flex-direction: row-reverse;
+}
+
+body[dir="rtl"] .creator-layout {
+  direction: rtl;
+}
+
+body[dir="rtl"] .form-group label {
+  text-align: right;
+}
+
+body[dir="rtl"] .modal-header {
+  direction: rtl;
+}
+
+body[dir="rtl"] .gallery-card {
+  direction: rtl;
+}

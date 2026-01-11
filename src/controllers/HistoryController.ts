@@ -316,6 +316,12 @@ export class HistoryController {
             const history = await this.state.getHistory();
             const cards = history.filter(item => this.selectedIds.has(item.id));
             console.log('🖨️ Cards to print:', cards.length, cards);
+            // Ensure modal isn't hidden by some other state
+            const modal = document.getElementById('print-modal');
+            if (modal && modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            }
+
             globals.printManager.openPrintModal(cards);
         } else {
             console.error('🖨️ PrintManager not found on window!');
@@ -523,15 +529,102 @@ export class HistoryController {
                         <div class="history-name">${item.name}</div>
                         <div class="history-meta">${new Date(item.savedAt).toLocaleDateString('he-IL')}</div>
                     </div>
-                    <div class="history-actions" style="display: flex; gap: 0.5rem; justify-content: center; padding: 0.5rem;">
-                         <button class="zoom-btn action-btn" title="הגדל">🔍</button>
-                         <button class="load-btn action-btn" title="ערוך">✏️</button>
-                         <button class="delete-btn action-btn" title="מחק">🗑️</button>
-                    </div>
+                     <div class="history-actions" style="display: flex; gap: 0.5rem; justify-content: center; padding: 0.5rem;">
+                          <button class="flip-btn action-btn" title="הפוך קלף">🔄</button>
+                          <button class="zoom-btn action-btn" title="הגדל">🔍</button>
+                          <button class="load-btn action-btn" title="ערוך">✏️</button>
+                          <button class="delete-btn action-btn" title="מחק">🗑️</button>
+                     </div>
                 `;
 
                 // Events
                 const checkbox = card.querySelector('.select-checkbox') as HTMLInputElement;
+                const imgElement = card.querySelector('img') as HTMLImageElement;
+                let isFlipped = false;
+
+                // Flip Action
+                card.querySelector('.flip-btn')?.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    isFlipped = !isFlipped;
+
+                    if (isFlipped) {
+                        // Check if back image missing
+                        const data = item.cardData as any;
+                        let backSrc = item.backThumbnail ||
+                            data?.backThumbnail ||
+                            data?.capturedBackImage ||
+                            data?.back?.imageUrl ||
+                            data?.backImageUrl;
+
+                        // If no real back image, generate it!
+                        if (!backSrc || backSrc.includes('stone_slab')) {
+                            const btn = e.currentTarget as HTMLButtonElement;
+                            const originalIcon = btn.textContent;
+                            btn.textContent = '⏳'; // Loading
+
+                            try {
+                                console.log("🔄 Generating back image for", item.name);
+
+                                // 1. Create hidden container
+                                const hiddenId = `gen-back-${item.id}`;
+                                const hiddenContainer = document.createElement('div');
+                                hiddenContainer.id = hiddenId;
+                                hiddenContainer.style.visibility = 'hidden';
+                                hiddenContainer.style.position = 'absolute';
+                                hiddenContainer.style.pointerEvents = 'none';
+                                document.body.appendChild(hiddenContainer);
+
+                                // 2. Init off-screen renderer
+                                const { KonvaCardRenderer } = await import('../konva/KonvaCardRenderer');
+                                const { StateManager } = await import('../state');
+
+                                const tempState = new StateManager();
+                                tempState.setCardData(item.cardData);
+
+                                const renderer = new KonvaCardRenderer(tempState);
+                                renderer.init(hiddenId);
+                                renderer.setMode('back');
+
+                                // 3. Load Template
+                                // Using default template for now
+                                await renderer.setTemplate('assets/card-template.png');
+
+                                // 4. Render & Capture
+                                renderer.updateFromState();
+                                await new Promise(r => setTimeout(r, 100)); // Wait for render
+
+                                const dataUrl = renderer.toDataURL({ pixelRatio: 2 });
+
+                                // 5. Save
+                                if (!item.cardData.back) item.cardData.back = {} as any;
+                                // Save to storage
+                                const globals = window as any;
+                                if (globals.storageManager) {
+                                    await globals.storageManager.saveCard(item);
+                                }
+
+                                backSrc = dataUrl;
+                                console.log("✅ Back image generated and saved");
+
+                                // Cleanup
+                                renderer.destroy();
+                                hiddenContainer.remove();
+
+                            } catch (err) {
+                                console.error("❌ Failed to generate back:", err);
+                                this.ui.showToast('שגיאה ביצירת גב הקלף', 'error');
+                            } finally {
+                                btn.textContent = originalIcon || '🔄';
+                            }
+                        }
+
+                        imgElement.src = backSrc || 'assets/textures/stone_slab.png';
+                    } else {
+                        // Show Front
+                        imgElement.src = displayImage;
+                    }
+                });
+
                 checkbox.addEventListener('change', (e) => {
                     e.stopPropagation();
                     if (checkbox.checked) {

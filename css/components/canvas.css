@@ -418,3 +418,27 @@
 .canvas-container canvas {
     backface-visibility: hidden;
 }
+
+/* ==================== KONVA.JS EDIT OVERLAY ==================== */
+.konva-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    pointer-events: auto;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.konva-edit-overlay.hidden {
+    display: none;
+}
+
+/* Ensure Konva canvas matches the card canvas size */
+.konva-edit-overlay canvas {
+    max-height: 65vh !important;
+    width: auto;
+    border-radius: 18px;
+}

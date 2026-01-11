@@ -8,9 +8,7 @@ import { UI } from '../config/index';
 // Extend Window interface to include i18n
 declare global {
     interface Window {
-        i18n?: {
-            t: (key: string) => string;
-        };
+        // i18n handled in i18n.ts
     }
 }
 

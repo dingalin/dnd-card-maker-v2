@@ -4,11 +4,68 @@ import VisualEffects from './VisualEffects.ts';
 import ImageRenderer from './ImageRenderer.ts';
 import { FRONT_FONT_SIZES } from '../config/CardTextConfig';
 import { translateSpellText } from '../services/SpellTranslationService';
+import { ElementPositionTracker, ElementId } from '../editing/ElementPositionTracker';
 
 // Preload common icons via TextRenderer
 ['fire', 'cold', 'lightning', 'thunder', 'acid', 'poison', 'necrotic', 'radiant', 'force', 'psychic', 'spell'].forEach(
     iconName => TextRenderer.preloadIcon(iconName)
 );
+
+// Edit mode state (controlled by DirectEditManager)
+let editModeActive = false;
+let selectedElementId: string | null = null;
+
+// Export functions to control edit mode from DirectEditManager
+export function setEditModeActive(active: boolean) {
+    editModeActive = active;
+}
+
+export function setSelectedElement(elementId: string | null) {
+    selectedElementId = elementId;
+}
+
+export function isEditModeActive(): boolean {
+    return editModeActive;
+}
+
+/**
+ * Draw edit handles directly on the canvas
+ * This ensures perfect sync with the rendered elements
+ */
+function drawEditHandles(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    if (!editModeActive) return;
+
+    const elements: ElementId[] = ['name', 'type', 'rarity', 'coreStats', 'stats', 'gold'];
+
+    elements.forEach(elementId => {
+        const pos = ElementPositionTracker.getPosition(elementId);
+        if (!pos || !pos.visible) return;
+
+        const isSelected = selectedElementId === elementId;
+
+        // Calculate handle bounds with some padding
+        const padding = 8;
+        const handleX = 30; // Left margin
+        const handleWidth = width - 60; // Full width minus margins
+        const handleY = pos.y - padding;
+        const handleHeight = pos.height + padding * 2;
+
+        // Draw handle border
+        ctx.save();
+        ctx.strokeStyle = isSelected ? 'rgba(100, 200, 255, 0.9)' : 'rgba(255, 200, 100, 0.6)';
+        ctx.lineWidth = isSelected ? 3 : 2;
+        ctx.setLineDash(isSelected ? [] : [8, 4]);
+        ctx.strokeRect(handleX, handleY, handleWidth, handleHeight);
+
+        // Draw subtle background for selected element
+        if (isSelected) {
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
+            ctx.fillRect(handleX, handleY, handleWidth, handleHeight);
+        }
+
+        ctx.restore();
+    });
+}
 
 
 export const FrontCardRenderer = {
@@ -54,6 +111,9 @@ export const FrontCardRenderer = {
 
         // Clear canvas
         ctx.clearRect(0, 0, width, height);
+
+        // Clear position tracker before render
+        ElementPositionTracker.clear();
 
         // 1. Draw Template
         await this.drawTemplate(ctx, canvas, template, options.backgroundScale);
@@ -136,6 +196,7 @@ export const FrontCardRenderer = {
      */
     renderText(ctx, canvas, data, offsets) {
         const width = canvas.width;
+        const height = canvas.height;
         const sizes = {
             nameSize: FRONT_FONT_SIZES.nameSize,
             typeSize: FRONT_FONT_SIZES.typeSize,
@@ -176,6 +237,14 @@ export const FrontCardRenderer = {
             offsets.rarityWidth,
             { ...drawOpts, elementName: 'rarity' }
         );
+        // Track position using actual metrics
+        const rarityMetrics = ctx.measureText(data.rarityHe || '');
+        ElementPositionTracker.setPosition('rarity', {
+            x: width / 2,
+            y: (100 + offsets.rarity) - rarityMetrics.actualBoundingBoxAscent, // Top Y
+            width: rarityMetrics.actualBoundingBoxLeft + rarityMetrics.actualBoundingBoxRight,
+            height: rarityMetrics.actualBoundingBoxAscent + rarityMetrics.actualBoundingBoxDescent
+        });
 
         // 2. Type
         ctx.font = getFont('type', sizes.typeSize);
@@ -187,6 +256,14 @@ export const FrontCardRenderer = {
             offsets.typeWidth,
             { ...drawOpts, elementName: 'type' }
         );
+        // Track position using actual metrics
+        const typeMetrics = ctx.measureText(`${data.typeHe || ''}`);
+        ElementPositionTracker.setPosition('type', {
+            x: width / 2,
+            y: (140 + offsets.type) - typeMetrics.actualBoundingBoxAscent, // Top Y
+            width: typeMetrics.actualBoundingBoxLeft + typeMetrics.actualBoundingBoxRight,
+            height: typeMetrics.actualBoundingBoxAscent + typeMetrics.actualBoundingBoxDescent
+        });
 
         // 3. Name
         ctx.font = getFont('name', sizes.nameSize);
@@ -199,6 +276,14 @@ export const FrontCardRenderer = {
             offsets.nameWidth,
             { ...drawOpts, elementName: 'name' }
         );
+        // Track position using actual metrics
+        const nameMetrics = ctx.measureText(data.name);
+        ElementPositionTracker.setPosition('name', {
+            x: width / 2,
+            y: (200 + offsets.name) - nameMetrics.actualBoundingBoxAscent, // Top Y
+            width: nameMetrics.actualBoundingBoxLeft + nameMetrics.actualBoundingBoxRight,
+            height: nameMetrics.actualBoundingBoxAscent + nameMetrics.actualBoundingBoxDescent
+        });
 
         // Core Stats Construction
         let coreStatsText = this.constructCoreStatsText(data);
@@ -223,6 +308,14 @@ export const FrontCardRenderer = {
                 offsets.coreStatsWidth,
                 { ...drawOpts, elementName: 'coreStats' }
             );
+            // Track position using actual metrics (like other elements)
+            const coreMetrics = ctx.measureText(coreStatsText);
+            ElementPositionTracker.setPosition('coreStats', {
+                x: width / 2,
+                y: currentY - coreMetrics.actualBoundingBoxAscent, // Visual Top (baseline - ascent)
+                width: offsets.coreStatsWidth,
+                height: coreMetrics.actualBoundingBoxAscent + coreMetrics.actualBoundingBoxDescent
+            });
             currentY += coreSize * 1.1; // Move down for next line
             currentY += coreSize * 1.1; // Move down for next line
         }
@@ -404,7 +497,20 @@ export const FrontCardRenderer = {
             offsets.goldWidth,
             { ...drawOpts, elementName: 'gold' }
         );
+        // Track position
+        ElementPositionTracker.setPosition('gold', {
+            x: width / 2,
+            y: goldY,
+            width: totalW,
+            height: sizes.goldSize
+        });
         ctx.lineWidth = 1;
+
+        // Draw edit handles directly on canvas if edit mode is active
+        drawEditHandles(ctx, width, height);
+
+        // Notify position tracker that render is complete
+        ElementPositionTracker.notifyUpdate();
     },
 
     constructCoreStatsText(data) {

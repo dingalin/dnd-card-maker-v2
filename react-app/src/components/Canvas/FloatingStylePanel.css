@@ -1,0 +1,194 @@
+/* Floating Style Panel - Mimic Vault Theme */
+.floating-style-panel {
+    position: absolute;
+    left: -240px;
+    top: 20px;
+    width: 220px;
+    background: rgba(15, 25, 45, 0.95);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 15px rgba(168, 85, 247, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 0;
+    z-index: 1000;
+    direction: rtl;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+}
+
+/* Decorative top border */
+.floating-style-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border-gold);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(107, 33, 168, 0.2) 100%);
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.panel-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent-gold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: var(--accent-cyan);
+}
+
+.panel-section {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-row label {
+    min-width: 40px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Styled Sliders */
+.control-row input[type="range"] {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+.control-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 5px var(--accent-cyan-glow);
+    cursor: pointer;
+    margin-top: -4px;
+}
+
+.control-row input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    border: none;
+}
+
+/* Styled Select */
+.control-row select {
+    flex: 1;
+    padding: 4px 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+}
+
+.control-row select:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: var(--glow-cyan);
+}
+
+/* Color Input */
+.control-row input[type="color"] {
+    width: 30px;
+    height: 24px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 0;
+    background: var(--bg-input);
+}
+
+.slider-control {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.slider-control span {
+    min-width: 35px;
+    font-size: 0.75rem;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    text-align: left;
+    flex-shrink: 0;
+}
+
+.toggle-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.toggle-row input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent-purple);
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+}

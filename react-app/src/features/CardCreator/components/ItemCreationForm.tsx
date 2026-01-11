@@ -1,0 +1,597 @@
+import { useState } from 'react';
+import { useCardContext } from '../../../store';
+import { useGemini } from '../../../hooks/useGemini';
+import { useImageGenerator } from '../../../hooks/useImageGenerator';
+import { useBackgroundGenerator } from '../../../hooks/useBackgroundGenerator';
+import { useWorkerPassword } from '../../../hooks/useWorkerPassword';
+import { storageService } from '../../../services/storage';
+import { TYPE_TO_SUBTYPES } from '../../../data/itemSubtypes';
+import type { CardData } from '../../../types';
+import './ItemCreationForm.css';
+
+function ItemCreationForm() {
+    const { setCardData, state, updateOffset } = useCardContext();
+    const { generateItem, isLoading: isGenerating, error: genError } = useGemini();
+    const { generateImage, isGenerating: isGeneratingImage, error: imageError } = useImageGenerator();
+    const { generateBackground, isGenerating: isGeneratingBg, error: bgError, themes } = useBackgroundGenerator();
+    const { password, isConfigured, savePassword } = useWorkerPassword();
+
+    const [bgTheme, setBgTheme] = useState('Nature');
+
+    const [showPasswordInput, setShowPasswordInput] = useState(false);
+    const [tempPassword, setTempPassword] = useState('');
+
+    // Sections state - converted to continuous scroll
+
+    const [type, setType] = useState('נשק');
+    const [rarity, setRarity] = useState('לא נפוץ');
+    const [name, setName] = useState('');
+    const [ability, setAbility] = useState('');
+    const [description, setDescription] = useState('');
+
+    // Level and type-specific fields
+
+    const [attunement, setAttunement] = useState(false);
+    const [subtype, setSubtype] = useState('');
+
+
+
+    // Image generation options
+    const [imageModel, setImageModel] = useState<'flux' | 'z-image' | 'fal-zimage'>(() => {
+        return (localStorage.getItem('dnd_image_model') as any) || 'flux';
+    });
+    const [imageStyle, setImageStyle] = useState<'realistic' | 'watercolor' | 'oil' | 'sketch' | 'dark_fantasy' | 'epic_fantasy' | 'anime' | 'pixel' | 'stained_glass' | 'simple_icon' | 'ink_drawing' | 'silhouette' | 'synthwave'>('realistic');
+    const [backgroundOption, setBackgroundOption] = useState<'natural' | 'colored' | 'no-background'>('no-background');
+    const [imageTheme, setImageTheme] = useState('Nature');
+
+    const handleCreate = async () => {
+        if (!isConfigured) {
+            setShowPasswordInput(true);
+            return;
+        }
+
+        try {
+            console.log('🚀 Starting full card generation...');
+
+            // Step 1: Generate AI Text Content
+            console.log('📝 Step 1/3: Generating text with AI...');
+            const result = await generateItem(
+                { type: subtype || type, rarity, level: 5 },
+                password
+            );
+
+            const computedStats = result.quickStats ||
+                (result.weaponDamage ? result.weaponDamage : '') ||
+                (result.armorClass ? `AC ${result.armorClass}` : '');
+
+            let newCard: CardData = {
+                name: result.name,
+                typeHe: result.typeHe,
+                subtype: subtype || result.typeHe,
+                rarityHe: result.rarityHe,
+                abilityName: result.abilityName,
+                abilityDesc: result.abilityDesc,
+                description: result.description,
+                gold: result.gold,
+                quickStats: computedStats,
+                weaponDamage: result.weaponDamage,
+                armorClass: result.armorClass,
+                front: {
+                    title: result.name,
+                    type: subtype || result.typeHe,
+                    rarity: result.rarityHe,
+                    quickStats: computedStats,
+                    gold: result.gold + ' זהב'
+                },
+                back: {
+                    title: result.abilityName,
+                    mechanics: result.abilityDesc,
+                    lore: result.description
+                },
+                legacy: false
+            };
+
+            setCardData(newCard);
+            setName(result.name);
+            setAbility(result.abilityName);
+            setDescription(result.description);
+
+
+            // Step 2: Generate Item Image
+            console.log('🖼️ Step 2/3: Generating item image...');
+            try {
+                const visualPrompt = result.description || result.name || 'fantasy magic item';
+                const imageUrl = await generateImage(
+                    {
+                        visualPrompt,
+                        itemSubtype: result.typeHe,
+                        abilityDesc: result.abilityName,
+                        model: imageModel,
+                        style: imageStyle,
+                        backgroundOption: backgroundOption,
+                        theme: imageTheme
+                    },
+                    password
+                );
+                newCard = { ...newCard, itemImageUrl: imageUrl };
+                setCardData(newCard);
+            } catch (imgError) {
+                console.warn('Image generation failed, continuing...', imgError);
+            }
+
+            // Step 3: Generate Background
+            console.log('🎨 Step 3/3: Generating background...');
+            try {
+                const bgUrl = await generateBackground(password, bgTheme, imageStyle, imageModel);
+                if (bgUrl) {
+                    newCard = { ...newCard, backgroundUrl: bgUrl };
+                    setCardData(newCard);
+                }
+            } catch (bgError) {
+                console.warn('Background generation failed, continuing...', bgError);
+            }
+
+            saveToHistory(newCard);
+            console.log('✅ Full card generation complete!');
+
+        } catch (error: any) {
+            console.error('Card generation failed:', error);
+            alert(`Failed to generate card: ${error.message}`);
+        }
+    };
+
+    const handleGenerateWithAI = async () => {
+        if (!isConfigured) {
+            setShowPasswordInput(true);
+            return;
+        }
+
+        try {
+            const result = await generateItem(
+                { type: subtype || type, rarity, level: 5 },
+                password
+            );
+
+            // Compute quickStats from weaponDamage or armorClass if not provided
+            const computedStats = result.quickStats ||
+                (result.weaponDamage ? result.weaponDamage : '') ||
+                (result.armorClass ? `AC ${result.armorClass}` : '');
+
+            const newCard: CardData = {
+                // Preserve existing images
+                ...(state.cardData || {}),
+                // Update text content from AI
+                name: result.name,
+                typeHe: result.typeHe,
+                subtype: subtype || result.typeHe,
+                rarityHe: result.rarityHe,
+                abilityName: result.abilityName,
+                abilityDesc: result.abilityDesc,
+                description: result.description,
+                gold: result.gold,
+                quickStats: computedStats,
+                weaponDamage: result.weaponDamage,
+                armorClass: result.armorClass,
+                // Preserve existing URLs explicitly
+                backgroundUrl: state.cardData?.backgroundUrl,
+                itemImageUrl: state.cardData?.itemImageUrl,
+                front: {
+                    ...(state.cardData?.front || {}),
+                    title: result.name,
+                    type: subtype || result.typeHe,
+                    rarity: result.rarityHe,
+                    quickStats: computedStats,
+                    gold: result.gold + ' זהב'
+                },
+                back: {
+                    ...(state.cardData?.back || {}),
+                    title: result.abilityName,
+                    mechanics: result.abilityDesc,
+                    lore: result.description
+                },
+                legacy: false
+            };
+
+            setCardData(newCard);
+            saveToHistory(newCard);
+
+            setName(result.name);
+            setAbility(result.abilityName);
+            setDescription(result.description);
+            // Also update local fields to reflect AI result
+
+
+        } catch (error: any) {
+            console.error('AI Generation failed:', error);
+            alert(`Failed to generate: ${error.message}`);
+        }
+    };
+
+    const handleGenerateImage = async () => {
+        if (!isConfigured) {
+            setShowPasswordInput(true);
+            return;
+        }
+
+        if (!name && !description) {
+            alert('Please provide at least a name or description for the image');
+            return;
+        }
+
+        try {
+            const visualPrompt = description || name || 'fantasy magic item';
+            const imageUrl = await generateImage(
+                {
+                    visualPrompt,
+                    itemSubtype: type,
+                    abilityDesc: ability,
+                    model: imageModel,
+                    style: imageStyle,
+                    backgroundOption: backgroundOption,
+                    theme: imageTheme
+                },
+                password
+            );
+
+            if (state.cardData) {
+                const updatedCard = {
+                    ...state.cardData,
+                    itemImageUrl: imageUrl
+                };
+                setCardData(updatedCard);
+            } else {
+                const newCard: CardData = {
+                    name: name || 'New Card',
+                    typeHe: type,
+                    rarityHe: rarity,
+                    abilityName: ability,
+                    abilityDesc: '',
+                    description: description,
+                    itemImageUrl: imageUrl,
+                    front: {
+                        title: name || 'New Card',
+                        type: subtype || type,
+                        rarity,
+                        imageUrl: imageUrl
+                    },
+                    back: {
+                        title: ability,
+                        mechanics: '',
+                        lore: description
+                    }
+                };
+                setCardData(newCard);
+                saveToHistory(newCard);
+            }
+
+            console.log('✅ Image generated successfully!');
+        } catch (error: any) {
+            console.error('Image generation failed:', error);
+            alert(`Failed to generate image: ${error.message}`);
+        }
+    };
+
+    const handleGenerateBackground = async () => {
+        if (!isConfigured) {
+            setShowPasswordInput(true);
+            return;
+        }
+
+        try {
+            console.log(`🎨 Generating ${bgTheme} background...`);
+
+            console.log(`Using model: ${imageModel}`);
+
+            const bgUrl = await generateBackground(password, bgTheme, imageStyle, imageModel);
+
+            if (bgUrl) {
+                if (state.cardData) {
+                    const updatedCard = {
+                        ...state.cardData,
+                        backgroundUrl: bgUrl
+                    };
+                    setCardData(updatedCard);
+                } else {
+                    // Create a minimal card with just the background
+                    const newCard: CardData = {
+                        name: 'New Card',
+                        typeHe: type,
+                        rarityHe: rarity,
+                        backgroundUrl: bgUrl,
+                        front: { title: 'New Card', type, rarity }
+                    };
+                    setCardData(newCard);
+                }
+                console.log('✅ Background generated successfully!');
+            }
+        } catch (error: any) {
+            console.error('Background generation failed:', error);
+            alert(`Failed to generate background: ${error.message}`);
+        }
+    };
+
+    const handleSavePassword = () => {
+        if (tempPassword.trim()) {
+            savePassword(tempPassword.trim());
+            setShowPasswordInput(false);
+            setTempPassword('');
+        }
+    };
+
+    const saveToHistory = async (card: CardData) => {
+        try {
+            await storageService.saveCard({
+                id: Date.now(),
+                name: card.name || 'Unnamed Card',
+                cardData: card,
+                settings: state.settings,
+                savedAt: new Date().toISOString(),
+                thumbnail: null
+            });
+        } catch (error) {
+            console.error('Failed to save to history:', error);
+        }
+    };
+
+    return (
+        <div className="item-creation-form">
+            <div className="form-scroll-content">
+
+
+                {showPasswordInput && (
+                    <div className="api-key-setup">
+                        <h3>🔑 Enter Password</h3>
+                        <p>To use AI generation, enter the access password:</p>
+                        <input
+                            type="password"
+                            value={tempPassword}
+                            onChange={(e) => setTempPassword(e.target.value)}
+                            placeholder="Enter password..."
+                            className="api-key-input"
+                        />
+                        <div className="api-key-actions">
+                            <button onClick={handleSavePassword} className="save-key-btn">
+                                Save Password
+                            </button>
+                            <button onClick={() => setShowPasswordInput(false)} className="cancel-btn">
+                                Cancel
+                            </button>
+                        </div>
+                        <small>Password is stored locally in your browser</small>
+                    </div>
+                )}
+
+                {/* Section: Basic Info */}
+
+                <div className="section-content open">
+                    <div className="form-group">
+                        <label>Type</label>
+                        <select value={type} onChange={(e) => setType(e.target.value)}>
+                            <option value="נשק">נשק (Weapon)</option>
+                            <option value="שריון">שריון (Armor)</option>
+                            <option value="שיקוי">שיקוי (Potion)</option>
+                            <option value="טבעת">טבעת (Ring)</option>
+                            <option value="פריט נפלא">פריט נפלא (Wondrous)</option>
+                        </select>
+                    </div>
+
+                    {/* Subtype Dropdown - shows for all types that have subtypes */}
+                    {TYPE_TO_SUBTYPES[type] && (
+                        <div className="form-group">
+                            <label>חפץ ספציפי (Specific Item)</label>
+                            <select value={subtype} onChange={(e) => setSubtype(e.target.value)}>
+                                <option value="">-- בחר חפץ --</option>
+                                {Object.entries(TYPE_TO_SUBTYPES[type]).map(([category, items]) => (
+                                    <optgroup key={category} label={category}>
+                                        {items.map((item) => (
+                                            <option key={item} value={item}>
+                                                {item}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+
+
+                    {/* Independent Rarity Panel */}
+                    <div className="rarity-independent-panel">
+                        <label>
+                            RARITY
+                            <span className={`rarity-label ${rarity === 'נפוץ' ? 'common' : rarity === 'לא נפוץ' ? 'uncommon' : rarity === 'נדיר' ? 'rare' : rarity === 'נדיר מאוד' ? 'very-rare' : 'legendary'}`}>
+                                {{
+                                    'נפוץ': 'נפוץ (Common)',
+                                    'לא נפוץ': 'לא נפוץ (Uncommon)',
+                                    'נדיר': 'נדיר (Rare)',
+                                    'נדיר מאוד': 'נדיר מאוד (Very Rare)',
+                                    'אגדי': 'אגדי (Legendary)'
+                                }[rarity] || rarity}
+                            </span>
+                        </label>
+                        <div className="rarity-slider-container">
+                            <input
+                                type="range"
+                                min="0"
+                                max="4"
+                                step="1"
+                                value={Math.max(0, ['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'].indexOf(rarity))}
+                                onChange={(e) => {
+                                    const rarities = ['נפוץ', 'לא נפוץ', 'נדיר', 'נדיר מאוד', 'אגדי'];
+                                    setRarity(rarities[parseInt(e.target.value)]);
+                                }}
+                                className="rarity-range"
+                            />
+                            <div className="rarity-ticks">
+                                <span>C</span>
+                                <span>U</span>
+                                <span>R</span>
+                                <span>V</span>
+                                <span>L</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                        <input
+                            type="checkbox"
+                            id="attunement"
+                            checked={attunement}
+                            onChange={(e) => setAttunement(e.target.checked)}
+                        />
+                        <label htmlFor="attunement" style={{ margin: 0 }}>Requires Attunement</label>
+                    </div>
+                </div>
+
+                <div className="section-content open">
+                    <div className="form-group">
+                        <label>Image Model</label>
+                        <select
+                            value={imageModel}
+                            onChange={(e) => {
+                                const val = e.target.value as any;
+                                setImageModel(val);
+                                localStorage.setItem('dnd_image_model', val);
+                            }}
+                        >
+                            <option value="flux">FLUX Schnell (Fast)</option>
+                            <option value="z-image">Z-Image Turbo (Faster)</option>
+                            <option value="fal-zimage">FAL Z-Image (Budget)</option>
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Style</label>
+                        <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value as any)}>
+                            <option value="realistic">Realistic</option>
+                            <option value="watercolor">Watercolor</option>
+                            <option value="oil">Oil Painting</option>
+                            <option value="sketch">Pencil Sketch</option>
+                            <option value="dark_fantasy">Dark Fantasy</option>
+                            <option value="epic_fantasy">Epic Fantasy</option>
+                            <option value="anime">Anime</option>
+                            <option value="pixel">Pixel Art</option>
+                            <option value="stained_glass">Stained Glass</option>
+                            <option value="simple_icon">Flat Icon</option>
+                            <option value="ink_drawing">Ink Drawing</option>
+                            <option value="silhouette">Silhouette</option>
+                            <option value="synthwave">Synthwave</option>
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Background</label>
+                        <select value={backgroundOption} onChange={(e) => setBackgroundOption(e.target.value as any)}>
+                            <option value="no-background">No Background (Clean)</option>
+                            <option value="natural">Natural Bokeh (Blurred)</option>
+                            <option value="colored">Colored Gradient</option>
+                        </select>
+                    </div>
+
+                    {backgroundOption === 'natural' && (
+                        <div className="form-group">
+                            <label>Theme (for natural backgrounds)</label>
+                            <select value={imageTheme} onChange={(e) => setImageTheme(e.target.value)}>
+                                <option value="Nature">🌲 Nature</option>
+                                <option value="Fire">🔥 Fire</option>
+                                <option value="Ice">❄️ Ice</option>
+                                <option value="Lightning">⚡ Lightning</option>
+                                <option value="Arcane">🔮 Arcane</option>
+                                <option value="Divine">✨ Divine</option>
+                                <option value="Necrotic">💀 Necrotic</option>
+                                <option value="Ocean">🌊 Ocean</option>
+                                <option value="Shadow">🌑 Shadow</option>
+                                <option value="Celestial">🌌 Celestial</option>
+                                <option value="Blood">🩸 Blood</option>
+                                <option value="Industrial">⚙️ Industrial</option>
+                                <option value="Iron">🔨 Iron/Forge</option>
+                                <option value="Old Scroll">📜 Ancient Library</option>
+                                <option value="Elemental">💫 Elemental Chaos</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                        <label>זום רקע (Background Zoom)</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input
+                                type="range"
+                                min="1.0"
+                                max="1.5"
+                                step="0.05"
+                                value={state.settings?.front?.offsets?.backgroundScale ?? 1}
+                                onChange={(e) => updateOffset('backgroundScale', parseFloat(e.target.value), 'front')}
+                                style={{ flex: 1 }}
+                            />
+                            <span style={{ minWidth: '40px', textAlign: 'right' }}>
+                                {(state.settings?.front?.offsets?.backgroundScale ?? 1).toFixed(2)}x
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {bgError && (
+                    <div className="error-message">
+                        ⚠️ {bgError}
+                    </div>
+                )}
+
+                {genError && (
+                    <div className="error-message">
+                        ⚠️ {genError}
+                    </div>
+                )}
+
+                {imageError && (
+                    <div className="error-message">
+                        ⚠️ Image: {imageError}
+                    </div>
+                )}
+            </div>
+
+            {/* Sticky Action Buttons - Always visible at bottom */}
+            <div className="sticky-buttons">
+                <div className="bg-gen-row">
+                    <button
+                        onClick={handleGenerateBackground}
+                        className="generate-btn bg-btn"
+                        disabled={isGeneratingBg}
+                    >
+                        {isGeneratingBg ? '🔄...' : '🖼️ BG'}
+                    </button>
+                    <select
+                        value={bgTheme}
+                        onChange={(e) => setBgTheme(e.target.value)}
+                        className="bg-theme-select"
+                    >
+                        {themes.map(theme => (
+                            <option key={theme} value={theme}>{theme}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="button-row">
+                    <button
+                        onClick={handleGenerateImage}
+                        className="generate-btn image-btn"
+                        disabled={isGeneratingImage}
+                    >
+                        {isGeneratingImage ? '🔄...' : '🎨 Image'}
+                    </button>
+                    <button
+                        onClick={handleGenerateWithAI}
+                        className="generate-btn ai-text-btn"
+                        disabled={isGenerating}
+                    >
+                        {isGenerating ? '🔄...' : '🤖 AI Text'}
+                    </button>
+                </div>
+                <button onClick={handleCreate} className="create-btn full-width">
+                    ✨ Create Card
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default ItemCreationForm;

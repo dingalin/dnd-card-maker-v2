@@ -1,0 +1,228 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    backdrop-filter: blur(4px);
+}
+
+.print-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #667eea;
+    font-size: 1.5rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.modal-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.print-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.option-group h3 {
+    margin: 0 0 0.75rem 0;
+    color: #764ba2;
+    font-size: 1rem;
+}
+
+.radio-option,
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.radio-option:hover,
+.checkbox-option:hover {
+    background: #f5f5f5;
+}
+
+.radio-option input,
+.checkbox-option input {
+    cursor: pointer;
+}
+
+.print-preview h3 {
+    margin: 0 0 1rem 0;
+    color: #764ba2;
+    font-size: 1rem;
+}
+
+.preview-container {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 300px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.preview-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-height: 120px;
+}
+
+.layout-single .preview-card {
+    width: 200px;
+    height: 280px;
+}
+
+.layout-grid-3x3 .preview-card {
+    width: 80px;
+    height: 112px;
+    font-size: 0.7rem;
+}
+
+.preview-card.placeholder {
+    opacity: 0.5;
+}
+
+.card-name {
+    font-weight: 600;
+}
+
+.card-size-info {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.cancel-btn,
+.export-btn,
+.print-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #5a6268;
+}
+
+.export-btn {
+    background: #ffc107;
+    color: #333;
+}
+
+.export-btn:hover {
+    background: #e0a800;
+    transform: translateY(-2px);
+}
+
+.print-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.print-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+@media print {
+
+    .modal-overlay,
+    .modal-header,
+    .print-options,
+    .modal-footer {
+        display: none !important;
+    }
+
+    .print-modal {
+        position: static;
+        transform: none;
+        max-width: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        grid-template-columns: 1fr;
+    }
+
+    .print-modal {
+        width: 95%;
+    }
+}

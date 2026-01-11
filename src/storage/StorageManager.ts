@@ -1,9 +1,5 @@
 // Extend Window interface
-declare global {
-    interface Window {
-        storageManager: StorageManager;
-    }
-}
+// Window interface augmentation removed to prevent TS modifier errors
 
 // Types
 export interface CardData {

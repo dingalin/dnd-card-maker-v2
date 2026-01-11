@@ -8,7 +8,9 @@ import CardRenderer from './card-renderer.ts';
 import { BackgroundManager } from './background-manager.ts';
 import { stateManager } from './state.ts';
 import { previewManager } from './preview-manager.ts';
-import './printing/PrintManager.js';
+import './printing/PrintManager';
+import { DirectEditManager } from './editing/DirectEditManager';
+import { KonvaCardEditor } from './konva/KonvaCardEditor';
 
 // New Architecture Imports
 import { UIManager } from './ui/UIManager.js';
@@ -173,6 +175,111 @@ async function initApp() {
 
     // Init Preview Manager (after DOM ready)
     previewManager.init();
+
+    // import moved to top
+
+    // ... (other imports)
+
+    // 2.1 Initialize Konva Card Editor (Overlay based)
+    const konvaEditor = new KonvaCardEditor(stateManager);
+
+    // DEBUG: Force inject button from main.ts to ensure it runs
+    console.log("🚀 MAIN: Injecting Debug Floating Button");
+    const debugBtn = document.createElement('button');
+    debugBtn.id = 'debug-main-fab';
+    debugBtn.innerHTML = '✏️ FATAL';
+    Object.assign(debugBtn.style, {
+        position: 'fixed',
+        bottom: '80px', // Higher than the other one might be
+        left: '20px',
+        zIndex: 99999,
+        padding: '10px',
+        background: 'red',
+        color: 'white',
+        border: '2px solid white'
+    });
+    debugBtn.onclick = () => {
+        console.log("Clicked Debug Button");
+        konvaEditor.toggleEditMode();
+    };
+    document.body.appendChild(debugBtn);
+
+    const konvaContainer = document.getElementById('konva-container');
+
+    if (konvaContainer) {
+        if (konvaEditor.init('konva-container')) {
+            // Size Konva stage to match card canvas initially
+            const cardCanvas = document.getElementById('card-canvas');
+            if (cardCanvas) {
+                const rect = cardCanvas.getBoundingClientRect();
+                konvaEditor.resize(rect.width, rect.height);
+                konvaContainer.style.width = `${rect.width}px`;
+                konvaContainer.style.height = `${rect.height}px`;
+            }
+        }
+    }
+    window.konvaEditor = konvaEditor;
+
+    // Keep DirectEditManager as fallback (will be removed later)
+    const canvas = document.getElementById('card-canvas') as HTMLCanvasElement;
+    const directEditManager = new DirectEditManager(stateManager);
+    if (canvas) {
+        directEditManager.init(canvas);
+    }
+    window.directEditManager = directEditManager;
+
+    // Setup Edit Mode toggle button - Uses KonvaCardEditor
+    const editModeBtn = document.getElementById('edit-mode-btn');
+    if (editModeBtn) {
+        editModeBtn.addEventListener('click', async () => {
+            // Check if we are entering edit mode
+            const willBeActive = !konvaEditor.isInEditMode();
+
+            // Perform updates if entering
+            if (willBeActive && konvaContainer) {
+                // 1. Ensure size matches
+                const cardCanvas = document.getElementById('card-canvas');
+                if (cardCanvas) {
+                    const rect = cardCanvas.getBoundingClientRect();
+                    konvaEditor.resize(rect.width, rect.height);
+                    konvaContainer.style.width = `${rect.width}px`;
+                    konvaContainer.style.height = `${rect.height}px`;
+                }
+
+                // 2. Refresh handle positions (since layout might have changed)
+                konvaEditor.refreshHandlePositions();
+            }
+
+            // Toggle edit mode
+            const isActive = konvaEditor.toggleEditMode();
+            editModeBtn.classList.toggle('active', isActive);
+
+            // Show/hide Konva container
+            if (konvaContainer) {
+                konvaContainer.classList.toggle('hidden', !isActive);
+            }
+
+            // Update canvas container class (visual feedback)
+            const canvasContainer = document.querySelector('.canvas-container');
+            canvasContainer?.classList.toggle('edit-mode', isActive);
+
+            console.log(`✏️ Edit mode: ${isActive ? 'ON (Konva Overlay)' : 'OFF'}`);
+        });
+
+        // Listen for resize to keep overlay synced
+        window.addEventListener('resize', () => {
+            if (konvaEditor.isInEditMode() && konvaContainer) {
+                const cardCanvas = document.getElementById('card-canvas');
+                if (cardCanvas) {
+                    const rect = cardCanvas.getBoundingClientRect();
+                    konvaEditor.resize(rect.width, rect.height);
+                    konvaContainer.style.width = `${rect.width}px`;
+                    konvaContainer.style.height = `${rect.height}px`;
+                    konvaEditor.refreshHandlePositions();
+                }
+            }
+        });
+    }
 
     // 3. Initialize Controllers
     // Editor: Handles inputs and sliders -> State
