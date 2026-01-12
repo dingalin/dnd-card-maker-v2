@@ -15,19 +15,22 @@ export const LAYOUT = {
     // Image section (center of card)
     IMAGE_CENTER_Y: 450,  // Center point for item image
 
-    // Footer section (bottom of card)
-    STATS_Y: 700,      // Stats/damage text (e.g., "1d8 חותך") - MOVED UP for visibility
-    GOLD_Y: 800,       // Gold price (e.g., "150 זהב") - MOVED UP
+    // Footer section (lower portion of card, inside safe area)
+    STATS_Y: 750,      // Stats/damage text - in lower safe area
+    GOLD_Y: 820,       // Gold price - below stats
 
     // Boundaries
     MIN_Y: 20,         // Top boundary for dragging
     MAX_Y: 1000,       // Bottom boundary for dragging (leaves room for text height)
 };
 
-// Simple drag bound function - lock X to 0 (since we use width=CARD_WIDTH + align=center), allow Y movement
+// Drag bound function - only allows Y movement, X stays unchanged
+// The pos argument contains new position, this.absolutePosition() contains the current attached position
 export const dragBoundFunc = function (this: any, pos: any) {
+    // Don't modify X - let the element keep its current position (set by padding prop)
+    const currentX = this.absolutePosition().x;
     return {
-        x: 0,
+        x: currentX,
         y: Math.max(20, Math.min(pos.y, CARD_HEIGHT - 60))
     };
 };

@@ -31,7 +31,7 @@ export type StateAction =
     | { type: typeof ActionType.UPDATE_FONT_STYLE; payload: { key: string; value: boolean } }
     | { type: typeof ActionType.UPDATE_STYLE; payload: { key: string; value: any } }
     | { type: typeof ActionType.UPDATE_CUSTOM_STYLE; payload: { key: string; value: any; side?: 'front' | 'back' } }
-    | { type: typeof ActionType.RESET_TO_DEFAULTS }
+    | { type: typeof ActionType.RESET_TO_DEFAULTS; payload?: Partial<AppSettings> }
     | { type: typeof ActionType.SET_FLIPPED; payload: boolean }
     | { type: typeof ActionType.SET_LAST_CONTEXT; payload: unknown }
     | { type: typeof ActionType.SET_LAST_VISUAL_PROMPT; payload: string | null }

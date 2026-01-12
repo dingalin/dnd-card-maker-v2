@@ -192,3 +192,83 @@
     background: var(--bg-input);
     border: 1px solid var(--border-subtle);
 }
+
+/* Style Toggle Buttons (Bold/Italic) */
+.style-toggles {
+    display: flex;
+    gap: 6px;
+}
+
+.style-btn {
+    width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.style-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+.style-btn.active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+.style-btn strong {
+    font-weight: 900;
+}
+
+.style-btn em {
+    font-style: italic;
+    font-family: serif;
+}
+
+/* Currency Icon Images */
+.currency-icons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.currency-icons .icon-btn {
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.currency-icons .icon-btn:hover {
+    border-color: var(--accent-gold);
+    transform: scale(1.05);
+}
+
+.currency-icons .icon-btn.active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(168, 85, 247, 0.2) 100%);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}
+
+.currency-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}

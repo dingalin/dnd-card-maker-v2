@@ -4,15 +4,40 @@
     flex-direction: column;
     align-items: center;
     gap: 0;
-    padding: 0.25rem 1rem 1rem 1rem;
+    padding: 40px 1rem 1rem 1rem;
     overflow: visible;
     perspective: 1000px;
 }
 
-/* Flip Animation Wrapper */
+/* Light Blue Glow - Using drop-shadow to follow card shape */
 .card-flip-wrapper {
+    position: relative;
     transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
     transform-style: preserve-3d;
+    /* Slow, subtle glow animation */
+    animation: cardGlowPulse 6s ease-in-out infinite alternate;
+    /* Rounded corners like professional trading cards (Adjusted for screen scale: ~14px) */
+    border-radius: 14px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+/* Remove the pseudo-element - no longer needed */
+
+@keyframes cardGlowPulse {
+
+    0%,
+    100% {
+        /* Very subtle glow - close to card */
+        filter:
+            drop-shadow(0 0 3px rgba(100, 180, 255, 1)) drop-shadow(0 0 6px rgba(100, 180, 255, 0.8));
+    }
+
+    50% {
+        /* Slightly stronger but still subtle */
+        filter:
+            drop-shadow(0 0 5px rgba(100, 200, 255, 1)) drop-shadow(0 0 10px rgba(100, 200, 255, 1));
+    }
 }
 
 .card-flip-wrapper.flipped {
@@ -24,12 +49,22 @@
     transform: rotateY(180deg);
 }
 
-/* Card preview area with exact dimensions */
+/* Card preview area - rounded corners for professional look */
 .card-canvas-container .konvajs-content {
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    border-radius: 28px !important;
+    box-shadow: none;
+    overflow: hidden !important;
+    background: transparent !important;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    /* Fix for Safari/Chrome borderRadius clipping */
+    isolation: isolate;
+}
+
+/* Make the canvas element itself have rounded corners */
+.card-canvas-container canvas {
+    background: transparent !important;
+    border-radius: 28px !important;
 }
 
 .canvas-container {
@@ -54,44 +89,60 @@
     margin-top: 0.15rem;
 }
 
+/* Gem-style Action Buttons */
 .flip-btn,
 .download-btn,
 .edit-mode-btn {
-    padding: 0.4rem 1rem;
-    border: none;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Purple Amethyst - Back/Flip */
 .flip-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(180deg, #9333ea 0%, #7e22ce 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 4px 10px rgba(126, 34, 206, 0.4);
+    border-color: rgba(168, 85, 247, 0.5);
 }
 
 .flip-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 6px 15px rgba(126, 34, 206, 0.5);
+    filter: brightness(1.1);
 }
 
-.flip-btn:active {
-    transform: translateY(0);
-}
-
+/* Green Emerald - Download */
 .download-btn {
-    background: #28a745;
-    color: white;
+    background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 4px 10px rgba(21, 128, 61, 0.4);
+    border-color: rgba(74, 222, 128, 0.5);
 }
 
 .download-btn:hover {
-    background: #218838;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 6px 15px rgba(21, 128, 61, 0.5);
+    filter: brightness(1.1);
 }
 
-.download-btn:active {
+.download-btn:active,
+.flip-btn:active {
     transform: translateY(0);
 }
 

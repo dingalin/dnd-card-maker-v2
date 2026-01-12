@@ -227,12 +227,28 @@ export class StateManager {
                 mechanics: data.abilityDesc || '',
                 lore: data.description || '' // Fluff maps to Lore
             },
-            // Preserve weapon/armor stats at root for renderer access
+            // ✅ CRITICAL: Preserve ALL weapon/armor stats at root for renderer access
+            // These fields MUST be preserved or they won't display on the card!
             weaponDamage: data.weaponDamage || '',
             damageType: data.damageType || '',
             armorClass: data.armorClass || '',
             versatileDamage: data.versatileDamage || null,
             weaponProperties: data.weaponProperties || [],
+            // ✅ Preserve Hebrew naming fields
+            typeHe: data.typeHe || '',
+            rarityHe: data.rarityHe || '',
+            // ✅ Preserve quick-glance fields (critical for frontend display!)
+            quickStats: data.quickStats || '',
+            specialDamage: data.specialDamage || '',
+            spellAbility: data.spellAbility || '',
+            // ✅ Preserve ability fields for back card
+            abilityName: data.abilityName || '',
+            abilityDesc: data.abilityDesc || '',
+            description: data.description || '',
+            // ✅ Preserve visualization fields
+            visualPrompt: data.visualPrompt || '',
+            // ✅ Preserve pricing
+            gold: data.gold || '',
             // Keep specific legacy fields if needed for direct access
             legacy: true
         };

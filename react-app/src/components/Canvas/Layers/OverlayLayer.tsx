@@ -20,6 +20,9 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({ selectedId, isEditMo
 
             if (node) {
                 trRef.current.nodes([node]);
+                // IMPORTANT: Force update is needed because the node may contain cached children
+                // which can cause the transformer to not properly track the group bounds
+                trRef.current.forceUpdate();
                 trRef.current.getLayer().batchDraw();
             } else {
                 trRef.current.nodes([]);

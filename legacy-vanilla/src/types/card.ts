@@ -1,5 +1,6 @@
 export interface CardData {
     id?: string;
+    type?: 'item'; // Discriminator for BaseEntity compatibility
     version: 'v2';
     front: FrontCardData;
     back: BackCardData;

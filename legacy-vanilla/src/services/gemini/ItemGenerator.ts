@@ -32,8 +32,8 @@ interface ItemGenerationResult {
     description: string;
     gold: string;
     weaponDamage: string;
-    damageType: null;
-    armorClass: number | null;
+    damageType?: string;  // Changed from null to match ItemDetails
+    armorClass?: number | string;  // Can be number or string
     quickStats: string;
     specialDamage?: string;  // Extra elemental damage for front card
     spellAbility?: string;   // Spell summary for front card
@@ -298,6 +298,22 @@ export async function generateItemDetails(
             spellAbility: parsedResult.spellAbility || '(empty)',
             abilityDesc: (parsedResult.abilityDesc || '').substring(0, 80)
         });
+
+        // ✅ DEBUG: Log ALL fields to see what's missing
+        console.log('📦 FULL AI RESPONSE:', JSON.stringify({
+            name: parsedResult.name,
+            typeHe: parsedResult.typeHe,
+            rarityHe: parsedResult.rarityHe,
+            weaponDamage: parsedResult.weaponDamage || 'MISSING',
+            damageType: parsedResult.damageType || 'MISSING',
+            armorClass: parsedResult.armorClass || 'MISSING',
+            quickStats: parsedResult.quickStats || 'MISSING',
+            specialDamage: parsedResult.specialDamage || 'MISSING',
+            spellAbility: parsedResult.spellAbility || 'MISSING',
+            abilityName: parsedResult.abilityName || 'MISSING',
+            abilityDesc: parsedResult.abilityDesc?.substring(0, 50) || 'MISSING',
+            gold: parsedResult.gold
+        }, null, 2));
 
         return parsedResult;
     } catch (error: any) {

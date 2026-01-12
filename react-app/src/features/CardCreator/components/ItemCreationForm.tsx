@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Logger } from '../../../utils/Logger';
 import { useCardContext } from '../../../store';
 import { useGemini } from '../../../hooks/useGemini';
 import { useImageGenerator } from '../../../hooks/useImageGenerator';
@@ -30,7 +31,7 @@ function ItemCreationForm() {
     // Level and type-specific fields
 
     const [attunement, setAttunement] = useState(false);
-    const [subtype, setSubtype] = useState('');
+    const [subtype, setSubtype] = useState('Longsword (חרב ארוכה)');
 
     // Collapsible sections state
     const [openSection, setOpenSection] = useState<string | null>('basic');
@@ -40,9 +41,11 @@ function ItemCreationForm() {
 
     // Image generation options
     const [imageModel, setImageModel] = useState<'flux' | 'z-image' | 'fal-zimage'>(() => {
-        return (localStorage.getItem('dnd_image_model') as any) || 'flux';
+        return (localStorage.getItem('dnd_image_model') as any) || 'z-image';
     });
-    const [imageStyle, setImageStyle] = useState<'realistic' | 'watercolor' | 'oil' | 'sketch' | 'dark_fantasy' | 'epic_fantasy' | 'anime' | 'pixel' | 'stained_glass' | 'simple_icon' | 'ink_drawing' | 'silhouette' | 'synthwave'>('realistic');
+    const [imageStyle, setImageStyle] = useState<'realistic' | 'watercolor' | 'oil' | 'sketch' | 'dark_fantasy' | 'epic_fantasy' | 'anime' | 'pixel' | 'stained_glass' | 'simple_icon' | 'ink_drawing' | 'silhouette' | 'synthwave'>(() => {
+        return (localStorage.getItem('dnd_image_style') as any) || 'realistic';
+    });
     const [backgroundOption, setBackgroundOption] = useState<'natural' | 'colored' | 'no-background'>('no-background');
     const [imageTheme, setImageTheme] = useState('Nature');
     const [cardTheme, setCardTheme] = useState('Arcane');
@@ -54,10 +57,10 @@ function ItemCreationForm() {
         }
 
         try {
-            console.log('🚀 Starting full card generation...');
+            Logger.info('ItemCreationForm', 'Starting full card generation');
 
             // Step 1: Generate AI Text Content
-            console.log('📝 Step 1/3: Generating text with AI...');
+            Logger.info('ItemCreationForm', 'Step 1/3: Generating text with AI');
             const result = await generateItem(
                 { type: subtype || type, rarity, level: 5 },
                 password
@@ -101,7 +104,7 @@ function ItemCreationForm() {
 
 
             // Step 2: Generate Item Image
-            console.log('🖼️ Step 2/3: Generating item image...');
+            Logger.info('ItemCreationForm', 'Step 2/3: Generating item image');
             try {
                 const visualPrompt = result.description || result.name || 'fantasy magic item';
                 const imageUrl = await generateImage(
@@ -118,27 +121,28 @@ function ItemCreationForm() {
                 );
                 newCard = { ...newCard, itemImageUrl: imageUrl };
                 setCardData(newCard);
+                setCardData(newCard);
             } catch (imgError) {
-                console.warn('Image generation failed, continuing...', imgError);
+                Logger.warn('ItemCreationForm', 'Image generation failed, continuing', imgError);
             }
 
-            // Step 3: Generate Background
-            console.log('🎨 Step 3/3: Generating background...');
+            // Step 3: Generate Background using cardTheme from IMAGE OPTIONS
+            Logger.info('ItemCreationForm', 'Step 3/3: Generating background');
             try {
-                const bgUrl = await generateBackground(password, imageTheme, imageStyle, imageModel);
+                const bgUrl = await generateBackground(password, cardTheme, imageStyle, imageModel);
                 if (bgUrl) {
                     newCard = { ...newCard, backgroundUrl: bgUrl };
                     setCardData(newCard);
                 }
             } catch (bgError) {
-                console.warn('Background generation failed, continuing...', bgError);
+                Logger.warn('ItemCreationForm', 'Background generation failed, continuing', bgError);
             }
 
             saveToHistory(newCard);
-            console.log('✅ Full card generation complete!');
+            Logger.info('ItemCreationForm', 'Full card generation complete');
 
         } catch (error: any) {
-            console.error('Card generation failed:', error);
+            Logger.error('ItemCreationForm', 'Card generation failed', error);
             alert(`Failed to generate card: ${error.message}`);
         }
     };
@@ -205,7 +209,7 @@ function ItemCreationForm() {
 
 
         } catch (error: any) {
-            console.error('AI Generation failed:', error);
+            Logger.error('ItemCreationForm', 'AI Generation failed', error);
             alert(`Failed to generate: ${error.message}`);
         }
     };
@@ -216,18 +220,25 @@ function ItemCreationForm() {
             return;
         }
 
-        if (!name && !description) {
-            alert('Please provide at least a name or description for the image');
+        // Smart detection: Use form fields if available, otherwise fall back to current card data
+        const effectiveName = name || state.cardData?.name || state.cardData?.front?.title || '';
+        const effectiveDescription = description || state.cardData?.description || state.cardData?.abilityDesc || '';
+        const effectiveType = subtype || type || state.cardData?.subtype || state.cardData?.typeHe || 'fantasy item';
+        const effectiveAbility = ability || state.cardData?.abilityName || '';
+
+        if (!effectiveName && !effectiveDescription) {
+            alert('אין מידע על החפץ. אנא הזן שם או תיאור, או צור קלף קודם.');
             return;
         }
 
         try {
-            const visualPrompt = description || name || 'fantasy magic item';
+            const visualPrompt = effectiveDescription || effectiveName || 'fantasy magic item';
             const imageUrl = await generateImage(
                 {
                     visualPrompt,
-                    itemSubtype: type,
-                    abilityDesc: ability,
+                    itemType: type, // Pass High-Level Type (Potion, Weapon, etc.)
+                    itemSubtype: effectiveType,
+                    abilityDesc: effectiveAbility,
                     model: imageModel,
                     style: imageStyle,
                     backgroundOption: backgroundOption,
@@ -267,9 +278,9 @@ function ItemCreationForm() {
                 saveToHistory(newCard);
             }
 
-            console.log('✅ Image generated successfully!');
+            Logger.info('ItemCreationForm', 'Image generated successfully');
         } catch (error: any) {
-            console.error('Image generation failed:', error);
+            Logger.error('ItemCreationForm', 'Image generation failed', error);
             alert(`Failed to generate image: ${error.message}`);
         }
     };
@@ -281,9 +292,7 @@ function ItemCreationForm() {
         }
 
         try {
-            console.log(`🎨 Generating ${cardTheme} background...`);
-
-            console.log(`Using model: ${imageModel}`);
+            Logger.info('ItemCreationForm', `Generating ${cardTheme} background`, { model: imageModel });
 
             const bgUrl = await generateBackground(password, cardTheme, imageStyle, imageModel);
 
@@ -305,10 +314,10 @@ function ItemCreationForm() {
                     };
                     setCardData(newCard);
                 }
-                console.log('✅ Background generated successfully!');
+                Logger.info('ItemCreationForm', 'Background generated successfully');
             }
         } catch (error: any) {
-            console.error('Background generation failed:', error);
+            Logger.error('ItemCreationForm', 'Background generation failed', error);
             alert(`Failed to generate background: ${error.message}`);
         }
     };
@@ -330,9 +339,10 @@ function ItemCreationForm() {
                 settings: state.settings,
                 savedAt: new Date().toISOString(),
                 thumbnail: null
+
             });
         } catch (error) {
-            console.error('Failed to save to history:', error);
+            Logger.error('ItemCreationForm', 'Failed to save to history', error);
         }
     };
 
@@ -489,7 +499,11 @@ function ItemCreationForm() {
 
                         <div className="form-group">
                             <label>Style</label>
-                            <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value as any)}>
+                            <select value={imageStyle} onChange={(e) => {
+                                const val = e.target.value as any;
+                                setImageStyle(val);
+                                localStorage.setItem('dnd_image_style', val);
+                            }}>
                                 <option value="realistic">Realistic</option>
                                 <option value="watercolor">Watercolor</option>
                                 <option value="oil">Oil Painting</option>
@@ -503,6 +517,7 @@ function ItemCreationForm() {
                                 <option value="ink_drawing">Ink Drawing</option>
                                 <option value="silhouette">Silhouette</option>
                                 <option value="synthwave">Synthwave</option>
+                                <option value="comic_book">Exaggerated Comic</option>
                             </select>
                         </div>
 
@@ -547,10 +562,10 @@ function ItemCreationForm() {
                             <select
                                 value={cardTheme}
                                 onChange={(e) => {
-                                    setCardTheme(e.target.value);
-                                    // Also update image theme if it wasn't manually set? 
-                                    // For now keep them independent but maybe default them to be same 
-                                    // on initial separate load if we wanted.
+                                    const newTheme = e.target.value;
+                                    setCardTheme(newTheme);
+                                    // Auto-sync item theme to match card background theme
+                                    setImageTheme(newTheme);
                                 }}
                             >
                                 <option value="Nature">🌲 Nature</option>
@@ -612,34 +627,36 @@ function ItemCreationForm() {
                 )}
             </div>
 
-            {/* Sticky Action Buttons - Always visible at bottom */}
+            {/* Sticky Action Buttons - Fixed footer bottom-right */}
             <div className="sticky-buttons">
-                <div className="button-row-3">
+                {/* CREATE CARD button on the left */}
+                <button onClick={handleCreate} className="create-btn">
+                    CREATE CARD ✨
+                </button>
+                {/* Vertical stack of 3 colored buttons on the right */}
+                <div className="button-stack-vertical">
                     <button
-                        onClick={handleGenerateBackground}
-                        className="generate-btn bg-btn compact"
-                        disabled={isGeneratingBg}
+                        onClick={handleGenerateImage}
+                        className="generate-btn image-btn compact"
+                        disabled={isGeneratingImage}
                     >
-                        {isGeneratingBg ? '🔄' : '🖼️ BG'}
+                        {isGeneratingImage ? '🔄' : 'IMG 🎨'}
                     </button>
                     <button
                         onClick={handleGenerateWithAI}
                         className="generate-btn ai-text-btn compact"
                         disabled={isGenerating}
                     >
-                        {isGenerating ? '🔄' : '🤖 AI'}
+                        {isGenerating ? '🔄' : 'AI 🤖'}
                     </button>
                     <button
-                        onClick={handleGenerateImage}
-                        className="generate-btn image-btn compact"
-                        disabled={isGeneratingImage}
+                        onClick={handleGenerateBackground}
+                        className="generate-btn bg-btn compact"
+                        disabled={isGeneratingBg}
                     >
-                        {isGeneratingImage ? '🔄' : '🎨 IMG'}
+                        {isGeneratingBg ? '🔄' : 'BG 🖼️'}
                     </button>
                 </div>
-                <button onClick={handleCreate} className="create-btn full-width">
-                    ✨ Create Card
-                </button>
             </div>
         </div>
     );

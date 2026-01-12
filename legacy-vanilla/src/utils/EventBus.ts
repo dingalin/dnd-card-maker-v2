@@ -3,6 +3,8 @@
  * Replaces scattered document.dispatchEvent calls with a unified pub/sub pattern
  */
 
+import { Logger } from './Logger';
+
 export class EventBus {
     private events: Map<string, Set<Function>>;
     private debug: boolean;
@@ -52,7 +54,7 @@ export class EventBus {
      */
     emit(event: string, data: any = null): void {
         if (this.debug) {
-            console.log(`📣 Event: ${event}`, data);
+            Logger.debug('EventBus', `Event: ${event}`, data);
         }
 
         if (this.events.has(event)) {
@@ -60,7 +62,7 @@ export class EventBus {
                 try {
                     callback(data);
                 } catch (error) {
-                    console.error(`Error in event handler for "${event}":`, error);
+                    Logger.error('EventBus', `Error in event handler for "${event}"`, error as Error);
                 }
             });
         }

@@ -1,4 +1,11 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useCardContext } from '../../store';
+import { useGemini } from '../../hooks/useGemini';
+import { useImageGenerator } from '../../hooks/useImageGenerator';
+import { useBackgroundGenerator } from '../../hooks/useBackgroundGenerator';
+import { useWorkerPassword } from '../../hooks/useWorkerPassword';
+import { generateMimicCard } from '../../utils/mimicGenerator';
 import './NavigationRail.css';
 import mouthImage from '../../assets/mouth.png';
 
@@ -16,6 +23,25 @@ const navItems: NavItem[] = [
 ];
 
 export default function NavigationRail() {
+    const { setCardData, updateCustomStyle } = useCardContext();
+    const [clickCount, setClickCount] = useState(0);
+
+    // AI Hooks
+    const { generateItem } = useGemini();
+    const { generateImage } = useImageGenerator();
+    const { generateBackground } = useBackgroundGenerator();
+    const { password } = useWorkerPassword();
+
+    const handleMouthClick = () => {
+        const newCount = clickCount + 1;
+        setClickCount(newCount);
+
+        if (newCount >= 10) {
+            console.log('👹 MIMIC EASTER EGG TRIGGERED! (Mouth) - Generating Unique Card...');
+            generateMimicCard(password, generateItem, generateImage, generateBackground, setCardData, updateCustomStyle);
+            setClickCount(0);
+        }
+    };
 
     return (
         <nav className="nav-rail">
@@ -40,7 +66,12 @@ export default function NavigationRail() {
                     <span className="nav-rail-icon">⚙️</span>
                     <span className="nav-rail-label">Settings</span>
                 </button>
-                <div className="mimic-maw-rail">
+                <div
+                    className="mimic-maw-rail"
+                    onClick={handleMouthClick}
+                    style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
+                    title="Don't touch the teeth..."
+                >
                     <img src={mouthImage} alt="Mimic Maw" className="mimic-maw-img" />
                 </div>
             </div>

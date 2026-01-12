@@ -19,16 +19,17 @@
 
 /**
  * Front card element positions
- * These are OFFSETS added to base positions in the renderer
- * UPDATED: Matches the optimized layout from user testing
+ * Card height is 1050px
+ * Safe visible area is approximately Y: 50-900 (frame borders)
+ * These are Y coordinates used directly by TextLayer
  */
 export const FRONT_POSITIONS = {
-    rarity: 61,          // נדירות - offset from base 100
-    type: 97,            // סוג - offset from base 140  
-    name: 129,           // שם החפץ - offset from base 200
-    coreStats: 750,      // נזק/דרד"ש - moved up for better visibility
-    stats: 820,          // תיאור קצר - below damage
-    gold: 280,           // מחיר - near bottom but visible
+    rarity: 0,           // נדירות - uses LAYOUT.RARITY_Y (50) + this offset
+    type: 0,             // סוג - uses LAYOUT.TYPE_Y (90) + this offset
+    name: 0,             // שם החפץ - uses LAYOUT.TITLE_Y (140) + this offset
+    coreStats: 0,        // נזק/דרד"ש - uses LAYOUT.STATS_Y + this offset
+    stats: 0,            // תיאור קצר - same
+    gold: 0,             // מחיר - uses LAYOUT.GOLD_Y + this offset
 } as const;
 
 /**
@@ -73,12 +74,13 @@ export const FRONT_FONT_STYLES = {
 
 /**
  * Back card element positions
- * These are ABSOLUTE Y positions
+ * These are OFFSETS added to base Y values in TextLayer
+ * Card height is 1050, safe visible area ~50-900
  */
 export const BACK_POSITIONS = {
-    abilityName: 220,    // שם יכולת
-    mech: 320,           // מכניקה
-    lore: 1100,          // לור
+    abilityName: 0,      // שם יכולת - base Y is 220 in TextLayer
+    mech: 0,             // מכניקה - base Y is 320 in TextLayer
+    lore: 0,             // לור - base Y is 750 in TextLayer (was 1100 - off screen!)
 } as const;
 
 /**

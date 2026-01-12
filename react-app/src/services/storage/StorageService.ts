@@ -4,6 +4,7 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb';
+import { Logger } from '../../utils/Logger';
 import type { HistoryItem } from '../../types';
 
 const DB_NAME = 'DndCardCreatorDB';
@@ -33,7 +34,7 @@ async function getDB(): Promise<IDBPDatabase> {
                 const store = db.createObjectStore(CARDS_STORE, { keyPath: 'id' });
                 store.createIndex('savedAt', 'savedAt', { unique: false });
                 store.createIndex('folder', 'folder', { unique: false });
-                console.log(`[StorageService] Created '${CARDS_STORE}' store`);
+                Logger.info('StorageService', `Created '${CARDS_STORE}' store`);
             } else if (oldVersion < 2) {
                 // Upgrade: add folder index if missing
                 const tx = (db as any).transaction;
@@ -41,7 +42,7 @@ async function getDB(): Promise<IDBPDatabase> {
                     const store = tx.objectStore(CARDS_STORE);
                     if (!store.indexNames.contains('folder')) {
                         store.createIndex('folder', 'folder', { unique: false });
-                        console.log('[StorageService] Added folder index');
+                        Logger.info('StorageService', 'Added folder index');
                     }
                 }
             }
@@ -49,7 +50,7 @@ async function getDB(): Promise<IDBPDatabase> {
             // Folders Store
             if (!db.objectStoreNames.contains(FOLDERS_STORE)) {
                 db.createObjectStore(FOLDERS_STORE, { keyPath: 'id' });
-                console.log(`[StorageService] Created '${FOLDERS_STORE}' store`);
+                Logger.info('StorageService', `Created '${FOLDERS_STORE}' store`);
             }
         },
     });
@@ -73,7 +74,7 @@ export class StorageService {
             const db = await this.dbPromise;
             return !!db;
         } catch (e) {
-            console.error('[StorageService] IndexedDB unavailable:', e);
+            Logger.error('StorageService', 'IndexedDB unavailable', e);
             return false;
         }
     }
@@ -87,9 +88,9 @@ export class StorageService {
         try {
             const db = await this.dbPromise;
             await db.put(CARDS_STORE, card);
-            console.log(`[StorageService] Card saved (ID: ${card.id})`);
+            Logger.info('StorageService', `Card saved (ID: ${card.id})`);
         } catch (error) {
-            console.error('[StorageService] Failed to save card:', error);
+            Logger.error('StorageService', 'Failed to save card', error);
             throw error;
         }
     }
@@ -111,7 +112,7 @@ export class StorageService {
 
             return cards;
         } catch (error) {
-            console.error('[StorageService] Failed to get cards:', error);
+            Logger.error('StorageService', 'Failed to get cards', error);
             return [];
         }
     }
@@ -124,7 +125,7 @@ export class StorageService {
             const db = await this.dbPromise;
             return await db.get(CARDS_STORE, id);
         } catch (error) {
-            console.error('[StorageService] Failed to get card:', error);
+            Logger.error('StorageService', 'Failed to get card', error);
             return undefined;
         }
     }
@@ -136,9 +137,9 @@ export class StorageService {
         try {
             const db = await this.dbPromise;
             await db.delete(CARDS_STORE, id);
-            console.log(`[StorageService] Card deleted (ID: ${id})`);
+            Logger.info('StorageService', `Card deleted (ID: ${id})`);
         } catch (error) {
-            console.error('[StorageService] Failed to delete card:', error);
+            Logger.error('StorageService', 'Failed to delete card', error);
             throw error;
         }
     }
@@ -154,9 +155,9 @@ export class StorageService {
             await Promise.all(ids.map(id => tx.store.delete(id)));
             await tx.done;
 
-            console.log(`[StorageService] Deleted ${ids.length} cards`);
+            Logger.info('StorageService', `Deleted ${ids.length} cards`);
         } catch (error) {
-            console.error('[StorageService] Failed to delete cards:', error);
+            Logger.error('StorageService', 'Failed to delete cards', error);
             throw error;
         }
     }
@@ -168,9 +169,9 @@ export class StorageService {
         try {
             const db = await this.dbPromise;
             await db.clear(CARDS_STORE);
-            console.log('[StorageService] All cards cleared');
+            Logger.info('StorageService', 'All cards cleared');
         } catch (error) {
-            console.error('[StorageService] Failed to clear cards:', error);
+            Logger.error('StorageService', 'Failed to clear cards', error);
             throw error;
         }
     }
@@ -184,9 +185,9 @@ export class StorageService {
         try {
             const db = await this.dbPromise;
             await db.put(FOLDERS_STORE, folder);
-            console.log(`[StorageService] Folder saved: ${folder.name}`);
+            Logger.info('StorageService', `Folder saved: ${folder.name}`);
         } catch (error) {
-            console.error('[StorageService] Failed to save folder:', error);
+            Logger.error('StorageService', 'Failed to save folder', error);
             throw error;
         }
     }
@@ -199,7 +200,7 @@ export class StorageService {
             const db = await this.dbPromise;
             return await db.getAll(FOLDERS_STORE);
         } catch (error) {
-            console.error('[StorageService] Failed to get folders:', error);
+            Logger.error('StorageService', 'Failed to get folders', error);
             return [];
         }
     }
@@ -211,9 +212,9 @@ export class StorageService {
         try {
             const db = await this.dbPromise;
             await db.delete(FOLDERS_STORE, id);
-            console.log(`[StorageService] Folder deleted: ${id}`);
+            Logger.info('StorageService', `Folder deleted: ${id}`);
         } catch (error) {
-            console.error('[StorageService] Failed to delete folder:', error);
+            Logger.error('StorageService', 'Failed to delete folder', error);
             throw error;
         }
     }
@@ -236,7 +237,7 @@ export class StorageService {
 
             return cards;
         } catch (error) {
-            console.error('[StorageService] Failed to get cards by folder:', error);
+            Logger.error('StorageService', 'Failed to get cards by folder', error);
             return [];
         }
     }
@@ -256,7 +257,7 @@ export class StorageService {
             };
             return JSON.stringify(exportData, null, 2);
         } catch (error) {
-            console.error('[StorageService] Failed to export data:', error);
+            Logger.error('StorageService', 'Failed to export data', error);
             throw error;
         }
     }
@@ -291,10 +292,10 @@ export class StorageService {
             }
 
             await tx.done;
-            console.log(`[StorageService] Imported ${imported} cards`);
+            Logger.info('StorageService', `Imported ${imported} cards`);
             return imported;
         } catch (error) {
-            console.error('[StorageService] Failed to import data:', error);
+            Logger.error('StorageService', 'Failed to import data', error);
             throw error;
         }
     }

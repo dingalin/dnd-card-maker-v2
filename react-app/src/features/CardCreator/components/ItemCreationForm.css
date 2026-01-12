@@ -11,6 +11,9 @@
     overflow: hidden;
     position: relative;
     /* Context for floating buttons */
+    border-left: 1px solid rgba(212, 175, 55, 0.3);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    background: rgba(10, 12, 16, 0.4);
 }
 
 /* Scrollable Content Area (Top) */
@@ -20,9 +23,11 @@
     overflow-x: hidden;
     padding: var(--space-md);
 
-    /* Ensure content doesn't touch the very bottom */
-    /* Ensure content isn't hidden behind floating buttons */
-    padding-bottom: 240px;
+    /* No extra bottom padding - content ends naturally */
+    padding-bottom: var(--space-md);
+
+    /* Limit max height so scroll area ends before fixed buttons */
+    max-height: calc(100vh - 220px);
 
     /* Smooth scroll behavior */
     scroll-behavior: smooth;
@@ -45,48 +50,48 @@
     gap: var(--space-sm);
 }
 
-/* Collapsible Section Headers */
+/* Collapsible Section Headers - Fantasy RPG Style */
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: var(--space-sm) var(--space-md);
-    background: linear-gradient(135deg, rgba(107, 33, 168, 0.6) 0%, rgba(168, 85, 247, 0.4) 100%);
-    color: var(--text-primary);
-    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+
+    /* Dark rounded bar background */
+    background:
+        linear-gradient(180deg,
+            rgba(30, 35, 50, 0.95) 0%,
+            rgba(20, 25, 40, 0.98) 100%);
+    border: 1px solid rgba(180, 150, 90, 0.3);
+    border-radius: 8px;
+
     cursor: pointer;
     user-select: none;
     transition: all var(--transition-fast);
-    font-weight: 600;
-    padding: var(--space-sm) 0;
-    margin-bottom: var(--space-md);
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--border-subtle);
-    border-radius: 0;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    box-shadow: none;
 }
 
 .section-header:hover {
-    transform: none;
-    box-shadow: none;
-    border-color: var(--accent-cyan);
+    border-color: rgba(212, 175, 55, 0.5);
+    background:
+        linear-gradient(180deg,
+            rgba(35, 40, 55, 0.95) 0%,
+            rgba(25, 30, 45, 0.98) 100%);
 }
 
 .section-header:hover .section-title {
-    color: var(--accent-cyan);
-    text-shadow: var(--glow-cyan);
+    color: rgba(232, 213, 163, 1);
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
 }
 
 .section-title {
     font-family: var(--font-display);
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: rgba(220, 200, 160, 0.95);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.15em;
+    transition: all var(--transition-fast);
 }
 
 .section-icon {
@@ -131,13 +136,11 @@
 .form-group label {
     display: block;
     margin-bottom: var(--space-xs);
-    color: var(--text-secondary);
-    /* Softer text */
+    color: rgba(200, 200, 210, 0.9);
     font-size: 0.7rem;
-    font-weight: 500;
-    /* Less bold */
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
 }
 
 .form-group input[type="text"],
@@ -145,31 +148,32 @@
 .form-group select,
 .form-group textarea {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    /* Subtle glass */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-sm);
+    background: rgba(10, 15, 25, 0.85);
+    border: 1px solid rgba(180, 150, 90, 0.5);
+    border-radius: 6px;
     color: var(--text-primary);
     font-family: var(--font-body);
     font-size: 0.85rem;
-    padding: 8px 12px;
+    padding: 10px 14px;
     transition: all var(--transition-fast);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
-    /* Subtle cyan glow */
+    background: rgba(5, 10, 20, 0.95);
+    border-color: rgba(212, 175, 55, 0.8);
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.5),
+        0 0 12px rgba(212, 175, 55, 0.2);
     outline: none;
 }
 
 .form-group input:hover,
 .form-group select:hover,
 .form-group textarea:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(212, 175, 55, 0.6);
 }
 
 /* Prevent scroll propagation from form elements */
@@ -229,27 +233,59 @@
 }
 
 
-/* Sticky Action Buttons - Always visible at bottom */
+/* Sticky Action Buttons - Ornate Control Panel */
 .sticky-buttons {
-    /* Floating positioning */
-    position: absolute;
-    bottom: var(--space-md);
-    left: var(--space-md);
-    right: var(--space-md);
+    /* Natural flow at bottom of flex container */
+    margin-top: auto;
+    margin-bottom: 0;
+    width: 100%;
 
-    background: rgba(18, 18, 24, 0.95);
-    backdrop-filter: blur(8px);
-    padding: var(--space-md);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
+    /* Deep fantasy panel background */
+    background:
+        linear-gradient(180deg,
+            rgba(20, 25, 40, 0.98) 0%,
+            rgba(10, 15, 25, 0.99) 100%);
+    backdrop-filter: blur(16px);
+    padding: var(--space-sm);
 
-    /* Robust shadow for floating effect */
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    /* Ornate metallic border */
+    border: 2px solid;
+    border-image: linear-gradient(135deg,
+            rgba(200, 170, 100, 0.6) 0%,
+            rgba(140, 110, 60, 0.4) 25%,
+            rgba(100, 80, 45, 0.6) 50%,
+            rgba(140, 110, 60, 0.4) 75%,
+            rgba(200, 170, 100, 0.6) 100%) 1;
+    border-radius: 8px;
 
+    /* Multi-layer shadows for depth and glow */
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.6),
+        0 0 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 0 30px rgba(0, 0, 0, 0.3);
+
+    /* Horizontal layout */
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: stretch;
     gap: var(--space-sm);
     z-index: 100;
+}
+
+/* Vertical stack of 3 buttons on the left */
+.button-stack-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: space-between;
+}
+
+.button-stack-vertical button {
+    flex: 1;
+    min-width: 50px;
+    padding: var(--space-xs);
+    font-size: 0.6rem;
 }
 
 .sticky-buttons .button-row {
@@ -297,7 +333,7 @@
     letter-spacing: 0.05em;
 }
 
-/* Button Gradients - Pro Tool Style */
+/* Button Gradients - Fantasy RPG Style */
 
 /* Shared Button Base */
 .bg-btn,
@@ -315,82 +351,155 @@
     position: relative;
     overflow: hidden;
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-sm);
-    box-shadow: none;
+    background: rgba(10, 15, 25, 0.9);
+    border-radius: 6px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-/* Specific Variants - Minimalist Neon Accents */
+/* Specific Variants - Fantasy RPG Accents */
 
-/* Background Button */
+/* Background Button - Orange/Gold */
 .bg-btn {
-    border: 1px solid rgba(249, 115, 22, 0.3);
-    /* Orange subtle */
+    border: 1px solid rgba(249, 180, 100, 0.5);
+    color: #fbbf24;
 }
 
 .bg-btn:hover {
-    border-color: #f97316;
-    background: rgba(249, 115, 22, 0.1);
-    box-shadow: 0 0 10px rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 180, 100, 0.8);
+    background: rgba(249, 180, 100, 0.15);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(249, 180, 100, 0.25);
 }
 
-/* Image Button */
+/* Image Button - Cyan/Teal */
 .image-btn {
-    border: 1px solid rgba(6, 182, 212, 0.3);
-    /* Cyan subtle */
+    border: 1px solid rgba(100, 200, 220, 0.5);
+    color: #67e8f9;
 }
 
 .image-btn:hover {
-    border-color: var(--accent-cyan);
-    background: rgba(6, 182, 212, 0.1);
-    box-shadow: var(--glow-cyan);
+    border-color: rgba(100, 200, 220, 0.8);
+    background: rgba(100, 200, 220, 0.15);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(100, 200, 220, 0.25);
 }
 
-/* AI Text Button */
+/* AI Text Button - Purple/Magenta */
 .ai-text-btn {
-    border: 1px solid rgba(217, 70, 239, 0.3);
-    /* Magenta subtle */
+    border: 1px solid rgba(200, 150, 255, 0.5);
+    color: #c4b5fd;
 }
 
 .ai-text-btn:hover {
-    border-color: #d946ef;
-    background: rgba(217, 70, 239, 0.1);
-    box-shadow: 0 0 10px rgba(217, 70, 239, 0.2);
+    border-color: rgba(200, 150, 255, 0.8);
+    background: rgba(200, 150, 255, 0.15);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(200, 150, 255, 0.25);
 }
 
-/* Create Card Button - Elite Action */
+/* Create Card Button - Crystal Gem Elite Action */
 .create-btn {
     font-family: var(--font-display);
     font-size: 1rem;
-    letter-spacing: 0.1em;
-    background: linear-gradient(180deg, rgba(20, 20, 25, 0.9) 0%, rgba(10, 10, 12, 1) 100%);
-    border: 1px solid var(--accent-gold-dim);
-    color: var(--accent-gold);
-    margin-top: var(--space-md);
-    padding: var(--space-md);
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+
+    /* Crystal/Metallic blue gradient background */
+    background:
+        linear-gradient(180deg,
+            rgba(40, 60, 100, 0.9) 0%,
+            rgba(20, 35, 60, 0.95) 50%,
+            rgba(10, 20, 40, 1) 100%);
+
+    /* Ornate border */
+    border: 2px solid;
+    border-image: linear-gradient(180deg,
+            rgba(180, 160, 120, 0.8) 0%,
+            rgba(140, 120, 80, 0.6) 50%,
+            rgba(100, 85, 60, 0.8) 100%) 1;
+    border-radius: 8px;
+
+    color: #e8d5a3;
+    padding: var(--space-lg) var(--space-xl);
+
+    /* Inset lighting for depth */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -2px 10px rgba(0, 0, 0, 0.5),
+        0 4px 20px rgba(0, 0, 0, 0.4);
+
+    /* Layout */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
 }
 
+/* Shimmer highlight effect */
 .create-btn::before {
     content: '';
     position: absolute;
-    inset: 0;
-    border-radius: var(--radius-sm);
-    padding: 1px;
-    background: linear-gradient(45deg, transparent 40%, var(--accent-gold) 50%, transparent 60%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 100%);
+    animation: buttonShimmer 4s ease-in-out infinite;
+}
+
+@keyframes buttonShimmer {
+
+    0%,
+    100% {
+        left: -100%;
+    }
+
+    50% {
+        left: 100%;
+    }
+}
+
+/* Outer glow frame */
+.create-btn::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 10px;
+    background: linear-gradient(180deg,
+            rgba(212, 175, 55, 0.3) 0%,
+            rgba(100, 150, 200, 0.2) 50%,
+            rgba(212, 175, 55, 0.3) 100%);
+    z-index: -1;
     opacity: 0.5;
+    transition: opacity 0.3s ease;
 }
 
 .create-btn:hover {
-    border-color: var(--accent-gold);
     color: #fff;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3), inset 0 0 10px rgba(212, 175, 55, 0.1);
-    transform: translateY(-1px);
-    text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+    text-shadow: 0 0 12px rgba(232, 213, 163, 0.8);
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -2px 10px rgba(0, 0, 0, 0.4),
+        0 8px 30px rgba(100, 150, 200, 0.3),
+        0 0 30px rgba(212, 175, 55, 0.2);
+}
+
+.create-btn:hover::after {
+    opacity: 1;
+}
+
+.create-btn:active {
+    transform: translateY(0);
 }
 
 .bg-gen-row,

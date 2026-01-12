@@ -70,6 +70,11 @@ const FLUX_STYLE_CONFIGS = {
         primary: 'synthwave aesthetic, retro futuristic',
         technique: 'neon colors, grid lines, 80s aesthetic',
         finish: 'vibrant synthwave art, retrowave style'
+    },
+    comic_book: {
+        primary: 'exaggerated comic book style, highly stylized',
+        technique: 'bold thick outlines, dynamic shading, exaggerated proportions, vibrant comic colors',
+        finish: 'classic comic book action, hand-drawn comic art'
     }
 };
 
@@ -77,6 +82,7 @@ type ImageStyle = keyof typeof FLUX_STYLE_CONFIGS;
 
 interface ImageGenerationParams {
     visualPrompt: string;
+    itemType?: string;
     itemSubtype?: string;
     abilityDesc?: string;
     model?: 'flux' | 'z-image' | 'fal-zimage';
@@ -86,6 +92,7 @@ interface ImageGenerationParams {
 }
 
 // Canvas-based fallback for removing white backgrounds
+// Canvas-based fallback for removing white backgrounds with Soft Edges
 const removeWhiteBackground = (imageSrc: string): Promise<string> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -101,18 +108,34 @@ const removeWhiteBackground = (imageSrc: string): Promise<string> => {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // Tolerance for "white" - aggressive trimming for clean edges
-            const threshold = 230;
+            // Soft Edge Parameters
+            // Distance from White (0 = Pure White)
+            // NEWER: 5/25 - Balanced. Catches compression artifacts but preserves most silver details.
+            const transparencyThreshold = 5;
+            const opacityThreshold = 25;
 
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
 
-                // If near white, make transparent
-                if (r > threshold && g > threshold && b > threshold) {
+                // Calculate Euclidean distance from White (255, 255, 255)
+                const dist = Math.sqrt(
+                    Math.pow(255 - r, 2) +
+                    Math.pow(255 - g, 2) +
+                    Math.pow(255 - b, 2)
+                );
+
+                if (dist < transparencyThreshold) {
+                    // Too close to white -> Transparent
                     data[i + 3] = 0;
+                } else if (dist < opacityThreshold) {
+                    // Semi-transparent edge (Feathering)
+                    // Map distance [30...80] to Alpha [0...255]
+                    const alpha = ((dist - transparencyThreshold) / (opacityThreshold - transparencyThreshold)) * 255;
+                    data[i + 3] = alpha;
                 }
+                // Else: keep original alpha (usually 255)
             }
 
             ctx.putImageData(imageData, 0, 0);
@@ -121,6 +144,16 @@ const removeWhiteBackground = (imageSrc: string): Promise<string> => {
         img.onerror = (e) => reject(e);
         img.src = imageSrc;
     });
+};
+
+const removeHebrew = (text: string): string => {
+    if (!text) return '';
+    // Remove Hebrew characters and common Hebrew punctuation/parens
+    // Range \u0590-\u05FF is Hebrew.
+    return text.replace(/[\u0590-\u05FF]+/g, '')
+        .replace(/\(\s*\)/g, '') // remove empty parens leftovers
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
 export function useImageGenerator() {
@@ -137,6 +170,7 @@ export function useImageGenerator() {
         try {
             const {
                 visualPrompt,
+                itemType = '',
                 itemSubtype = '',
                 abilityDesc = '',
                 model = 'flux',
@@ -144,6 +178,12 @@ export function useImageGenerator() {
                 backgroundOption = 'no-background',
                 theme = 'Nature'
             } = params;
+
+            // Clean inputs to ensure English only
+            const cleanVisualPrompt = removeHebrew(visualPrompt) || 'fantasy magical item';
+            const cleanType = removeHebrew(itemType);
+            const cleanSubtype = removeHebrew(itemSubtype);
+            const cleanAbilityDesc = removeHebrew(abilityDesc);
 
             let styleConfig = FLUX_STYLE_CONFIGS[style];
 
@@ -156,21 +196,25 @@ export function useImageGenerator() {
                 };
             }
 
-            const itemTypeEnhancement = getItemTypeEnhancement(itemSubtype, visualPrompt);
-            const elementalEnhancement = getElementalEnhancement(abilityDesc);
+            const itemTypeEnhancement = getItemTypeEnhancement(cleanType, cleanSubtype, cleanVisualPrompt);
+            const elementalEnhancement = getElementalEnhancement(cleanAbilityDesc);
             const backgroundPrompt = getBackgroundPrompt(backgroundOption, theme);
 
-            // Composition instructions
-            let compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition';
+            // NOTE: Z-Image Turbo does NOT support negative prompts. 
+            // All constraints must be explicit in the positive prompt.
+            // WE MUST EXPLICITLY FORBID TEXT via positive descriptions of "clean", "object only".
+
+            // Composition instructions - Strengthened to avoid text
+            let compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, no text, no words, no letters, no label, no signature, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition, masterpiece, best quality, ultra detailed';
 
             if (backgroundOption === 'no-background') {
-                compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame, complete item fully visible, sharp focus on item, centered composition, 3D render style, clean edges';
+                compositionInstructions = 'isolated single item floating in air, item fills two-thirds of image frame, complete item fully visible, no text, no writing, no watermark, sharp focus on item, centered composition, 3D render style, clean edges, flat studio lighting, no cast shadows';
             }
 
             const finalPrompt = [
                 styleConfig.primary,
                 styleConfig.technique,
-                visualPrompt,
+                `(${cleanVisualPrompt})`, // boost visual prompt weight slightly
                 itemTypeEnhancement,
                 compositionInstructions,
                 elementalEnhancement,
@@ -194,7 +238,7 @@ export function useImageGenerator() {
                 action = 'fal-zimage';
                 requestData = {
                     prompt: finalPrompt,
-                    image_size: 'square',
+                    image_size: { width: 1024, height: 1024 },
                     num_inference_steps: 8,
                     output_format: 'jpeg'
                 };
@@ -271,12 +315,15 @@ export function useImageGenerator() {
     return { generateImage, isGenerating, error };
 }
 
-function getItemTypeEnhancement(itemSubtype: string, visualPrompt: string): string {
-    const promptLower = `${itemSubtype} ${visualPrompt}`.toLowerCase();
+// Helper to get type-specific prompt enhancements
+function getItemTypeEnhancement(itemType: string, itemSubtype: string, visualPrompt: string): string {
+    // Combine all inputs for keyword matching
+    const promptLower = `${itemType} ${itemSubtype} ${visualPrompt}`.toLowerCase();
+
     let itemTypeEnhancement = '';
     let compositionGuide = '';
 
-    // WEAPONS
+    // WEAPONS - Keyword Matching (prioritize specific subtypes logic first)
     if (promptLower.includes('axe') || promptLower.includes('גרזן') || promptLower.includes('hatchet')) {
         itemTypeEnhancement = 'formidable battle axe weapon, heavy curved axe head, thick wooden or metal handle, single or double-headed axe design, chopping weapon';
         compositionGuide = 'angled view showing the distinctive axe head shape';
@@ -317,6 +364,12 @@ function getItemTypeEnhancement(itemSubtype: string, visualPrompt: string): stri
         compositionGuide = 'horizontal layout showing full length of tube, item displayed on stand, product photography';
     }
 
+    // POTIONS - Enhanced Check (Explicitly check itemType too)
+    else if (promptLower.includes('potion') || promptLower.includes('bottle') || promptLower.includes('שיקוי') || promptLower.includes('vial') || promptLower.includes('flask')) {
+        itemTypeEnhancement = 'glass potion bottle, cork stopper, intricate glasswork, swirling magical vibrant liquid inside, alchemical fantasy item';
+        compositionGuide = 'vertical bottle with liquid glowing effects visible, macro photography styling';
+    }
+
     // ARMOR
     else if (promptLower.includes('chain') || promptLower.includes('שרשראות')) {
         itemTypeEnhancement = 'medieval chainmail armor, interlocking metal rings, protective mail hauberk, iron ring mesh, warrior torso armor, wearable body protection';
@@ -354,9 +407,6 @@ function getItemTypeEnhancement(itemSubtype: string, visualPrompt: string): stri
     } else if (promptLower.includes('amulet') || promptLower.includes('necklace') || promptLower.includes('קמע')) {
         itemTypeEnhancement = 'mystical amulet pendant, ornate chain, magical centerpiece gem';
         compositionGuide = 'centered with chain flowing around it';
-    } else if (promptLower.includes('potion') || promptLower.includes('bottle') || promptLower.includes('שיקוי')) {
-        itemTypeEnhancement = 'glass potion bottle, swirling magical liquid inside, cork stopper, alchemical labels';
-        compositionGuide = 'vertical bottle with liquid effects visible';
     } else if (promptLower.includes('scroll') || promptLower.includes('מגילה')) {
         itemTypeEnhancement = 'ancient spell scroll, weathered parchment, magical glowing text, wax seal';
         compositionGuide = 'partially unrolled showing mystical writing';
@@ -407,7 +457,7 @@ function getElementalEnhancement(abilityDesc: string): string {
 
 function getBackgroundPrompt(option: string, theme: string = 'Nature'): string {
     if (option === 'no-background') {
-        return 'pure white background, floating, clean edges';
+        return 'solid pure white background (hex color #FFFFFF), flat lighting, no shadows, no gradient, isolated, high contrast';
     }
 
     if (option === 'colored') {

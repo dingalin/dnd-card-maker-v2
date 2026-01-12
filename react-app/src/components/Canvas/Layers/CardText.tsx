@@ -1,4 +1,4 @@
-import React from 'react';
+import { useCallback, memo } from 'react';
 import { Text } from 'react-konva';
 import { dragBoundFunc, textHitFunc, CARD_WIDTH } from '../utils/canvasUtils';
 
@@ -18,9 +18,15 @@ interface CardTextProps {
     onSelect: (e: any, id: string) => void;
     onDblClick?: (e: any, id: string, text: string) => void;
     onDragEnd: (e: any, id: string) => void;
+    onHoverEnter?: (id: string) => void;
+    onHoverLeave?: () => void;
 }
 
-export const CardText: React.FC<CardTextProps> = ({
+/**
+ * Memoized text component for canvas rendering.
+ * Only re-renders when props actually change.
+ */
+export const CardText = memo<CardTextProps>(({
     id,
     text,
     y,
@@ -35,8 +41,30 @@ export const CardText: React.FC<CardTextProps> = ({
     textStyles = {},
     onSelect,
     onDblClick,
-    onDragEnd
+    onDragEnd,
+    onHoverEnter,
+    onHoverLeave
 }) => {
+    // Memoize handlers to prevent new function references on each render
+    const handleClick = useCallback((e: any) => onSelect(e, id), [onSelect, id]);
+    const handleTap = useCallback((e: any) => onSelect(e, id), [onSelect, id]);
+    const handleDblClick = useCallback((e: any) => onDblClick && onDblClick(e, id, text), [onDblClick, id, text]);
+    const handleDragEnd = useCallback((e: any) => onDragEnd(e, id), [onDragEnd, id]);
+
+    const handleMouseEnter = useCallback((e: any) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = 'pointer';
+        // Trigger hover selection preview
+        if (onHoverEnter) onHoverEnter(id);
+    }, [onHoverEnter, id]);
+
+    const handleMouseLeave = useCallback((e: any) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = 'default';
+        // Clear hover selection preview
+        if (onHoverLeave) onHoverLeave();
+    }, [onHoverLeave]);
+
     return (
         <Text
             id={id}
@@ -52,21 +80,16 @@ export const CardText: React.FC<CardTextProps> = ({
             hitFunc={textHitFunc}
             draggable={isEditMode}
             dragBoundFunc={dragBoundFunc}
-            onClick={(e) => onSelect(e, id)}
-            onTap={(e) => onSelect(e, id)}
-            onDblClick={(e) => onDblClick && onDblClick(e, id, text)}
-            onDragEnd={(e) => onDragEnd(e, id)}
-            onMouseEnter={(e) => {
-                if (isEditMode) {
-                    const stage = e.target.getStage();
-                    if (stage) stage.container().style.cursor = 'move';
-                }
-            }}
-            onMouseLeave={(e) => {
-                const stage = e.target.getStage();
-                if (stage) stage.container().style.cursor = 'default';
-            }}
+            onClick={handleClick}
+            onTap={handleTap}
+            onDblClick={handleDblClick}
+            onDragEnd={handleDragEnd}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             {...textStyles}
         />
     );
-};
+});
+
+// Display name for React DevTools
+CardText.displayName = 'CardText';

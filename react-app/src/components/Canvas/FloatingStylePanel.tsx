@@ -1,14 +1,36 @@
 import { useCardContext } from '../../store';
 import './FloatingStylePanel.css';
 
-const FONT_OPTIONS = [
-    { value: 'Arial', label: 'Arial' },
-    { value: 'David', label: 'David (דוד)' },
-    { value: 'Frank Ruhl Libre', label: 'Frank Ruhl' },
-    { value: 'Heebo', label: 'Heebo' },
+// Hebrew Fantasy Fonts
+const HEBREW_FONT_OPTIONS = [
+    { value: 'Frank Ruhl Libre', label: 'Frank Ruhl Libre' },
+    { value: 'Suez One', label: 'Suez One (כותרות)' },
+    { value: 'Secular One', label: 'Secular One (דרמטי)' },
+    { value: 'Heebo', label: 'Heebo (מודרני)' },
     { value: 'Rubik', label: 'Rubik' },
     { value: 'Assistant', label: 'Assistant' },
+    { value: 'Miriam Libre', label: 'Miriam Libre (קלאסי)' },
+    { value: 'Alef', label: 'Alef' },
+    { value: 'David', label: 'David (דוד)' },
+    { value: 'Noto Serif Hebrew', label: 'Noto Serif (אלגנטי)' },
 ];
+
+// English Fantasy/Medieval Fonts
+const ENGLISH_FONT_OPTIONS = [
+    { value: 'Cinzel', label: 'Cinzel (Epic)' },
+    { value: 'Cinzel Decorative', label: 'Cinzel Decorative' },
+    { value: 'MedievalSharp', label: 'MedievalSharp' },
+    { value: 'Metamorphous', label: 'Metamorphous (Stone)' },
+    { value: 'Uncial Antiqua', label: 'Uncial Antiqua (Celtic)' },
+    { value: 'IM Fell English', label: 'IM Fell English' },
+    { value: 'Almendra Display', label: 'Almendra Display' },
+    { value: 'Fondamento', label: 'Fondamento (Calligraphic)' },
+    { value: 'Cormorant Garamond', label: 'Cormorant Garamond' },
+    { value: 'Pirata One', label: 'Pirata One (Bold)' },
+];
+
+// Combined for backward compatibility
+const FONT_OPTIONS = [...HEBREW_FONT_OPTIONS, ...ENGLISH_FONT_OPTIONS];
 
 const ELEMENT_LABELS: Record<string, string> = {
     title: 'שם הפריט',
@@ -90,35 +112,89 @@ function FloatingStylePanel({ selectedElement, side, onClose }: FloatingStylePan
                         onChange={(e) => updateStyle('fill', e.target.value)}
                     />
                 </div>
-            </div>
-            {/* Alignment Controls */}
-            <div className="panel-section">
+
+                {/* Bold and Italic Toggles */}
                 <div className="control-row">
-                    <label>יישור</label>
-                    <div className="btn-group">
+                    <label>סגנון</label>
+                    <div className="btn-group style-toggles">
                         <button
-                            className={`tool-btn ${getStyleValue('align', 'center') === 'right' ? 'active' : ''}`}
-                            onClick={() => updateStyle('align', 'right')}
-                            title="יישור לימין"
+                            className={`tool-btn style-btn ${getStyleValue('fontStyle', 'normal') === 'bold' || getStyleValue('fontStyle', 'normal') === 'bold italic' ? 'active' : ''}`}
+                            onClick={() => {
+                                const current = getStyleValue('fontStyle', 'normal');
+                                const isItalic = current.includes('italic');
+                                const isBold = current.includes('bold');
+                                if (isBold) {
+                                    updateStyle('fontStyle', isItalic ? 'italic' : 'normal');
+                                } else {
+                                    updateStyle('fontStyle', isItalic ? 'bold italic' : 'bold');
+                                }
+                            }}
+                            title="מודגש (Bold)"
                         >
-                            ➡️
+                            <strong>B</strong>
                         </button>
                         <button
-                            className={`tool-btn ${getStyleValue('align', 'center') === 'center' ? 'active' : ''}`}
-                            onClick={() => updateStyle('align', 'center')}
-                            title="מרכז"
+                            className={`tool-btn style-btn ${getStyleValue('fontStyle', 'normal').includes('italic') ? 'active' : ''}`}
+                            onClick={() => {
+                                const current = getStyleValue('fontStyle', 'normal');
+                                const isItalic = current.includes('italic');
+                                const isBold = current.includes('bold');
+                                if (isItalic) {
+                                    updateStyle('fontStyle', isBold ? 'bold' : 'normal');
+                                } else {
+                                    updateStyle('fontStyle', isBold ? 'bold italic' : 'italic');
+                                }
+                            }}
+                            title="נטוי (Italic)"
                         >
-                            ⬇️
-                        </button>
-                        <button
-                            className={`tool-btn ${getStyleValue('align', 'center') === 'left' ? 'active' : ''}`}
-                            onClick={() => updateStyle('align', 'left')}
-                            title="יישור לשמאל"
-                        >
-                            ⬅️
+                            <em>I</em>
                         </button>
                     </div>
                 </div>
+
+                {/* Currency Icon Selector - only for gold/price element */}
+                {selectedElement === 'gold' && (
+                    <div className="control-row">
+                        <label>סמל מטבע</label>
+                        <div className="btn-group currency-icons">
+                            <button
+                                className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold1' ? 'active' : ''}`}
+                                onClick={() => updateStyle('currencyIcon', 'gold1')}
+                                title="מטבע זהב 1"
+                            >
+                                <img src="/src/assets/gold1.png" alt="gold1" className="currency-img" />
+                            </button>
+                            <button
+                                className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold2' ? 'active' : ''}`}
+                                onClick={() => updateStyle('currencyIcon', 'gold2')}
+                                title="מטבע זהב 2"
+                            >
+                                <img src="/src/assets/gold2.png" alt="gold2" className="currency-img" />
+                            </button>
+                            <button
+                                className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold3' ? 'active' : ''}`}
+                                onClick={() => updateStyle('currencyIcon', 'gold3')}
+                                title="מטבע זהב 3"
+                            >
+                                <img src="/src/assets/gold3.png" alt="gold3" className="currency-img" />
+                            </button>
+                            <button
+                                className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold4' ? 'active' : ''}`}
+                                onClick={() => updateStyle('currencyIcon', 'gold4')}
+                                title="מטבע זהב 4"
+                            >
+                                <img src="/src/assets/gold4.png" alt="gold4" className="currency-img" />
+                            </button>
+                            <button
+                                className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold5' ? 'active' : ''}`}
+                                onClick={() => updateStyle('currencyIcon', 'gold5')}
+                                title="מטבע זהב 5"
+                            >
+                                <img src="/src/assets/gold5.png" alt="gold5" className="currency-img" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
 

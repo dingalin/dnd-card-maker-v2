@@ -24,6 +24,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = ({
                 width={width}
                 height={height}
                 fill="#f5f0e1"
+                cornerRadius={24}
                 onMouseDown={onMouseDown}
                 onTouchStart={onMouseDown}
             />

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * LayoutConfig.ts
  * ================
@@ -8,6 +7,7 @@
  * All position-related values should be defined here and referenced
  * by CSS or JavaScript, not hardcoded elsewhere.
  */
+
 
 /**
  * Position configuration for a fixed/absolute element

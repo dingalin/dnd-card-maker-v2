@@ -74,6 +74,7 @@ export interface CardData {
     rarity?: string;
     legacy?: boolean;
     imageStyle?: string;
+    visualPrompt?: string; // AI image generation prompt
 }
 
 // ============== FONT SIZES ==============

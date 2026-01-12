@@ -1,5 +1,5 @@
 import { getRarityFromLevel, blobToBase64 } from '../../utils';
-import { enrichItemDetails } from '../../utils/item-enrichment';
+import { enrichItemDetails, type ItemDetails } from '../../utils/item-enrichment';
 import { validateItemBalance } from '../../utils/balancing-validator';
 import { sampleCardBackgroundColor } from '../../utils/ColorSampler';
 import { calculatePriceFromDescription } from '../../services/PricingService';
@@ -86,27 +86,6 @@ interface AssemblyBuildData {
     locale: string;
 }
 
-interface ItemDetails {
-    name?: string;
-    type?: string;
-    subtype?: string;
-    rarity?: string;
-    rarityHe?: string;
-    gold?: string;
-    visualPrompt?: string;
-    abilityDesc?: string;
-    weaponDamage?: string;
-    damageType?: string;
-    armorClass?: string | number;
-    armorBonus?: number;
-    typeHe?: string;
-    specialDamage?: string;
-    spellAbility?: string;
-    requiresAttunement?: boolean;
-    assemblyAbilities?: AssemblyAbility[];
-    assemblyElement?: AssemblyElement;
-    [key: string]: unknown;
-}
 
 interface CardData extends ItemDetails {
     imageUrl?: string;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Logger } from '../utils/Logger';
 
 const WORKER_URL = 'https://dnd-api-proxy.dingalin2000.workers.dev/';
 
@@ -13,7 +14,7 @@ export function useGemini() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const generateItem = async (params: GenerateItemParams, password: string) => {
+    const generateItem = async (params: GenerateItemParams, password: string, customPrompt?: string) => {
         setIsLoading(true);
         setError(null);
 
@@ -23,8 +24,8 @@ export function useGemini() {
             // Infer level from rarity for better context
             const level = getLevelFromRarity(rarity);
 
-            // Build prompt
-            const prompt = buildItemPrompt(type, subtype, rarity, level);
+            // Build prompt - use custom if provided
+            const prompt = customPrompt || buildItemPrompt(type, subtype, rarity, level);
 
             // Call via Cloudflare Worker
             const response = await fetch(WORKER_URL, {
@@ -34,7 +35,7 @@ export function useGemini() {
                     password: password,
                     action: 'gemini-generate',
                     data: {
-                        model: 'gemini-2.5-flash',
+                        model: 'gemini-2.0-flash',
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: {
                             temperature: 0.9,
@@ -54,29 +55,29 @@ export function useGemini() {
             }
 
             const responseText = await response.text();
-            console.log('[useGemini] Raw response:', responseText.substring(0, 500));
+            Logger.debug('useGemini', 'Raw response preview', responseText.substring(0, 500));
 
             // Try to parse as JSON
             let data;
             try {
                 data = JSON.parse(responseText);
             } catch (parseErr) {
-                console.error('[useGemini] Failed to parse API response:', responseText);
+                Logger.error('useGemini', 'Failed to parse API response', responseText);
                 throw new Error(`API returned invalid JSON: ${responseText.substring(0, 200)}`);
             }
 
             if (data.error) {
-                console.error('[useGemini] API Error:', data.error);
+                Logger.error('useGemini', 'API Error', data.error);
                 throw new Error(data.error.message || 'Gemini API error');
             }
 
             if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                console.error('[useGemini] Invalid response structure:', JSON.stringify(data).substring(0, 500));
+                Logger.error('useGemini', 'Invalid response structure', JSON.stringify(data).substring(0, 500));
                 throw new Error('Invalid response from Gemini API - no text content');
             }
 
             const text = data.candidates[0].content.parts[0].text;
-            console.log('[useGemini] Gemini text response:', text.substring(0, 300));
+            Logger.debug('useGemini', 'Gemini text response', text.substring(0, 300));
 
             // Parse JSON response - Robust extraction
             let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -88,15 +89,47 @@ export function useGemini() {
                 jsonStr = jsonStr.substring(firstOpen, lastClose + 1);
             }
 
-            console.log('[useGemini] Extracted JSON:', jsonStr.substring(0, 300));
+            Logger.debug('useGemini', 'Extracted JSON', jsonStr.substring(0, 300));
 
             let result;
             try {
                 result = JSON.parse(jsonStr);
             } catch (parseErr) {
-                console.error('[useGemini] Failed to parse item JSON:', jsonStr);
+                Logger.error('useGemini', 'Failed to parse item JSON', jsonStr);
                 throw new Error(`Invalid item JSON from Gemini: ${jsonStr.substring(0, 100)}`);
             }
+
+            // 🛡️ FALLBACK: Ensure critical fields are always populated
+            // If AI didn't return these, generate smart defaults
+            if (!result.gold) {
+                const rarityPrices: Record<string, string> = {
+                    'נפוץ': '75',
+                    'לא נפוץ': '300',
+                    'נדיר': '2500',
+                    'נדיר מאוד': '25000',
+                    'אגדי': '100000'
+                };
+                result.gold = rarityPrices[result.rarityHe] || '250';
+                Logger.warn('useGemini', 'Added fallback gold', result.gold);
+            }
+
+            if (!result.weaponDamage && result.typeHe === 'נשק') {
+                // Default weapon damage for common subtypes
+                result.weaponDamage = '1d8 חותך';
+                Logger.warn('useGemini', 'Added fallback weaponDamage', result.weaponDamage);
+            }
+
+            if (!result.quickStats) {
+                result.quickStats = result.weaponDamage ||
+                    (result.armorClass ? `AC ${result.armorClass}` : '');
+            }
+
+            Logger.info('useGemini', 'Final result with fallbacks', {
+                name: result.name,
+                weaponDamage: result.weaponDamage,
+                gold: result.gold,
+                quickStats: result.quickStats
+            });
 
             setIsLoading(false);
             return result;
@@ -131,7 +164,7 @@ RARITY GUIDELINES:
 - Very Rare: 5000-50000gp, +3 bonus or powerful ability
 - Legendary: 50000+gp, +4/+5 bonus, unique abilities
 
-Return ONLY valid JSON with this structure:
+Return ONLY valid JSON with this EXACT structure (ALL fields are REQUIRED):
 {
   "name": "Creative Hebrew name (2-3 words, NO item type in name)",
   "typeHe": "Hebrew type (נשק/שריון/שיקוי/טבעת)",
@@ -139,18 +172,20 @@ Return ONLY valid JSON with this structure:
   "abilityName": "Hebrew ability name",
   "abilityDesc": "Hebrew ability description (max 50 words)",
   "description": "Hebrew flavor text (max 20 words)",
-  "gold": "Price as number string (e.g., '350')",
-  "weaponDamage": "Weapon damage if applicable (e.g., '1d8+1 חותך')",
-  "armorClass": "AC number if armor, null otherwise",
-  "quickStats": "Quick stats summary (leave empty for weapons/armor)",
+  "gold": "REQUIRED: Price as number string (e.g., '350')",
+  "weaponDamage": "REQUIRED for weapons: Damage dice in Hebrew (e.g., '1d8+1 חותך'). For non-weapons use ''.",
+  "armorClass": "REQUIRED for armor: AC number. For non-armor use null.",
+  "quickStats": "Short stats summary (damage or AC) in Hebrew",
   "visualPrompt": "English description for image generation (max 20 words)"
 }
 
-CRITICAL:
-- Price must be realistic for rarity
-- Use Hebrew for all text except visualPrompt
-- Damage types in Hebrew: חותך (slashing), דוקר (piercing), מוחץ (bludgeoning), אש (fire), קור (cold), ברק (lightning)
-- Keep it D&D 5e balanced`;
+CRITICAL RULES:
+1. EVERY weapon MUST have "weaponDamage" with dice format (1d6, 1d8, etc.) + damage type in Hebrew
+2. EVERY armor MUST have "armorClass" as a number
+3. EVERY item MUST have "gold" as a price string
+4. Price must be realistic for rarity (Common: 50-100, Uncommon: 100-500, etc.)
+5. Use Hebrew for all text except visualPrompt
+6. Damage types in Hebrew: חותך (slashing), דוקר (piercing), מוחץ (bludgeoning), אש (fire), קור (cold), ברק (lightning)`;
 }
 
 function getLevelFromRarity(rarity: string): number {

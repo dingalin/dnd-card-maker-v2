@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCardContext } from '../../store';
+import { useGemini } from '../../hooks/useGemini';
+import { useImageGenerator } from '../../hooks/useImageGenerator';
+import { useBackgroundGenerator } from '../../hooks/useBackgroundGenerator';
+import { useWorkerPassword } from '../../hooks/useWorkerPassword';
+import { generateMimicCard } from '../../utils/mimicGenerator';
 import HistoryGallery from '../Modals/HistoryGallery';
 import PrintModal from '../Modals/PrintModal';
 import './Header.css';
@@ -9,9 +14,27 @@ import eyeImage from '../../assets/eye.png';
 
 function Header() {
     const { i18n } = useTranslation();
-    const { state } = useCardContext();
+    const { state, setCardData, updateCustomStyle } = useCardContext();
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isPrintOpen, setIsPrintOpen] = useState(false);
+    const [clickCount, setClickCount] = useState(0);
+
+    // AI Hooks
+    const { generateItem } = useGemini();
+    const { generateImage } = useImageGenerator();
+    const { generateBackground } = useBackgroundGenerator();
+    const { password } = useWorkerPassword();
+
+    const handleEyeClick = () => {
+        const newCount = clickCount + 1;
+        setClickCount(newCount);
+
+        if (newCount >= 10) {
+            console.log('👁️ MIMIC EASTER EGG TRIGGERED! (Eye) - Generating Unique Card...');
+            generateMimicCard(password, generateItem, generateImage, generateBackground, setCardData, updateCustomStyle);
+            setClickCount(0);
+        }
+    };
 
     const toggleLanguage = () => {
         const newLang = i18n.language === 'he' ? 'en' : 'he';
@@ -24,7 +47,14 @@ function Header() {
         <>
             <header className="app-header">
                 <div className="header-brand">
-                    <img src={eyeImage} alt="Mimic Eye" className="header-logo-img" />
+                    <img
+                        src={eyeImage}
+                        alt="Mimic Eye"
+                        className="header-logo-img"
+                        onClick={handleEyeClick}
+                        style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
+                        title="Is it watching me...?"
+                    />
                     <h1 className="header-title">
                         <span className="brand-name">MIMIC VAULT</span>
                         <span className="brand-separator">|</span>

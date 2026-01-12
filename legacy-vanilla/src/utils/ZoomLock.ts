@@ -3,10 +3,12 @@
  * Feature was causing display issues, disabled for now
  */
 
+import { Logger } from './Logger';
+
 export class ZoomLock {
     constructor() {
         // Disabled - do nothing
-        console.log('🔒 ZoomLock disabled');
+        Logger.info('ZoomLock', 'Feature disabled');
     }
 
     enable(): void { }

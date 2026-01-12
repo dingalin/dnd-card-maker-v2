@@ -1,3 +1,16 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden !important;
+  /* Force no scrollbars */
+  position: fixed;
+  /* Lock body to prevent elastic scrolling */
+}
+
 body[dir="rtl"] {
   text-align: right;
 }

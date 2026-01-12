@@ -3,6 +3,8 @@
  * Shared logic for enriching item details with official D&D stats and translations
  */
 
+import { Logger } from './Logger';
+
 // ==================== TYPES ====================
 
 export interface TranslationMap {
@@ -27,11 +29,14 @@ export interface OfficialStats {
 }
 
 export interface ItemDetails {
+    name?: string;
+    type?: string;
+    subtype?: string;
     typeHe?: string;
     weaponDamage?: string;
     damageType?: string;
     coreStats?: string;
-    armorClass?: number;
+    armorClass?: number | string; // Can be either - parsed to number later
     armorBonus?: number;
     dexModLabel?: string;
     weaponProperties?: string[];
@@ -40,6 +45,13 @@ export interface ItemDetails {
     rarity?: string;
     rarityHe?: string;
     gold?: number | string;
+    visualPrompt?: string;
+    specialDamage?: string;
+    spellAbility?: string;
+    requiresAttunement?: boolean;
+    versatileDamage?: string;
+    assemblyAbilities?: any[];
+    assemblyElement?: any;
     [key: string]: any;
 }
 
@@ -171,8 +183,7 @@ export function calculateItemPrice(basePrice: number = 0, magicBonus: number = 0
     // Minimum price of 1 GP for mundane items
     if (price < 1) price = Math.max(1, Math.round(basePrice * variance));
 
-    const timestamp = new Date().toLocaleTimeString();
-    console.log(`💰💰💰 [${timestamp}] PRICE CALC: base=${basePrice}, bonus=+${magicBonus}, rarity=${rarity}, randomSeed=${randomSeed.toFixed(4)}, variance=${variance.toFixed(2)}, jitter=${jitterAmount}, FINAL=${price} GP`);
+    Logger.debug('ItemEnrichment', `PRICE CALC: base=${basePrice}, bonus=+${magicBonus}, rarity=${rarity}, randomSeed=${randomSeed.toFixed(4)}, variance=${variance.toFixed(2)}, jitter=${jitterAmount}, FINAL=${price} GP`);
 
     return price;
 }
@@ -212,7 +223,7 @@ function findOfficialStats(finalSubtype: string): OfficialStats | null {
 
     // Try direct match first
     if ((window as any).ITEM_STATS[finalSubtype]) {
-        console.log("ItemEnrichment: Direct match found:", finalSubtype);
+        Logger.debug('ItemEnrichment', 'Direct match found', { finalSubtype });
         return (window as any).ITEM_STATS[finalSubtype];
     }
 
@@ -257,12 +268,11 @@ function findOfficialStats(finalSubtype: string): OfficialStats | null {
     });
 
     if (matchingKey) {
-        console.log("ItemEnrichment: Match found:", matchingKey, "for:", finalSubtype);
+        Logger.debug('ItemEnrichment', 'Match found', { matchingKey, finalSubtype });
         return (window as any).ITEM_STATS[matchingKey];
     }
 
-    console.warn("ItemEnrichment: No stats found for:", finalSubtype,
-        "| Available keys sample:", statsKeys.slice(0, 5).join(', '));
+    Logger.warn('ItemEnrichment', `No stats found for: ${finalSubtype} | Available keys sample: ${statsKeys.slice(0, 5).join(', ')}`);
     return null;
 }
 
@@ -311,7 +321,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
     const isHebrew = locale === 'he';
 
     try {
-        console.log(`ItemEnrichment: Enriching ${type} / ${finalSubtype} (locale: ${locale})`);
+        Logger.debug('ItemEnrichment', `Enriching ${type} / ${finalSubtype}`, { locale });
 
         const specificType = extractSpecificType(finalSubtype, isHebrew);
         const t = (key: string) => CATEGORY_TRANSLATIONS[key]?.[isHebrew ? 'he' : 'en'] || key;
@@ -404,7 +414,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                 // Also set coreStats for TreasureController compatibility
                 itemDetails.coreStats = `${officialStats.damage} ${officialDamageType}`;
 
-                console.log("ItemEnrichment: Set weapon stats:", itemDetails.weaponDamage, itemDetails.damageType);
+                Logger.debug('ItemEnrichment', 'Set weapon stats', { weaponDamage: itemDetails.weaponDamage, damageType: itemDetails.damageType });
             }
 
             // Armor AC
@@ -415,7 +425,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                 // SKIP if armorClass was already set correctly by ItemGenerator's updateArmorClassWithBonus
                 const existingAC = parseInt(String(itemDetails.armorClass), 10) || 0;
                 if (existingAC >= 10) {
-                    console.log("ItemEnrichment: Keeping existing armorClass:", existingAC, "(already valid)");
+                    Logger.debug('ItemEnrichment', 'Keeping existing armorClass (already valid)', { existingAC });
                     totalAC = existingAC;
                     armorBonus = itemDetails.armorBonus || 0;
                 } else {
@@ -428,14 +438,14 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                         itemDetails.abilityDesc?.match(/מעניק\s*\+(\d+)/i);
                     if (bonusMatch) {
                         armorBonus = parseInt(bonusMatch[1], 10);
-                        console.log("ItemEnrichment: Extracted armor bonus:", armorBonus);
+                        Logger.debug('ItemEnrichment', 'Extracted armor bonus', { armorBonus });
                     }
 
                     // Total AC = Base + Bonus
                     totalAC = baseAC + armorBonus;
                     itemDetails.armorClass = totalAC;
                     itemDetails.armorBonus = armorBonus; // Store for display
-                    console.log("ItemEnrichment: Set armorClass:", totalAC, "(base", baseAC, "+ bonus", armorBonus, ")");
+                    Logger.debug('ItemEnrichment', 'Set armorClass', { totalAC, baseAC, armorBonus });
                 }
 
                 // Core stats shows "+X" indicator if there's a bonus
@@ -458,7 +468,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                     }
                 }
 
-                console.log("ItemEnrichment: Final armor AC:", totalAC, "Bonus:", armorBonus, "DexMod:", officialStats.dexMod);
+                Logger.debug('ItemEnrichment', 'Final armor AC', { totalAC, armorBonus, dexMod: officialStats.dexMod });
             }
 
             // Weapon properties
@@ -496,7 +506,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                     itemDetails.quickStats = effect;
                 }
 
-                console.log("ItemEnrichment: Set potion effect:", effect);
+                Logger.debug('ItemEnrichment', 'Set potion effect', { effect });
             }
 
             // Ring effects
@@ -506,7 +516,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                     : officialStats.effect;
 
                 itemDetails.quickStats = effect;
-                console.log("ItemEnrichment: Set ring effect:", effect);
+                Logger.debug('ItemEnrichment', 'Set ring effect', { effect });
             }
 
             // Wondrous item type labels
@@ -515,7 +525,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                 if (typeLabel && !itemDetails.typeHe?.includes(typeLabel)) {
                     itemDetails.typeHe = `${typeLabel} (${isHebrew ? 'פלאי' : 'Wondrous'})`;
                 }
-                console.log("ItemEnrichment: Set wondrous type:", itemDetails.typeHe);
+                Logger.debug('ItemEnrichment', 'Set wondrous type', { typeHe: itemDetails.typeHe });
             }
         }
 
@@ -540,7 +550,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
         // Note: officialStats was already defined earlier in this function
         const basePrice = officialStats?.basePrice || 0;
 
-        console.log(`💰 Price calculation check: officialStats=${officialStats ? 'found' : 'null'}, basePrice=${basePrice}`);
+        Logger.debug('ItemEnrichment', 'Price calculation check', { hasOfficialStats: !!officialStats, basePrice });
 
         // Extract magic bonus from armor or weapon
         let magicBonus = 0;
@@ -560,7 +570,7 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
                         rarity.includes('לא נפוץ') ? 'Uncommon' :
                             rarity; // Keep as-is if already English
 
-        console.log(`💰 Parsed: rarity="${rarity}" -> normalized="${normalizedRarity}", magicBonus=${magicBonus}`);
+        Logger.debug('ItemEnrichment', 'Parsed rarity', { rarity, normalizedRarity, magicBonus });
 
         // Calculate price if we have base price OR magic bonus (always for weapons/armor)
         // BUT: Skip if gold was already set to a high value by PricingService
@@ -568,16 +578,16 @@ export function enrichItemDetails(itemDetails: ItemDetails, type: string, finalS
         const skipPriceCalc = existingGold > 500; // PricingService already calculated; don't overwrite
 
         if (skipPriceCalc) {
-            console.log(`💰 Keeping PricingService gold: ${existingGold} GP (skipping enrichment calc)`);
+            Logger.debug('ItemEnrichment', 'Keeping PricingService gold (skipping enrichment calc)', { existingGold });
         } else if (basePrice > 0 || magicBonus > 0 || (type === 'weapon' || type === 'armor')) {
             const calculatedPrice = calculateItemPrice(basePrice, magicBonus, normalizedRarity);
             itemDetails.gold = calculatedPrice;
-            console.log(`💰 Set item gold to: ${calculatedPrice} GP (base=${basePrice}, bonus=+${magicBonus}, rarity=${normalizedRarity})`);
+            Logger.debug('ItemEnrichment', 'Set item gold', { calculatedPrice, basePrice, magicBonus, rarity: normalizedRarity });
         } else {
-            console.log(`💰 Skipping price calc: no basePrice, no bonus, type=${type}`);
+            Logger.debug('ItemEnrichment', 'Skipping price calc: no basePrice, no bonus', { type });
         }
 
     } catch (err) {
-        console.warn("ItemEnrichment: Error enriching details:", err);
+        Logger.error('ItemEnrichment', 'Error enriching details', err as Error);
     }
 }

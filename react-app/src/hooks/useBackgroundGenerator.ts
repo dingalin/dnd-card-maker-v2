@@ -230,14 +230,15 @@ export function useBackgroundGenerator() {
         password: string,
         theme: string = 'Old Scroll',
         style: string = 'watercolor',
-        model: string = 'flux-schnell'
+        model: string = 'flux-schnell',
+        customPrompt?: string
     ): Promise<string | null> => {
         setIsGenerating(true);
         setError(null);
 
         const themeConfig = THEME_CONFIGS[theme] || THEME_CONFIGS['Old Scroll'];
         const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS['watercolor'];
-        const prompt = buildBackgroundPrompt(theme, themeConfig, styleConfig);
+        const prompt = customPrompt || buildBackgroundPrompt(theme, themeConfig, styleConfig);
 
         console.log(`🎨 BackgroundGenerator: Generating ${theme} background in ${style} style`);
 

@@ -9,6 +9,7 @@ import type { AppState, CardData, AppSettings } from '../types';
 import type { StateAction } from './actions';
 import { ActionType } from './actions';
 import { stateReducer, getInitialState } from './reducer';
+import { Logger } from '../utils/Logger';
 
 interface CardContextValue {
     state: AppState;
@@ -24,6 +25,7 @@ interface CardContextValue {
     updateCustomStyle: (key: string, value: any, side?: 'front' | 'back') => void;
     updateStyle: (key: string, value: any) => void;
     resetToDefaults: () => void;
+    saveAsDefault: () => void;
     setFlipped: (flipped: boolean) => void;
     setLastContext: (context: unknown) => void;
     setLastVisualPrompt: (prompt: string | null) => void;
@@ -77,7 +79,32 @@ export function CardProvider({ children }: CardProviderProps) {
         dispatch({ type: ActionType.UPDATE_STYLE, payload: { key, value } });
     }, []);
 
+    const saveAsDefault = useCallback(() => {
+        if (!state.settings) return;
+        try {
+            localStorage.setItem('dnd_user_defaults', JSON.stringify(state.settings));
+            Logger.info('CardContext', 'Settings saved as user default');
+            // Visual feedback could be added here (toast)
+            alert('העיצוב נשמר כברירת מחדל! כרטיסים חדשים יתחילו עם העיצוב הזה.');
+        } catch (e) {
+            Logger.error('CardContext', 'Failed to save user defaults', e);
+            alert('שגיאה בשמירת ברירת המחדל');
+        }
+    }, [state.settings]);
+
     const resetToDefaults = useCallback(() => {
+        // Try to load user defaults
+        try {
+            const savedDefaults = localStorage.getItem('dnd_user_defaults');
+            if (savedDefaults) {
+                const userDefaults = JSON.parse(savedDefaults);
+                dispatch({ type: ActionType.RESET_TO_DEFAULTS, payload: userDefaults });
+                Logger.info('CardContext', 'Reset to USER defaults');
+                return;
+            }
+        } catch (e) {
+            Logger.warn('CardContext', 'Failed to load user defaults, using system defaults', e);
+        }
         dispatch({ type: ActionType.RESET_TO_DEFAULTS });
     }, []);
 
@@ -113,10 +140,10 @@ export function CardProvider({ children }: CardProviderProps) {
 
         try {
             localStorage.setItem('dnd_current_card', JSON.stringify(saveData));
-            console.log('💾 Card saved to localStorage');
+            Logger.debug('CardContext', 'Card saved to localStorage');
         } catch (e: any) {
             if (e.name === 'QuotaExceededError') {
-                console.warn('💾 localStorage quota exceeded, attempting cleanup...');
+                Logger.warn('CardContext', 'localStorage quota exceeded, attempting cleanup');
 
                 // Clear image data
                 if (saveData.cardData.front) saveData.cardData.front.imageUrl = null;
@@ -124,9 +151,9 @@ export function CardProvider({ children }: CardProviderProps) {
 
                 try {
                     localStorage.setItem('dnd_current_card', JSON.stringify(saveData));
-                    console.log('✅ Saved card without image data after cleanup');
+                    Logger.info('CardContext', 'Saved card without image data after cleanup');
                 } catch (e2) {
-                    console.warn('⚠️ Could not save current card even after cleanup (Storage full)');
+                    Logger.warn('CardContext', 'Could not save current card even after cleanup (Storage full)');
                 }
             }
         }
@@ -148,21 +175,54 @@ export function CardProvider({ children }: CardProviderProps) {
                     data.cardData.front.imageUrl = null;
                 }
 
+                // 🛡️ SANITIZE: Reset problematic offsets that could push elements off-screen
+                // These were causing elements to disappear after initial render
+                if (data.settings?.front?.offsets) {
+                    const frontOffsets = data.settings.front.offsets;
+                    // Reset stats, gold, coreStats to 0 (let LAYOUT constants control position)
+                    if (Math.abs(frontOffsets.stats || 0) > 200) frontOffsets.stats = 0;
+                    if (Math.abs(frontOffsets.gold || 0) > 200) frontOffsets.gold = 0;
+                    if (Math.abs(frontOffsets.coreStats || 0) > 200) frontOffsets.coreStats = 0;
+                    Logger.debug('CardContext', 'Sanitized front offsets');
+                }
+                if (data.settings?.back?.offsets) {
+                    const backOffsets = data.settings.back.offsets;
+                    // Reset lore offset if it's too large
+                    if (Math.abs(backOffsets.lore || 0) > 200) backOffsets.lore = 0;
+                    Logger.debug('CardContext', 'Sanitized back offsets');
+                }
+
                 loadState(data.cardData, data.settings);
-                console.log('📂 Card loaded from localStorage');
+                Logger.info('CardContext', 'Card loaded from localStorage');
                 return true;
             }
         } catch (e) {
-            console.error('Failed to load card from localStorage:', e);
+            Logger.error('CardContext', 'Failed to load card from localStorage', e);
         }
         return false;
     }, [loadState]);
 
-    // Auto-save on state changes
+    // Auto-save on state changes with debounce (500ms)
+    const saveTimeoutRef = React.useRef<number | null>(null);
+
     useEffect(() => {
         if (state.cardData) {
-            saveCurrentCard();
+            // Clear any pending save
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            // Schedule save after 500ms of inactivity
+            saveTimeoutRef.current = window.setTimeout(() => {
+                saveCurrentCard();
+            }, 500);
         }
+
+        // Cleanup on unmount
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
     }, [state.cardData, state.settings, saveCurrentCard]);
 
     // Load saved card on mount
@@ -182,6 +242,7 @@ export function CardProvider({ children }: CardProviderProps) {
         updateCustomStyle,
         updateStyle,
         resetToDefaults,
+        saveAsDefault,
         setFlipped,
         setLastContext,
         setLastVisualPrompt,
