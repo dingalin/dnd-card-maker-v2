@@ -40,10 +40,9 @@ export const OverlayLayer: React.FC<OverlayLayerProps> = ({ selectedId, isEditMo
     // For now, let's keep it generic but maybe strictly for itemImage if text shouldn't be resized (text uses fontSize).
     // The previous code ONLY allowed resizing 'itemImage'.
 
-    if (selectedId !== 'itemImage') {
-        // Return null if we don't want transformers on text
-        return null;
-    }
+    // We allow transformer for all elements now (Text & Images)
+    // Canva-like experience
+
 
     return (
         <Transformer

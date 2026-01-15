@@ -18,12 +18,18 @@
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     z-index: 1000;
-    width: 90%;
-    max-width: 800px;
+    width: 95%;
+    max-width: 1200px;
     max-height: 90vh;
+    /* Keep 90vh but ensure content shrinks */
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.page-break {
+    page-break-before: always;
+    break-before: page;
 }
 
 .modal-header {
@@ -57,24 +63,57 @@
 }
 
 .modal-content {
-    display: grid;
-    grid-template-columns: 300px 1fr;
+    display: flex;
+    flex-direction: row;
     gap: 2rem;
-    padding: 1.5rem;
-    overflow-y: auto;
+    padding: 1rem;
+    /* Compact padding */
+    overflow: hidden;
     flex: 1;
+    min-height: 0;
+    /* Allow shrinking to fit viewport */
+    align-items: stretch;
 }
 
 .print-options {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0.75rem;
+    flex: 0 0 320px;
+    /* Fixed width, no grow/shrink */
+    height: 100%;
+    min-height: 0;
+    overflow-y: scroll !important;
+    /* Force scrollbar */
+    padding-right: 0.75rem;
+    padding-bottom: 3rem;
+    /* Ensure bottom options are reachable */
+    padding-left: 0.25rem;
+    border-right: 2px solid #e0e0e0;
+    background: #fcfcfc;
+    /* Visual indicator of change */
+    overscroll-behavior: contain;
+}
+
+.print-preview {
+    flex: 1;
+    min-width: 0;
+    /* Critical for scrolling wide content */
+    overflow: auto;
+    background: #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .option-group h3 {
-    margin: 0 0 0.75rem 0;
+    margin: 0 0 0.5rem 0;
+    /* Compact margin */
     color: #764ba2;
     font-size: 1rem;
+    font-weight: 600;
 }
 
 .radio-option,
@@ -104,125 +143,205 @@
     font-size: 1rem;
 }
 
+/* Optimized for Grid View */
 .preview-container {
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    padding: 1rem;
-    min-height: 300px;
+    background: white;
+    width: 210mm;
+    /* A4 Width */
+    min-height: 297mm;
+    /* A4 Height */
+    padding: 10mm;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    /* Default flex behavior */
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    /* Allow wrapping by default */
+    align-content: flex-start;
     justify-content: center;
-    align-items: center;
 }
 
-.preview-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 8px;
-    padding: 1rem;
+.layout-single {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-height: 120px;
+    align-items: center;
+    gap: 10mm;
 }
 
-.layout-single .preview-card {
-    width: 200px;
-    height: 280px;
+.layout-single .preview-card-wrapper {
+    margin-bottom: 0;
+    break-after: page;
+    /* Force new page for each single card */
 }
 
-.layout-grid-3x3 .preview-card {
-    width: 80px;
-    height: 112px;
-    font-size: 0.7rem;
+.layout-grid-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, var(--card-width, 63mm));
+    grid-auto-rows: var(--card-height, 88mm);
+    gap: 2mm;
+    /* Small gap for cutting lines */
+    justify-content: center;
 }
 
-.preview-card.placeholder {
-    opacity: 0.5;
-}
-
-.card-name {
-    font-weight: 600;
-}
-
-.card-size-info {
-    font-size: 0.8rem;
-    opacity: 0.8;
-}
-
-.modal-footer {
+.preview-card-wrapper {
+    width: var(--card-width, 63mm);
+    height: var(--card-height, 88mm);
     display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    border-top: 1px solid #e0e0e0;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    /* Cutting guide */
 }
 
-.cancel-btn,
-.export-btn,
-.print-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+.preview-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Ensure it fills the poker card slot */
 }
 
-.cancel-btn {
-    background: #6c757d;
-    color: white;
+/* Placeholder for remaining slots */
+.preview-card-wrapper.placeholder {
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    opacity: 0.3;
 }
 
-.cancel-btn:hover {
-    background: #5a6268;
+/* Foldable Layout (Grid of Pairs for optimal page use) */
+.preview-container.layout-foldable {
+    display: grid;
+    /* Fit as many pairs as possible: each pair is 2x card width */
+    grid-template-columns: repeat(auto-fill, calc(var(--card-width, 63mm) * 2));
+    grid-auto-rows: var(--card-height, 88mm);
+    gap: 2mm;
+    justify-content: center;
+    align-content: start;
 }
 
-.export-btn {
-    background: #ffc107;
-    color: #333;
+.preview-card-wrapper.foldable-pair {
+    width: calc(var(--card-width, 63mm) * 2);
+    height: var(--card-height, 88mm);
+    display: flex;
+    flex-direction: row;
+    border: 1px dashed rgba(0, 0, 0, 0.4);
+    /* Outer cut line */
+    position: relative;
+    background: white;
 }
 
-.export-btn:hover {
-    background: #e0a800;
-    transform: translateY(-2px);
+/* Middle Fold Line */
+.preview-card-wrapper.foldable-pair::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1px dashed rgba(0, 0, 0, 0.6);
+    transform: translateX(-0.5px);
+    z-index: 10;
 }
 
-.print-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+.foldable-half {
+    width: 50%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
-.print-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+/* Ensure images fill their half */
+.foldable-half .preview-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
+
+/* PRINT MEDIA QUERY - CRITICAL */
 @media print {
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
 
     .modal-overlay,
     .modal-header,
     .print-options,
-    .modal-footer {
+    .modal-footer,
+    .app-header,
+    .library-header,
+    .library-sidebar,
+    .library-toolbar,
+    .nav-rail,
+    .creator-layout,
+    .card-creator .creator-layout,
+    /* Double specificity check */
+    .sidebar {
         display: none !important;
     }
 
-    .print-modal {
+    .card-library-overlay {
         position: static;
-        transform: none;
-        max-width: none;
-        box-shadow: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .modal-content {
-        grid-template-columns: 1fr;
+        background: white;
+        z-index: auto;
     }
 
+    .card-library-container {
+        display: none !important;
+        /* Wait, PrintModal is OUTSIDE library container? No, inside. */
+        /* If PrintModal is rendered inside Grid, we need to hide the Grid container but show PrintModal. */
+    }
+
+    /* We need to be careful. PrintModal is fixed. */
     .print-modal {
-        width: 95%;
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    /* But .modal-content is grid... we need to reset it */
+    .modal-content {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .print-preview {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .print-preview h3 {
+        display: none;
+    }
+
+    .preview-container {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 10mm !important;
+        /* Keep margins */
+        overflow: visible !important;
+    }
+
+    /* Force background images */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }

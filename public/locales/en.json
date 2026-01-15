@@ -173,7 +173,9 @@
         "simple_icon": "Flat Icon",
         "ink_drawing": "Ink Drawing",
         "silhouette": "Emblem",
-        "synthwave": "Synthwave"
+        "synthwave": "Synthwave",
+        "manga_action": "Manga Action",
+        "vintage_etching": "Vintage Etching"
     },
     "imageProcessing": {
         "natural": "Natural Background",

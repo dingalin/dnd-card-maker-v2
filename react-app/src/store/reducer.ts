@@ -14,67 +14,36 @@ import { clampFontSize } from '../utils/config/layout/FontSizeLimitsFixed';
  * Also ensures critical root-level fields are always present
  */
 export function migrateToV2(data: CardData): CardData {
-    // Even if already V2, ensure all root-level stats are preserved
+    // Even if already V2, return as is (strict mode)
     if (data.front && data.back) {
-        // Already V2, but ensure critical fields are at root level too
-        return {
-            ...data,
-            // Ensure stats are at root level (might only be in front/back)
-            weaponDamage: data.weaponDamage || '',
-            gold: data.gold || data.front?.gold || '',
-            description: data.description || data.back?.lore || '',
-            abilityName: data.abilityName || data.back?.title || '',
-            abilityDesc: data.abilityDesc || data.back?.mechanics || '',
-            quickStats: data.quickStats || data.front?.quickStats || data.weaponDamage || ''
-        };
+        return data;
     }
 
-
-    // V1 -> V2 Migration
+    // V1 -> V2 Migration (for legacy saves or Gemini API results)
     return {
         id: data.id || Date.now(),
         timestamp: data.timestamp || Date.now(),
         front: {
-            title: data.name || '',
-            type: data.type || data.typeHe || '',
-            rarity: data.rarity || data.rarityHe || '',
+            title: data.name || data.front?.title || '',
+            type: data.type || data.typeHe || data.front?.type || '',
+            rarity: data.rarity || data.rarityHe || data.front?.rarity || '',
             imageUrl: data.imageUrl || data.itemImageUrl || null,
             imageStyle: data.imageStyle || 'natural',
-            quickStats: data.quickStats || '',
-            gold: data.gold || '',
+            quickStats: data.quickStats || data.front?.quickStats || '',
+            gold: data.gold || data.front?.gold || '',
             badges: data.gold ? [data.gold] : []
         },
         back: {
-            title: data.abilityName || '',
-            mechanics: data.abilityDesc || '',
-            lore: data.description || ''
+            title: data.abilityName || data.back?.title || '',
+            mechanics: data.abilityDesc || data.back?.mechanics || '',
+            lore: data.description || data.back?.lore || ''
         },
-        // ✅ CRITICAL: Preserve ALL stats at root for renderer access
-        weaponDamage: data.weaponDamage || '',
-        damageType: data.damageType || '',
-        armorClass: data.armorClass || '',
-        versatileDamage: data.versatileDamage || null,
-        weaponProperties: data.weaponProperties || [],
-        // ✅ Hebrew naming (critical for display!)
-        typeHe: data.typeHe || '',
-        rarityHe: data.rarityHe || '',
-        // ✅ Quick-glance fields (critical for frontend!)
-        quickStats: data.quickStats || '',
-        specialDamage: data.specialDamage || '',
-        spellAbility: data.spellAbility || '',
-        // ✅ Ability fields for back card
-        abilityName: data.abilityName || '',
-        abilityDesc: data.abilityDesc || '',
-        description: data.description || '',
-        // ✅ Pricing
-        gold: data.gold || '',
-        // ✅ Image URLs
-        imageUrl: data.imageUrl || data.itemImageUrl || null,
-        itemImageUrl: data.itemImageUrl || data.imageUrl || null,
-        backgroundUrl: data.backgroundUrl || null,
-        // ✅ Visualization
+        // Valid Metadata (Non-deprecated)
         visualPrompt: data.visualPrompt || '',
-        legacy: true
+        imageStyle: data.imageStyle || 'natural',
+
+        // Mark as migrated
+        legacy: false
     };
 }
 
@@ -242,25 +211,29 @@ export function stateReducer(state: AppState, action: StateAction): AppState {
                 if (userDefaults) {
                     // Use user defaults but ensure structure matches
                     draft.settings = {
-                        front: { ...SLIDER_DEFAULTS.front, ...userDefaults.front },
-                        back: { ...SLIDER_DEFAULTS.back, ...userDefaults.back },
-                        style: { ...state.settings.style, ...userDefaults.style } // Mix current style or default? Usually defaults include style.
+                        front: {
+                            ...SLIDER_DEFAULTS.front,
+                            ...(userDefaults.front || {}),
+                            customStyles: userDefaults.front?.customStyles || {}
+                        },
+                        back: {
+                            ...SLIDER_DEFAULTS.back,
+                            ...(userDefaults.back || {}),
+                            customStyles: userDefaults.back?.customStyles || {}
+                        },
+                        style: { ...state.settings.style, ...(userDefaults.style || {}) }
                     };
 
                     // Deep merge for safety on nested objects
-                    if (userDefaults.front?.offsets) draft.settings.front.offsets = { ...SLIDER_DEFAULTS.front.offsets, ...userDefaults.front.offsets };
-                    if (userDefaults.front?.fontSizes) draft.settings.front.fontSizes = { ...SLIDER_DEFAULTS.front.fontSizes, ...userDefaults.front.fontSizes };
-                    if (userDefaults.front?.fontStyles) draft.settings.front.fontStyles = { ...SLIDER_DEFAULTS.front.fontStyles, ...userDefaults.front.fontStyles };
-                    if (userDefaults.back?.offsets) draft.settings.back.offsets = { ...SLIDER_DEFAULTS.back.offsets, ...userDefaults.back.offsets };
-                    if (userDefaults.back?.fontSizes) draft.settings.back.fontSizes = { ...SLIDER_DEFAULTS.back.fontSizes, ...userDefaults.back.fontSizes };
-                    if (userDefaults.back?.fontStyles) draft.settings.back.fontStyles = { ...SLIDER_DEFAULTS.back.fontStyles, ...userDefaults.back.fontStyles };
+                    if (userDefaults.front?.offsets) Object.assign(draft.settings.front.offsets, userDefaults.front.offsets);
+                    if (userDefaults.front?.fontSizes) Object.assign(draft.settings.front.fontSizes, userDefaults.front.fontSizes);
+                    if (userDefaults.front?.fontStyles) Object.assign(draft.settings.front.fontStyles, userDefaults.front.fontStyles);
+                    if (userDefaults.front?.customStyles) Object.assign(draft.settings.front.customStyles, userDefaults.front.customStyles);
 
-                    if (userDefaults.front?.customStyles) {
-                        draft.settings.front.customStyles = userDefaults.front.customStyles || {};
-                    }
-                    if (userDefaults.back?.customStyles) {
-                        draft.settings.back.customStyles = userDefaults.back.customStyles || {};
-                    }
+                    if (userDefaults.back?.offsets) Object.assign(draft.settings.back.offsets, userDefaults.back.offsets);
+                    if (userDefaults.back?.fontSizes) Object.assign(draft.settings.back.fontSizes, userDefaults.back.fontSizes);
+                    if (userDefaults.back?.fontStyles) Object.assign(draft.settings.back.fontStyles, userDefaults.back.fontStyles);
+                    if (userDefaults.back?.customStyles) Object.assign(draft.settings.back.customStyles, userDefaults.back.customStyles);
 
                 } else {
                     // System Defaults
@@ -277,8 +250,7 @@ export function stateReducer(state: AppState, action: StateAction): AppState {
                             fontStyles: { ...SLIDER_DEFAULTS.back.fontStyles },
                             customStyles: {}
                         },
-                        style: state.settings.style // Preserve style options if no payload? No, reset usually implies full reset.
-                        // Actually, the original code preserved style: state.settings.style. Let's keep that behavior for system reset.
+                        style: state.settings.style
                     };
                 }
                 break;
@@ -312,6 +284,7 @@ export function stateReducer(state: AppState, action: StateAction): AppState {
                         Object.assign(draft.settings.front.offsets, settings.front.offsets);
                         Object.assign(draft.settings.front.fontSizes, settings.front.fontSizes);
                         Object.assign(draft.settings.front.fontStyles, settings.front.fontStyles);
+                        Object.assign(draft.settings.front.customStyles, settings.front.customStyles);
                     }
                     if (settings.back) {
                         Object.assign(draft.settings.back.offsets, settings.back.offsets);

@@ -42,29 +42,47 @@ export interface CardData {
     back?: CardBack;
 
     // V1 style (flat) - Legacy support
+    /** @deprecated Use front.title */
     name?: string;
+    /** @deprecated Use front.type */
     typeHe?: string;
+    /** @deprecated Use front.rarity */
     rarityHe?: string;
+    /** @deprecated Use front.quickStats */
     quickStats?: string;
+    /** @deprecated Use front.gold */
     gold?: string;
+    /** @deprecated Use front.imageUrl */
     imageUrl?: string | null;
+    /** @deprecated Use front.imageUrl */
     itemImageUrl?: string | null; // AI-generated item image
+    /** @deprecated Use settings.style.cardBackgroundUrl */
     backgroundUrl?: string | null; // AI-generated card background/frame
 
     // Back side (V1 style)
+    /** @deprecated Use back.title */
     abilityName?: string;
+    /** @deprecated Use back.mechanics */
     abilityDesc?: string;
+    /** @deprecated Use back.lore */
     description?: string;
 
     // Weapon/Armor stats
+    /** @deprecated Use front.quickStats string parsing if needed or keep for metadata */
     weaponDamage?: string;
+    /** @deprecated Use front.quickStats */
     damageType?: string;
+    /** @deprecated Use front.quickStats */
     armorClass?: string;
+    /** @deprecated */
     versatileDamage?: string | null;
+    /** @deprecated */
     weaponProperties?: string[];
 
     // Quick-glance stats
+    /** @deprecated */
     specialDamage?: string;
+    /** @deprecated */
     spellAbility?: string;
 
     // Metadata
@@ -150,6 +168,7 @@ export interface StyleSettings {
     textBackdropEnabled: boolean;
     textBackdropOpacity: number;
     cardBackgroundUrl?: string;
+    defaultBackgroundId?: string; // For persistent defaults
     [key: string]: string | number | boolean | undefined;
 }
 

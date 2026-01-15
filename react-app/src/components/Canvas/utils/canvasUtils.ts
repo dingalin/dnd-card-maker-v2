@@ -24,28 +24,59 @@ export const LAYOUT = {
     MAX_Y: 1000,       // Bottom boundary for dragging (leaves room for text height)
 };
 
-// Drag bound function - only allows Y movement, X stays unchanged
-// The pos argument contains new position, this.absolutePosition() contains the current attached position
+// Drag bound function - locks X, only allows Y movement
 export const dragBoundFunc = function (this: any, pos: any) {
-    // Don't modify X - let the element keep its current position (set by padding prop)
-    const currentX = this.absolutePosition().x;
+    // Lock X to 0 (elements are centered via their own width/padding)
+    // Only allow vertical movement within card bounds
     return {
-        x: currentX,
+        x: 0,
         y: Math.max(20, Math.min(pos.y, CARD_HEIGHT - 60))
     };
 };
 
-// Custom hitFunc for text elements - creates a full-width hitbox for easier selection
+// Custom hitFunc for text elements - creates accurate hitbox matching actual text size
 export const textHitFunc = function (this: any, context: any) {
-    // Use the full allocated width (e.g., 750px) instead of just the text content width
-    // This allows selecting empty areas on the line and fixes alignment issues.
     const width = this.width();
+
+    // Use .height() to get accurate height including word wrapping and lineHeight
+    // Note: getTextHeight() is deprecated and may return incorrect single-line height
     const height = this.height();
-    const padding = 20; // Extra vertical padding for easier touch/click
+    const padding = 5; // Small padding for easier selection
 
     context.beginPath();
-    // Start from -padding/2 to extend hit area slightly above and below
-    context.rect(0, -padding / 2, width, height + padding);
+    // Create rect that matches actual text bounds
+    context.rect(0, -padding, width, height + (padding * 2));
     context.closePath();
     context.fillStrokeShape(this);
+};
+
+// =========================
+// RARITY COLORS & GRADIENTS
+// =========================
+export const RARITY_GRADIENTS: Record<string, string[]> = {
+    // Colors are: [Start, Mid, End]
+    'common': ['#b2b2b2', '#e0e0e0', '#8c8c8c'],      // Iron/Silver
+    'uncommon': ['#cd7f32', '#ffcba4', '#8b4513'],    // Bronze/Copper relative to user preference (User approved 'Bronze' for Uncommon)
+    'rare': ['#00008b', '#4169e1', '#0000cd'],        // Sapphire Blue (Deep Blue to Royal)
+    'epic': ['#4b0082', '#9932cc', '#8a2be2'],        // Amethyst Purple
+    'legendary': ['#bf953f', '#fcf6ba', '#b38728'],   // Gold (Metallic)
+
+    // Hebrew Mapping Fallbacks
+    'נפוץ': ['#b2b2b2', '#e0e0e0', '#8c8c8c'],
+    'לא נפוץ': ['#cd7f32', '#ffcba4', '#8b4513'],
+    'נדיר': ['#00008b', '#4169e1', '#0000cd'],
+    'אפי': ['#4b0082', '#9932cc', '#8a2be2'],
+    'אגדי': ['#bf953f', '#fcf6ba', '#b38728'],
+};
+
+// Helper to normalize rarity string to key
+export const getRarityKey = (rarityValues: string | undefined): string => {
+    if (!rarityValues) return 'common';
+    const r = rarityValues.trim().toLowerCase();
+
+    if (r.includes('אגדי') || r.includes('legendary')) return 'legendary';
+    if (r.includes('אפי') || r.includes('epic')) return 'epic';
+    if (r.includes('נדיר') || r.includes('rare')) return 'rare';
+    if (r.includes('לא נפוץ') || r.includes('uncommon')) return 'uncommon';
+    return 'common'; // Default
 };

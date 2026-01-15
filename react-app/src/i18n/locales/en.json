@@ -532,5 +532,74 @@
         "noTreasureYet": "Select a mode and click the button to start",
         "saveAllToGallery": "Save All to Gallery",
         "clear": "Clear"
+    },
+    "cardLibrary": {
+        "rotate": "Rotate ↻"
+    },
+    "monsterProfiles": {
+        "humanoid": {
+            "displayName": "Humanoid",
+            "flavor": "Standard humanoid equipment and personal possessions"
+        },
+        "goblinoid": {
+            "displayName": "Goblinoid",
+            "flavor": "Crude weapons and a magpie collection of shiny stolen objects"
+        },
+        "orc": {
+            "displayName": "Orc",
+            "flavor": "Brutal weapons and trophies from fallen enemies"
+        },
+        "undead": {
+            "displayName": "Undead",
+            "flavor": "Remnants of a past life - corroded armor and burial jewelry"
+        },
+        "powerfulUndead": {
+            "displayName": "Powerful Undead",
+            "flavor": "Centuries of accumulated wealth and dark artifacts"
+        },
+        "dragon": {
+            "displayName": "Dragon",
+            "flavor": "A magnificent hoard accumulated over centuries of terror"
+        },
+        "giant": {
+            "displayName": "Giant",
+            "flavor": "Oversized possessions and trophies from smaller victims"
+        },
+        "beast": {
+            "displayName": "Beast",
+            "flavor": "Whatever remains of previous meals and their possessions"
+        },
+        "fiend": {
+            "displayName": "Fiend",
+            "flavor": "Dark relics and corrupted artifacts from the lower planes"
+        },
+        "celestial": {
+            "displayName": "Celestial",
+            "flavor": "Holy relics and blessed items from the upper planes"
+        },
+        "elemental": {
+            "displayName": "Elemental",
+            "flavor": "Crystallized elemental essence and magical residue"
+        },
+        "construct": {
+            "displayName": "Construct",
+            "flavor": "Components, control items, and creator's research"
+        },
+        "aberration": {
+            "displayName": "Aberration",
+            "flavor": "Bizarre artifacts from beyond normal reality"
+        },
+        "fey": {
+            "displayName": "Fey",
+            "flavor": "Enchanted natural items and stolen mortal treasures"
+        },
+        "plant": {
+            "displayName": "Plant",
+            "flavor": "Remains of those who disturbed the forest"
+        },
+        "ooze": {
+            "displayName": "Ooze",
+            "flavor": "Undigested remains of previous victims"
+        }
     }
 }

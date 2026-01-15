@@ -127,6 +127,12 @@ export const THEME_CONFIGS: Record<string, { colors: string; elements: string; a
         elements: 'wooden tankards, candlelight, hearth fire, barrel rings, wanted poster fragments',
         atmosphere: 'cozy hospitality, rowdy adventure planning, warm hearth lighting',
         texture: 'stained oak wood table, burlap cloth, candle wax drippings'
+    },
+    'Premium Fantasy': {
+        colors: 'rich gold, warm bronze, aged parchment tan, dark mahogany brown',
+        elements: 'ornate Celtic knotwork borders, golden filigree corners, heraldic griffin emblems, intricate metalwork patterns',
+        atmosphere: 'luxurious ancient tome, prestigious artifact display, museum quality presentation',
+        texture: 'aged vellum parchment, embossed leather binding, gold leaf gilding, hammered metal frame'
     }
 };
 
@@ -196,6 +202,26 @@ export const STYLE_CONFIGS: Record<string, { primary: string; technique: string;
         primary: 'synthwave neon artwork, retrowave 80s aesthetic, cyberpunk neon style',
         technique: 'glowing neon lights, hot pink and cyan color scheme, grid lines, chrome reflections',
         finish: 'retro futuristic atmosphere, vaporwave aesthetic, glowing edges, 1980s sci-fi movie poster style'
+    },
+    'comic_book': {
+        primary: 'exaggerated comic book style frame, hand-drawn comic border, vintage comic book aesthetic',
+        technique: 'bold thick outlines, halftone dot patterns, dramatic dynamic borders, vibrant pop art colors',
+        finish: 'classic comic book action style, hand-drawn comic art feel, vintage superhero comic aesthetic'
+    },
+    'manga_action': {
+        primary: 'manga action style frame, energetic speed lines background, anime card border',
+        technique: 'bold black ink outlines, dynamic action lines radiating from center, comic sunburst effect, cel shaded elements',
+        finish: 'high energy manga illustration, dramatic anime reveal style, Japanese comic aesthetic'
+    },
+    'vintage_etching': {
+        primary: 'antique vintage etching style frame, old book illustration border, grimoire page aesthetic',
+        technique: 'intricate woodcut details, cross-hatching shading, fine black and white ink lines, textured aged paper background',
+        finish: 'highly detailed Victorian engraving, medieval manuscript border, ancient tome aesthetic'
+    },
+    'premium_fantasy': {
+        primary: 'premium fantasy trading card, ornate golden frame with Celtic patterns, luxurious D&D card design',
+        technique: 'intricate metallic gold filigree, embossed leather texture, aged parchment background, griffin and dragon motifs in corners',
+        finish: 'museum quality fantasy card, Elder Scrolls Legends aesthetic, Hearthstone golden card style, rich warm tones'
     }
 };
 
@@ -221,6 +247,27 @@ function buildBackgroundPrompt(theme: string, themeConfig: typeof THEME_CONFIGS[
     ].join(', ');
 }
 
+// Build prompt for STYLE-BASED passive backgrounds (style becomes the theme)
+function buildStyleBasedPrompt(styleConfig: typeof STYLE_CONFIGS['watercolor']): string {
+    return [
+        styleConfig.primary,
+        styleConfig.technique,
+        'FRAMED CARD DESIGN: ornate decorative border frame surrounding empty center',
+        'fantasy trading card background with elaborate picture frame border',
+        'thick ornamental frame edges with intricate carved details in this style',
+        'elaborate corner flourishes with symmetrical ornamental designs matching the artistic style',
+        'LARGE BRIGHT CENTER: cream colored or light parchment middle area',
+        'center area is clean, empty, soft, and very light for text overlay',
+        'decorative elements and patterns that embody the essence of this artistic style',
+        'frame design that showcases the unique characteristics of this art style',
+        'ornamental details built INTO the frame border using this style\'s visual language',
+        'vertical portrait orientation, 2:3 aspect ratio, trading card proportions',
+        'absolutely no text, no letters, no characters, no creatures, no faces',
+        'center must remain completely empty and bright for content overlay',
+        styleConfig.finish
+    ].join(', ');
+}
+
 export function useBackgroundGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -236,11 +283,21 @@ export function useBackgroundGenerator() {
         setIsGenerating(true);
         setError(null);
 
-        const themeConfig = THEME_CONFIGS[theme] || THEME_CONFIGS['Old Scroll'];
         const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS['watercolor'];
-        const prompt = customPrompt || buildBackgroundPrompt(theme, themeConfig, styleConfig);
 
-        console.log(`🎨 BackgroundGenerator: Generating ${theme} background in ${style} style`);
+        let prompt: string;
+
+        // Check if this is a style-based (passive) background
+        if (theme === 'Passive') {
+            // Use style as the theme - the style becomes the subject
+            prompt = customPrompt || buildStyleBasedPrompt(styleConfig);
+            console.log(`🎨 BackgroundGenerator: Generating STYLE-BASED background in ${style} style`);
+        } else {
+            // Normal theme-based generation
+            const themeConfig = THEME_CONFIGS[theme] || THEME_CONFIGS['Old Scroll'];
+            prompt = customPrompt || buildBackgroundPrompt(theme, themeConfig, styleConfig);
+            console.log(`🎨 BackgroundGenerator: Generating ${theme} background in ${style} style`);
+        }
 
         let action = 'getimg-generate';
         let requestData: any = {

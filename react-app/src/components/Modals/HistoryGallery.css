@@ -4,23 +4,49 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.3);
+    /* 30% opacity overlay */
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-out;
 }
 
 .modal-content {
     background: white;
     border-radius: 16px;
-    max-width: 900px;
-    width: 90%;
-    max-height: 85vh;
+    width: 95vw;
+    height: 95vh;
+    max-width: none;
+    max-height: none;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .modal-header {
@@ -82,8 +108,9 @@
 
 .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
 }
 
 .gallery-card {
@@ -91,18 +118,20 @@
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 3px solid transparent;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .gallery-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1;
 }
 
 .gallery-card.selected {
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 .card-thumbnail {
@@ -112,12 +141,18 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative;
 }
 
 .card-thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.gallery-card:hover .card-thumbnail img {
+    transform: scale(1.1);
 }
 
 .placeholder-thumbnail {
@@ -142,14 +177,14 @@
 }
 
 .card-info {
-    padding: 1rem;
+    padding: 1.25rem;
 }
 
 .card-title {
     margin: 0 0 0.5rem 0;
-    font-weight: 600;
+    font-weight: 700;
     color: #333;
-    font-size: 1rem;
+    font-size: 1.1rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -158,32 +193,32 @@
 .card-meta {
     margin: 0 0 0.25rem 0;
     color: #764ba2;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .card-date {
     margin: 0;
     color: #999;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
 }
 
 .card-actions {
     display: flex;
     gap: 0.5rem;
-    padding: 0 1rem 1rem 1rem;
+    padding: 0 1.25rem 1.25rem 1.25rem;
 }
 
 .load-btn,
 .delete-btn {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0.6rem;
     border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .load-btn {
@@ -193,26 +228,28 @@
 
 .load-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    filter: brightness(1.1);
 }
 
 .delete-btn {
-    background: #f5f5f5;
-    color: #999;
+    background: #fff0f0;
+    color: #e74c3c;
     flex: 0 0 auto;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem;
 }
 
 .delete-btn:hover {
     background: #ffe0e0;
-    color: #e74c3c;
+    color: #c0392b;
+    transform: translateY(-2px);
 }
 
 .modal-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
+    padding: 1.5rem 2rem;
     border-top: 2px solid #e0e0e0;
 }
 
@@ -226,9 +263,10 @@
     background: #f0f0f0;
     color: #666;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 2rem;
     border-radius: 8px;
     font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -236,4 +274,70 @@
 .btn-secondary:hover {
     background: #e0e0e0;
     color: #333;
+}
+
+/* ZOOM OVERLAY */
+.zoom-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    /* 30% Opacity as requested */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    /* Above the gallery modal */
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.zoom-container {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.zoom-image {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: block;
+}
+
+.zoom-close {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    background: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.zoom-close:hover {
+    transform: scale(1.1) rotate(90deg);
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

@@ -563,5 +563,74 @@
         "selectModeError": "בחר מצב יצירה",
         "selectTypeError": "בחר סוג חפץ",
         "enterNameError": "הזן שם לחפץ"
+    },
+    "cardLibrary": {
+        "rotate": "סובב ↻"
+    },
+    "monsterProfiles": {
+        "humanoid": {
+            "displayName": "הומנואיד",
+            "flavor": "ציוד הומנואידי סטנדרטי וחפצים אישיים"
+        },
+        "goblinoid": {
+            "displayName": "גובלינואיד",
+            "flavor": "נשק גס ואוסף של חפצים נוצצים גנובים"
+        },
+        "orc": {
+            "displayName": "אורק",
+            "flavor": "נשק אכזרי וגביעים מאויבים שנפלו"
+        },
+        "undead": {
+            "displayName": "אונדד",
+            "flavor": "שרידי חיים עברו - שריון חלוד ותכשיטי קבורה"
+        },
+        "powerfulUndead": {
+            "displayName": "אונדד חזק",
+            "flavor": "עושר שנצבר במאות שנים וחפצי קסם אפלים"
+        },
+        "dragon": {
+            "displayName": "דרקון",
+            "flavor": "אוצר מפואר שנצבר במאות שנים של טרור"
+        },
+        "giant": {
+            "displayName": "ענק",
+            "flavor": "חפצים ענקיים וגביעים מקורבנות קטנים יותר"
+        },
+        "beast": {
+            "displayName": "חיה",
+            "flavor": "מה שנשאר מארוחות קודמות והרכוש שלהם"
+        },
+        "fiend": {
+            "displayName": "שד",
+            "flavor": "שרידים אפלים וחפצים מושחתים מהמישורים התחתונים"
+        },
+        "celestial": {
+            "displayName": "שמימי",
+            "flavor": "שרידים קדושים וחפצים מבורכים מהמישורים העליונים"
+        },
+        "elemental": {
+            "displayName": "יסודי",
+            "flavor": "תמצית יסודית מגובשת ושאריות קסומות"
+        },
+        "construct": {
+            "displayName": "מבנה",
+            "flavor": "רכיבים, פריטי שליטה ומחקר של היוצר"
+        },
+        "aberration": {
+            "displayName": "חריגות",
+            "flavor": "חפצים מוזרים מעבר למציאות הרגילה"
+        },
+        "fey": {
+            "displayName": "פיי",
+            "flavor": "חפצי טבע מוקסמים ואוצרות בני תמותה גנובים"
+        },
+        "plant": {
+            "displayName": "צמח",
+            "flavor": "שרידי אלה שהפריעו ליער"
+        },
+        "ooze": {
+            "displayName": "רפש",
+            "flavor": "שרידים לא מעוכלים של קורבנות קודמים"
+        }
     }
 }

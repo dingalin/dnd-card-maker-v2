@@ -92,13 +92,40 @@ export function CardProvider({ children }: CardProviderProps) {
         }
     }, [state.settings]);
 
-    const resetToDefaults = useCallback(() => {
+    const resetToDefaults = useCallback(async () => {
         // Try to load user defaults
         try {
             const savedDefaults = localStorage.getItem('dnd_user_defaults');
             if (savedDefaults) {
                 const userDefaults = JSON.parse(savedDefaults);
                 dispatch({ type: ActionType.RESET_TO_DEFAULTS, payload: userDefaults });
+
+                // Handle Default Background Image Persistence
+                if (userDefaults.style?.defaultBackgroundId) {
+                    try {
+                        const { assetStore } = await import('../utils/AssetStore');
+                        const blob = await assetStore.getImage(userDefaults.style.defaultBackgroundId);
+                        if (blob) {
+                            const blobUrl = URL.createObjectURL(blob);
+                            dispatch({
+                                type: ActionType.UPDATE_CARD_FIELD,
+                                payload: { path: 'backgroundUrl', value: blobUrl }
+                            });
+                            // Also set for front if needed, though backgroundUrl is usually root
+                            dispatch({
+                                type: ActionType.UPDATE_CARD_FIELD,
+                                payload: { path: 'front.imageUrl', value: blobUrl }
+                            });
+                            dispatch({
+                                type: ActionType.UPDATE_CARD_FIELD,
+                                payload: { path: 'imageUrl', value: blobUrl }
+                            });
+                        }
+                    } catch (err) {
+                        Logger.warn('CardContext', 'Failed to load default background image', err);
+                    }
+                }
+
                 Logger.info('CardContext', 'Reset to USER defaults');
                 return;
             }

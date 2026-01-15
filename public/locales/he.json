@@ -107,7 +107,9 @@
         "simple_icon": "אייקון שטוח (Flat Icon)",
         "ink_drawing": "דיו ביד (Ink Drawing)",
         "silhouette": "סמל (Emblem)",
-        "synthwave": "סינת'וייב (Synthwave)"
+        "synthwave": "סינת'וייב (Synthwave)",
+        "manga_action": "מנגה אקשן (Manga Action)",
+        "vintage_etching": "תחריט עתיק (Vintage Etching)"
     },
     "imageProcessing": {
         "natural": "רקע טבעי (Natural)",

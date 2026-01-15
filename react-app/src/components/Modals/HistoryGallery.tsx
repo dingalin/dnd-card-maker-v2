@@ -52,7 +52,7 @@ function HistoryGallery({ isOpen, onClose }: HistoryGalleryProps) {
                             {cards.map((card) => (
                                 <div
                                     key={card.id}
-                                    className={`gallery-card ${selectedCard === card.id ? 'selected' : ''}`}
+                                    className={`gallery-card`}
                                     onClick={() => setSelectedCard(card.id)}
                                 >
                                     <div className="card-thumbnail">
@@ -77,7 +77,7 @@ function HistoryGallery({ isOpen, onClose }: HistoryGalleryProps) {
                                     <div className="card-actions">
                                         <button
                                             className="load-btn"
-                                            onClick={() => handleLoadCard(card)}
+                                            onClick={(e) => { e.stopPropagation(); handleLoadCard(card); }}
                                             title="Load this card"
                                         >
                                             📂 Load
@@ -101,6 +101,34 @@ function HistoryGallery({ isOpen, onClose }: HistoryGalleryProps) {
                     <button className="btn-secondary" onClick={onClose}>Close</button>
                 </div>
             </div>
+
+            {/* ZOOM OVERLAY */}
+            {selectedCard && (
+                <div className="zoom-overlay" onClick={(e) => { e.stopPropagation(); setSelectedCard(null); }}>
+                    <div className="zoom-container" onClick={(e) => e.stopPropagation()}>
+                        <button className="zoom-close" onClick={() => setSelectedCard(null)}>×</button>
+                        {(() => {
+                            const card = cards.find(c => c.id === selectedCard);
+                            if (!card) return null;
+
+                            return card.thumbnail ? (
+                                <img
+                                    src={card.thumbnail}
+                                    className="zoom-image"
+                                    alt={card.cardData.name || 'Zoomed Card'}
+                                />
+                            ) : (
+                                <div className="zoom-image placeholder-zoom">
+                                    <div className="placeholder-thumbnail" style={{ background: 'white', borderRadius: '20px', width: '400px', height: '600px' }}>
+                                        <span className="card-icon" style={{ fontSize: '5rem' }}>🎴</span>
+                                        <h2 className="card-name" style={{ fontSize: '1.5rem' }}>{card.cardData.front?.title || card.cardData.name}</h2>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

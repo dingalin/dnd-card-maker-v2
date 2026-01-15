@@ -6,9 +6,10 @@ import './FloatingStylePanel.css'; // Reusing the same CSS for consistency
 interface FloatingImagePanelProps {
     side: 'front' | 'back';
     onClose: () => void;
+    onPanelEnter?: () => void; // Called when mouse enters panel to cancel hide timeout
 }
 
-function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
+function FloatingImagePanel({ side, onClose, onPanelEnter }: FloatingImagePanelProps) {
     const { updateCustomStyle, updateOffset, state } = useCardContext();
 
     // Joystick Logic
@@ -87,7 +88,7 @@ function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
 
 
     return (
-        <div className="floating-style-panel" style={{ top: '60px', width: '240px' }}>
+        <div className="floating-style-panel" style={{ top: '60px', width: '240px' }} onMouseEnter={onPanelEnter}>
             <div className="panel-header">
                 <span className="panel-title">🖼️ עריכת תמונה</span>
                 <button className="close-btn" onClick={onClose}>✕</button>
@@ -132,7 +133,7 @@ function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
                 <div className="control-row" style={{ marginBottom: '8px' }}>
                     <label style={{ width: 'auto', fontWeight: 'bold' }}>צורת חיתוך (Mask)</label>
                 </div>
-                <div className="shape-selector" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <div className="shape-selector" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '15px' }}>
                     {[
                         { id: 'square', label: '⬛', title: 'Square' },
                         { id: 'rounded', label: '▢', title: 'Rounded' },
@@ -158,6 +159,34 @@ function FloatingImagePanel({ side, onClose }: FloatingImagePanelProps) {
                             {shape.label}
                         </button>
                     ))}
+                </div>
+
+                {/* Mask Border Controls */}
+                <div className="control-row">
+                    <label>קו (Border)</label>
+                    <div className="slider-control">
+                        <input
+                            type="range"
+                            min="0"
+                            max="50"
+                            value={getStyleValue('borderWidth', 0)}
+                            onChange={(e) => updateStyle('borderWidth', parseInt(e.target.value))}
+                        />
+                        <span>{getStyleValue('borderWidth', 0)}px</span>
+                    </div>
+                </div>
+                <div className="control-row">
+                    <label>ריכוך (Fade)</label>
+                    <div className="slider-control">
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={getStyleValue('borderFade', 0)}
+                            onChange={(e) => updateStyle('borderFade', parseInt(e.target.value))}
+                        />
+                        <span>{getStyleValue('borderFade', 0)}</span>
+                    </div>
                 </div>
             </div>
 

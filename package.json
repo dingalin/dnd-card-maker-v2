@@ -4,7 +4,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "author": "GOD",
   "description": "מחולל קלפי D&D - Create custom D&D item cards",
   "scripts": {

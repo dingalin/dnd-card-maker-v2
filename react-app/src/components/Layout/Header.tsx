@@ -8,6 +8,7 @@ import { useWorkerPassword } from '../../hooks/useWorkerPassword';
 import { generateMimicCard } from '../../utils/mimicGenerator';
 import HistoryGallery from '../Modals/HistoryGallery';
 import PrintModal from '../Modals/PrintModal';
+import AssetBrowser from '../Modals/AssetBrowser';
 import './Header.css';
 
 import eyeImage from '../../assets/eye.png';
@@ -17,6 +18,7 @@ function Header() {
     const { state, setCardData, updateCustomStyle } = useCardContext();
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isPrintOpen, setIsPrintOpen] = useState(false);
+    const [isAssetBrowserOpen, setIsAssetBrowserOpen] = useState(false);
     const [clickCount, setClickCount] = useState(0);
 
     // AI Hooks
@@ -62,17 +64,7 @@ function Header() {
                     </h1>
                 </div>
                 <div className="header-actions">
-                    <button onClick={() => setIsGalleryOpen(true)} className="header-btn" title="Gallery">
-                        🖼️
-                    </button>
-                    <button
-                        onClick={() => setIsPrintOpen(true)}
-                        className="header-btn"
-                        title="Print"
-                        disabled={!state.cardData}
-                    >
-                        🖨️
-                    </button>
+                    {/* Buttons removed as per user request: Gallery, Assets, Print */}
                     <button onClick={toggleLanguage} className="header-btn lang-toggle">
                         {i18n.language === 'he' ? 'EN' : 'עב'}
                     </button>
@@ -83,6 +75,7 @@ function Header() {
             </header>
 
             <HistoryGallery isOpen={isGalleryOpen} onClose={() => setIsGalleryOpen(false)} />
+            <AssetBrowser isOpen={isAssetBrowserOpen} onClose={() => setIsAssetBrowserOpen(false)} />
             <PrintModal
                 isOpen={isPrintOpen}
                 onClose={() => setIsPrintOpen(false)}

@@ -20,6 +20,10 @@ interface CardTextProps {
     onDragEnd: (e: any, id: string) => void;
     onHoverEnter?: (id: string) => void;
     onHoverLeave?: () => void;
+    scaleX?: number;
+    scaleY?: number;
+    rotation?: number;
+    onTransformEnd?: (e: any, id: string) => void;
 }
 
 /**
@@ -43,7 +47,11 @@ export const CardText = memo<CardTextProps>(({
     onDblClick,
     onDragEnd,
     onHoverEnter,
-    onHoverLeave
+    onHoverLeave,
+    scaleX,
+    scaleY,
+    rotation,
+    onTransformEnd
 }) => {
     // Memoize handlers to prevent new function references on each render
     const handleClick = useCallback((e: any) => onSelect(e, id), [onSelect, id]);
@@ -86,6 +94,10 @@ export const CardText = memo<CardTextProps>(({
             onDragEnd={handleDragEnd}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            scaleX={scaleX}
+            scaleY={scaleY}
+            rotation={rotation}
+            onTransformEnd={(e) => onTransformEnd && onTransformEnd(e, id)}
             {...textStyles}
         />
     );

@@ -234,7 +234,42 @@ function DesignTools() {
                     </>
                 )}
             </div>
-        </div>
+
+
+            {/* Visual Rarity Controls - FRONT ONLY */}
+            {
+                selectedSide === 'front' && (
+                    <div className="tool-section">
+                        <h3>🌟 עיצוב נדירות</h3>
+
+                        <div className="form-group checkbox-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={getStyleValue('visualRarity_enabled', false)}
+                                    onChange={(e) => updateStyle('visualRarity_enabled', e.target.checked)}
+                                />
+                                החלף טקסט נדירות באפקט ויזואלי
+                            </label>
+                            <p className="help-text" style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                                (מסתיר את הטקסט "נדיר/נפוץ" וצובע את הכותרת בצבע הנדירות)
+                            </p>
+                        </div>
+
+                        <div className="form-group checkbox-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={getStyleValue('visualRarity_border', false)}
+                                    onChange={(e) => updateStyle('visualRarity_border', e.target.checked)}
+                                />
+                                הצג מסגרת נדירות
+                            </label>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
 

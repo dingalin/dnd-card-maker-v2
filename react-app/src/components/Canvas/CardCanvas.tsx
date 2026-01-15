@@ -1,13 +1,13 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Konva from 'konva';
-import { Stage, Layer, Rect, Image as KonvaImage, Group, Circle, RegularPolygon } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Group, Rect, Shape } from 'react-konva';
 import FloatingStylePanel from './FloatingStylePanel';
 import FloatingImagePanel from './FloatingImagePanel';
 import { BackgroundLayer } from './Layers/BackgroundLayer';
 import { TextLayer } from './Layers/TextLayer';
 import { OverlayLayer } from './Layers/OverlayLayer';
 import { useCardContext } from '../../store';
-import { LAYOUT, CARD_WIDTH, CARD_HEIGHT } from './utils/canvasUtils';
+import { LAYOUT, CARD_WIDTH, CARD_HEIGHT, RARITY_GRADIENTS, getRarityKey } from './utils/canvasUtils';
 import './CardCanvas.css';
 
 const SCALE = 0.36;
@@ -50,30 +50,61 @@ const SilhouetteFilter = function (imageData: ImageData) {
     }
 };
 
-function CardCanvas() {
-    const { state, updateOffset, updateCardField, updateBatchOffsets, saveAsDefault } = useCardContext();
+export interface CardCanvasHandle {
+    captureImage: () => string | null;
+    deselect: () => void;
+}
+
+const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
+    const { state, updateOffset, updateCardField, updateBatchOffsets } = useCardContext();
     const stageRef = useRef<any>(null);
     const itemImageGroupRef = useRef<any>(null);
     const shadowGroupRef = useRef<any>(null); // Ref for updating shadow cache
+    const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Timeout for debounced hover leave
     const [isFlipped, setIsFlipped] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false); // Local state for auto-edit mode
     const [itemImage, setItemImage] = useState<HTMLImageElement | null>(null);
     const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
+    const [selectedId, selectShape] = useState<string | null>(null); // Locked selection (clicked)
+    const [hoveredId, setHoveredId] = useState<string | null>(null); // Hover preview
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState('');
+    // The effective selected element is the hovered one (if any), otherwise the locked one
+    const effectiveSelectedId = hoveredId || selectedId;
+
+    // Expose captureImage and deselect via ref
+    useImperativeHandle(ref, () => ({
+        captureImage: () => {
+            if (stageRef.current) {
+                return stageRef.current.toDataURL({ pixelRatio: 1.0 }); // Better quality thumbnail
+            }
+            return null;
+        },
+        deselect: () => {
+            setIsEditMode(false);
+            selectShape(null);
+            setHoveredId(null);
+            setEditingId(null);
+        }
+    }));
 
     const cardData = state.cardData || {
-        front: { title: 'פריט חדש', type: 'נשק', rarity: 'נפוץ', imageUrl: null, imageStyle: 'natural', quickStats: '1d4 חותך', gold: '2', badges: [] },
-        back: { title: '', mechanics: '', lore: '' },
+        front: {
+            title: 'פריט חדש',
+            type: 'נשק',
+            rarity: 'נפוץ',
+            imageUrl: null,
+            imageStyle: 'natural',
+            quickStats: '1d4 חותך',
+            gold: '2',
+            badges: []
+        },
+        back: {
+            title: '',
+            mechanics: '',
+            lore: ''
+        },
         legacy: false,
-        name: 'פריט חדש',
-        description: '',
-        type: 'נשק',
-        typeHe: 'נשק',
-        subtype: 'סכין',
-        rarity: 'נפוץ',
-        weaponDamage: '1d4 חותך',
-        gold: '2',
-        abilityName: '',
-        abilityDesc: ''
     } as any;
 
     // Debug: Log cardData to see what's being rendered
@@ -96,6 +127,74 @@ function CardCanvas() {
 
     const handleFlip = () => {
         setIsFlipped(!isFlipped);
+    };
+
+    // Handle saving card to library
+    const handleSaveToLibrary = async () => {
+        if (!state.cardData) {
+            alert('אין קלף לשמירה');
+            return;
+        }
+
+        try {
+            // Dynamic import to avoid circular dependencies
+            const { cardLibrary } = await import('../../utils/CardLibraryManager');
+
+            const cardName = state.cardData.front?.title || state.cardData.name || 'קלף חדש';
+
+            // Capture thumbnails
+            let thumbnailFront: string | undefined;
+            let thumbnailBack: string | undefined;
+
+            if (stageRef.current) {
+                // Store current state to restore later
+                const wasEditMode = isEditMode;
+                const previousSelectedId = selectedId;
+                const previousHoveredId = hoveredId;
+
+                // Temporarily hide edit mode / selection so Transformer doesn't appear in thumbnails
+                setIsEditMode(false);
+                selectShape(null);
+                setHoveredId(null);
+                await new Promise(r => setTimeout(r, 50)); // Wait for React to re-render
+
+                // Capture front (full resolution - saved to IndexedDB)
+                const currentIsFlipped = isFlipped;
+                if (currentIsFlipped) {
+                    setIsFlipped(false);
+                    await new Promise(r => setTimeout(r, 150));
+                }
+                thumbnailFront = stageRef.current.toDataURL({ pixelRatio: 1.0 }); // Full resolution
+
+                // Capture back
+                setIsFlipped(true);
+                await new Promise(r => setTimeout(r, 150));
+                thumbnailBack = stageRef.current.toDataURL({ pixelRatio: 1.0 }); // Full resolution
+
+                // Restore original state
+                setIsFlipped(currentIsFlipped);
+
+                // Restore edit mode state (optional)
+                if (wasEditMode) {
+                    setIsEditMode(true);
+                    selectShape(previousSelectedId);
+                    setHoveredId(previousHoveredId);
+                }
+            }
+
+            await cardLibrary.saveTemplate(
+                cardName,
+                state.cardData,
+                state.settings,
+                thumbnailFront,
+                thumbnailBack
+            );
+
+            alert('✅ הקלף נשמר בספרייה!');
+        } catch (error) {
+            console.error('Failed to save to library', error);
+            alert('שגיאה בשמירת הקלף');
+        }
     };
 
     // Load item image when cardData changes
@@ -145,17 +244,39 @@ function CardCanvas() {
 
     const handleExport = () => {
         if (!stageRef.current) return;
-        const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-        const link = document.createElement('a');
-        link.download = `${cardData?.front?.title || cardData?.name || 'card'}.png`;
-        link.href = uri;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        // Temporarily hide edit mode / selection so Transformer doesn't appear in export
+        const wasEditMode = isEditMode;
+        const previousSelectedId = selectedId;
+        const previousHoveredId = hoveredId;
+
+        setIsEditMode(false);
+        selectShape(null);
+        setHoveredId(null);
+
+        // Use setTimeout to allow React to re-render without Transformer before capturing
+        setTimeout(() => {
+            const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+            const link = document.createElement('a');
+            link.download = `${cardData?.front?.title || cardData?.name || 'card'}.png`;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Restore previous state (optional - user may want to continue editing)
+            if (wasEditMode) {
+                setIsEditMode(true);
+                selectShape(previousSelectedId);
+                setHoveredId(previousHoveredId);
+            }
+        }, 50); // Small delay to ensure Transformer is hidden
     };
 
     const handleDragEnd = (e: any, key: string, side: 'front' | 'back' = 'front') => {
-        const newY = e.target.y();
+        const node = e.target;
+        const newX = node.x();
+        const newY = node.y();
 
         // Base positions (synchronized with LAYOUT constants)
         const bases: Record<string, number> = {
@@ -168,16 +289,46 @@ function CardCanvas() {
             desc: LAYOUT.STATS_Y,         // Same as stats
             abilityName: 220,
             mech: 320,
-            lore: 650
+            lore: 750
         };
 
         const baseY = bases[key] || 0;
-        const offset = newY - baseY;
+        const baseX = 0; // Standard X base is 0 (centered logic handled differently usually, but offset is relative)
 
-        // Map key to store key if different
-        // FIX: Do not map 'title' to 'name'. TextLayer expects 'title'.
-        const storeKey = key;
-        updateOffset(storeKey, offset, side);
+        // Map key to store key
+        // We stick to the convention: 'key' is the Y offset (legacy). '${key}_x' is the X offset.
+        updateBatchOffsets([
+            { key: key, value: newY - baseY, side }, // Y offset (Legacy key)
+            { key: `${key}_x`, value: newX - baseX, side } // New X offset
+        ]);
+    };
+
+    const handleTransformEnd = (e: any, key: string, side: 'front' | 'back' = 'front') => {
+        const node = e.target;
+
+        // Re-use logic from drag end for position
+        const bases: Record<string, number> = {
+            rarity: LAYOUT.RARITY_Y,
+            type: LAYOUT.TYPE_Y,
+            title: LAYOUT.TITLE_Y,
+            stats: LAYOUT.STATS_Y,
+            gold: LAYOUT.GOLD_Y,
+            image: 240,
+            desc: LAYOUT.STATS_Y,
+            abilityName: 220,
+            mech: 320,
+            lore: 750
+        };
+        const baseY = bases[key] || 0;
+        const baseX = 0;
+
+        updateBatchOffsets([
+            { key: key, value: node.y() - baseY, side },
+            { key: `${key}_x`, value: node.x() - baseX, side },
+            { key: `${key}_scaleX`, value: node.scaleX(), side },
+            { key: `${key}_scaleY`, value: node.scaleY(), side },
+            { key: `${key}_rotation`, value: node.rotation(), side }
+        ]);
     };
 
     const getOffset = (key: string, side: 'front' | 'back' = 'front') => {
@@ -185,30 +336,10 @@ function CardCanvas() {
         const offsets = state.settings[side].offsets as any;
         return offsets[key] || 0;
     };
-    const transformerRef = useRef<any>(null);
-    const [selectedId, selectShape] = useState<string | null>(null); // Locked selection (clicked)
-    const [hoveredId, setHoveredId] = useState<string | null>(null); // Hover preview
+    // const transformerRef = useRef<any>(null); // Removed: Handled by OverlayLayer
+    // Duplicates removed
 
-    // The effective selected element is the hovered one (if any), otherwise the locked one
-    const effectiveSelectedId = hoveredId || selectedId;
-
-    // Direct Text Editing State
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editingValue, setEditingValue] = useState('');
-
-    // Effect to attach transformer to selected node
-    useEffect(() => {
-        if (isEditMode && effectiveSelectedId && transformerRef.current && stageRef.current) {
-            // Find node by ID
-            const node = stageRef.current.findOne('#' + effectiveSelectedId);
-            if (node) {
-                transformerRef.current.nodes([node]);
-                transformerRef.current.getLayer().batchDraw();
-            } else {
-                transformerRef.current.nodes([]);
-            }
-        }
-    }, [isEditMode, effectiveSelectedId]);
+    // Removed: Transformer logic moved to OverlayLayer
 
     // Clear selection when edit mode is turned off
     useEffect(() => {
@@ -237,9 +368,8 @@ function CardCanvas() {
                 selectShape(null);
                 setHoveredId(null);
                 setEditingId(null);
-                if (transformerRef.current) {
-                    transformerRef.current.nodes([]);
-                }
+                setEditingId(null);
+                // Transformer handled in OverlayLayer
             }
         };
 
@@ -253,26 +383,38 @@ function CardCanvas() {
 
     // Handle hover enter - preview selection (and replace any previous hover)
     const handleHoverEnter = (id: string) => {
+        // Cancel any pending hide timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
         setIsEditMode(true);
         setHoveredId(id); // This replaces any previous hovered element
     };
 
-    // Handle hover leave - DO NOT clear immediately!
-    // The user might be moving to the floating panel.
-    // hoveredId will be cleared when:
-    // 1. User hovers a different element (handleHoverEnter replaces it)
-    // 2. User clicks outside (global click handler clears it)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // Handle hover leave - debounced to allow moving to floating panel
     const handleHoverLeave = () => {
-        // Intentionally empty - we keep the selection "sticky"
-        // This allows the user to move their mouse to the floating panel
-        // without losing the selection.
+        // Don't immediately clear - give user time to move to floating panel
+        // Only start timeout if no element is locked (selectedId is null)
+        if (!selectedId) {
+            hoverTimeoutRef.current = setTimeout(() => {
+                setHoveredId(null);
+                setIsEditMode(false);
+            }, 300); // 300ms delay before hiding
+        }
     };
 
-    // Handle click - lock selection
+    // Handle click - lock selection (only for text elements)
     const handleSelect = (e: any, id: string) => {
         console.log('[CardCanvas] handleSelect called:', { id });
         e.cancelBubble = true;
+
+        // Only allow selection for text elements, not for itemImage or other non-text items
+        if (id === 'itemImage') {
+            // Don't select itemImage - it's confusing for users
+            return;
+        }
+
         setIsEditMode(true);
         selectShape(id); // Lock this selection
         console.log('[CardCanvas] selectedId locked to:', id);
@@ -292,19 +434,20 @@ function CardCanvas() {
         }
 
         // Map element IDs to cardData paths
+        // Map element IDs to cardData paths
         const idToPathMap: Record<string, string> = {
             // Front of card
-            'title': 'name',
-            'name': 'name',
+            'title': 'front.title',
+            'name': 'front.title',
             'type': 'front.type',
             'rarity': 'front.rarity',
-            'stats': 'quickStats',
-            'coreStats': 'quickStats',
-            'gold': 'gold',
+            'stats': 'front.quickStats',
+            'coreStats': 'front.quickStats',
+            'gold': 'front.gold',
             // Back of card
-            'abilityName': 'abilityName',
-            'mech': 'abilityDesc',
-            'lore': 'description',
+            'abilityName': 'back.title',
+            'mech': 'back.mechanics',
+            'lore': 'back.lore',
         };
 
         const path = idToPathMap[editingId];
@@ -343,9 +486,9 @@ function CardCanvas() {
         if (clickedOnEmpty) {
             setIsEditMode(false); // Automatically exit edit mode
             selectShape(null);
-            if (transformerRef.current) {
-                transformerRef.current.nodes([]);
-            }
+            setIsEditMode(false); // Automatically exit edit mode
+            selectShape(null);
+            // Transformer handled in OverlayLayer
             // Also cancel edit if clicking away
             if (editingId) {
                 handleTextEditComplete();
@@ -356,13 +499,16 @@ function CardCanvas() {
     const handleImageDragEnd = (e: any) => {
         const node = e.target;
         // Base positions for image
-        const BASE_X = 175;
+        const BASE_X = CARD_WIDTH / 2; // Always centered
         const BASE_Y = 240;
 
-        const newX = node.x();
         const newY = node.y();
 
-        updateOffset('imageXOffset', newX - BASE_X, 'front');
+        // Reset X to center (ignore any X movement)
+        node.x(BASE_X);
+
+        // Only save Y offset, X is always centered
+        updateOffset('imageXOffset', 0, 'front'); // Always 0
         updateOffset('imageYOffset', newY - BASE_Y, 'front');
     };
 
@@ -370,7 +516,7 @@ function CardCanvas() {
         const node = stageRef.current?.findOne('#itemImage');
         if (!node) return;
 
-        const BASE_X = 175;
+        const BASE_X = CARD_WIDTH / 2; // Must match imgX calculation
         const BASE_Y = 240;
 
         const scaleX = node.scaleX();
@@ -394,8 +540,8 @@ function CardCanvas() {
 
 
 
-    // Helper to get image specific offsets
-    const imgX = 175 + (getOffset('imageXOffset') || 0);
+    // Image is always centered horizontally, only Y can be adjusted
+    const imgX = CARD_WIDTH / 2; // Always centered
     const imgY = 240 + (getOffset('imageYOffset') || 0);
     const imgScale = getOffset('imageScale') || 1;
     const imgRotation = getOffset('imageRotation') || 0;
@@ -496,7 +642,8 @@ function CardCanvas() {
     }, [
         itemImage,
         state.settings.front?.customStyles?.itemImage_shadowBlur,
-        state.settings.front?.customStyles?.itemImage_shadowColor
+        state.settings.front?.customStyles?.itemImage_shadowColor,
+        isFlipped
     ]);
 
     const handleDragEndWrapper = (e: any, key: string, side: 'front' | 'back' = 'front') => {
@@ -544,7 +691,22 @@ function CardCanvas() {
                             onMouseDown={checkDeselect}
                         />
 
-                        {/* TextLayer moved to after ItemGroup to ensure clickability */}
+                        {/* Text Layer (Rendered BEFORE Text for Z-Index) */}
+                        {/* Text Layer (Rendered BEFORE Text for Z-Index) */}
+                        <TextLayer
+                            cardData={cardData}
+                            isFlipped={isFlipped}
+                            isEditMode={isEditMode}
+                            getOffset={getOffset}
+                            getCustomStyle={getCustomStyle}
+                            getTextStyles={getTextStyles}
+                            onSelect={handleSelect}
+                            onDblClick={handleTextDblClick}
+                            onDragEnd={handleDragEndWrapper}
+                            onTransformEnd={handleTransformEnd}
+                            onHoverEnter={handleHoverEnter}
+                            onHoverLeave={handleHoverLeave}
+                        />
 
                         {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) - FRONT ONLY */}
                         {!isFlipped && itemImage && (() => {
@@ -556,6 +718,38 @@ function CardCanvas() {
                             // Shadow Logic: Counter-rotate shadow to maintain "Global Light" direction
                             const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
                             const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
+                            const maskShape = getCustomStyle('itemImage', 'maskShape', 'square');
+                            const borderWidth = getCustomStyle('itemImage', 'borderWidth', 0);
+
+                            // Helper for mask path (reused for Clip and Border)
+                            const drawMaskPath = (ctx: any) => {
+                                const w = img.width;
+                                const h = img.height;
+                                ctx.beginPath();
+                                if (maskShape === 'circle') {
+                                    const r = Math.min(w, h) / 2;
+                                    ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2, false);
+                                } else if (maskShape === 'rounded') {
+                                    const r = 40;
+                                    ctx.moveTo(r, 0);
+                                    ctx.lineTo(w - r, 0);
+                                    ctx.quadraticCurveTo(w, 0, w, r);
+                                    ctx.lineTo(w, h - r);
+                                    ctx.quadraticCurveTo(w, h, w - r, h);
+                                    ctx.lineTo(r, h);
+                                    ctx.quadraticCurveTo(0, h, 0, h - r);
+                                    ctx.lineTo(0, r);
+                                    ctx.quadraticCurveTo(0, 0, r, 0);
+                                } else if (maskShape === 'diamond') {
+                                    ctx.moveTo(w / 2, 0);
+                                    ctx.lineTo(w, h / 2);
+                                    ctx.lineTo(w / 2, h);
+                                    ctx.lineTo(0, h / 2);
+                                } else {
+                                    ctx.rect(0, 0, w, h);
+                                }
+                                ctx.closePath();
+                            };
 
                             // When the object rotates, the shadow context rotates with it.
                             // We need to rotate the offset vector in the opposite direction so it stays visually consistent.
@@ -581,7 +775,7 @@ function CardCanvas() {
                                     scaleY={imgScale}
                                     rotation={imgRotation}
                                     draggable={isEditMode}
-                                    dragBoundFunc={(pos) => ({ x: pos.x, y: pos.y })}
+                                    // No dragBoundFunc - let it drag freely, X will be reset in handleImageDragEnd
                                     onClick={(e) => handleSelect(e, 'itemImage')}
                                     onDragEnd={handleImageDragEnd}
                                     onTransformEnd={handleImageTransformEnd}
@@ -640,38 +834,7 @@ function CardCanvas() {
                                             if (node) itemImageGroupRef.current = node;
                                         }}
                                         // MASKING
-                                        clipFunc={state.settings.front.customStyles?.itemImage_maskShape ? (ctx: any) => {
-                                            const maskShape = getCustomStyle('itemImage', 'maskShape', 'square');
-                                            const w = img.width;
-                                            const h = img.height;
-
-                                            ctx.beginPath();
-                                            if (maskShape === 'circle') {
-                                                const r = Math.min(w, h) / 2;
-                                                ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2, false);
-                                            } else if (maskShape === 'rounded') {
-                                                // Rounded Square
-                                                const r = 40;
-                                                ctx.moveTo(r, 0);
-                                                ctx.lineTo(w - r, 0);
-                                                ctx.quadraticCurveTo(w, 0, w, r);
-                                                ctx.lineTo(w, h - r);
-                                                ctx.quadraticCurveTo(w, h, w - r, h);
-                                                ctx.lineTo(r, h);
-                                                ctx.quadraticCurveTo(0, h, 0, h - r);
-                                                ctx.lineTo(0, r);
-                                                ctx.quadraticCurveTo(0, 0, r, 0);
-                                            } else if (maskShape === 'diamond') {
-                                                ctx.moveTo(w / 2, 0);
-                                                ctx.lineTo(w, h / 2);
-                                                ctx.lineTo(w / 2, h);
-                                                ctx.lineTo(0, h / 2);
-                                            } else {
-                                                // Square (Normal)
-                                                ctx.rect(0, 0, w, h);
-                                            }
-                                            ctx.closePath();
-                                        } : undefined}
+                                        clipFunc={state.settings.front.customStyles?.itemImage_maskShape ? drawMaskPath : undefined}
                                     >
                                         <KonvaImage // The VISIBLE Image
                                             image={img}
@@ -701,26 +864,84 @@ function CardCanvas() {
                                                 globalCompositeOperation="destination-in"
                                             />
                                         )}
-
-
                                     </Group>
+
+                                    {/* MASK BORDER (Drawn ON TOP of clipped group) */}
+                                    {borderWidth > 0 && (() => {
+                                        // Logic: "Fade" slider interpolates between Solid Stroke and Soft Shadow.
+                                        // f = borderFade (0-100) / 100
+
+                                        const f = (state.settings.front.customStyles?.itemImage_borderFade || 0) / 100;
+
+                                        // Dynamic Logic for "Dispersed" look:
+                                        // 1. STROKE: Decays as fade increases, but stays thick enough to cast a strong shadow.
+                                        //    We keep 20% of the width as solid stroke even at max fade to ensure the "dark edge" remains.
+                                        const dynamicStrokeWidth = Math.max(1, borderWidth * (1 - (f * 0.8)));
+
+                                        // 2. SHADOW (Blur): Increases aggressively with fade.
+                                        //    Multiplier of 3.0 creates a wide, dispersed glow that merges with the card.
+                                        const dynamicShadowBlur = borderWidth * f * 3;
+
+                                        return (
+                                            <Shape
+                                                sceneFunc={(ctx: any, shape: any) => {
+                                                    drawMaskPath(ctx);
+                                                    ctx.fillStrokeShape(shape);
+                                                }}
+                                                stroke="black"
+                                                strokeWidth={dynamicStrokeWidth}
+                                                // Konva Shadow props
+                                                shadowColor="black"
+                                                shadowBlur={dynamicShadowBlur}
+                                                shadowOffset={{ x: 0, y: 0 }}
+                                                shadowOpacity={1} // Keep full opacity for the shadow itself
+                                                opacity={1}
+                                                listening={false}
+                                            />
+                                        );
+                                    })()}
                                 </Group>
                             );
                         })()}
 
-                        <TextLayer
-                            cardData={cardData}
-                            isFlipped={isFlipped}
-                            isEditMode={isEditMode}
-                            getOffset={getOffset}
-                            getCustomStyle={getCustomStyle}
-                            getTextStyles={getTextStyles}
-                            onSelect={handleSelect}
-                            onDblClick={handleTextDblClick}
-                            onDragEnd={handleDragEndWrapper}
-                            onHoverEnter={handleHoverEnter}
-                            onHoverLeave={handleHoverLeave}
-                        />
+
+
+                        {/* RARITY BORDER EFFECT - FRONT ONLY */}
+                        {!isFlipped && (() => {
+                            // Look closer at the 'title' element settings for the border toggle
+                            const isBorderEnabled = state.settings.front?.customStyles?.title_visualRarity_border;
+                            if (isBorderEnabled) {
+                                const rarityKey = getRarityKey(cardData.front?.rarity || cardData.rarityHe);
+                                const colors = RARITY_GRADIENTS[rarityKey] || RARITY_GRADIENTS['common'];
+
+                                return (
+                                    <Rect
+                                        x={0}
+                                        y={0}
+                                        width={CARD_WIDTH}
+                                        height={CARD_HEIGHT}
+                                        strokeLinearGradientStartPoint={{ x: 0, y: 0 }}
+                                        strokeLinearGradientEndPoint={{ x: CARD_WIDTH, y: CARD_HEIGHT }} // Diagonal gradient for border? or top-down
+                                        // Let's do a reflective metallic gradient (diagonal)
+                                        strokeLinearGradientColorStops={[
+                                            0, colors[0],
+                                            0.25, colors[1],
+                                            0.5, colors[0],
+                                            0.75, colors[2],
+                                            1, colors[1]
+                                        ]}
+                                        strokeWidth={15} // Nice thick frame
+                                        strokeScaleEnabled={false} // Don't scale stroke when scaling stage? No, we want it to look good.
+                                        listening={false}
+                                        shadowColor={colors[2]}
+                                        shadowBlur={20}
+                                        shadowOpacity={0.6}
+                                        cornerRadius={0} // Outer edge is clipped by roundedCornerClip anyway
+                                    />
+                                );
+                            }
+                            return null;
+                        })()}
 
                         <OverlayLayer selectedId={effectiveSelectedId} isEditMode={isEditMode} />
                     </Layer>
@@ -728,11 +949,11 @@ function CardCanvas() {
             </div>
             {/* Controls moved OUTSIDE flip wrapper */}
             <div className="canvas-controls">
-                <button onClick={handleExport} className="export-btn" title="שמור כתמונה">
-                    💾 שמירה
+                <button onClick={handleExport} className="btn-metallic btn-silver btn-small" title="הורד כתמונה">
+                    הורדה
                 </button>
-                <button onClick={saveAsDefault} className="export-btn default-btn" title="שמור הגדרות נוכחיות כברירת מחדל">
-                    🏷️ שמירת עיצוב
+                <button onClick={handleSaveToLibrary} className="btn-metallic btn-silver btn-small" title="שמור קלף לספרייה">
+                    שמירת קלף
                 </button>
                 <div className="zoom-controls">
                     {/* Zoom controls could go here if needed */}
@@ -751,6 +972,13 @@ function CardCanvas() {
                         selectShape(null);
                         setEditingId(null);
                     }}
+                    onPanelEnter={() => {
+                        // Cancel any pending hide timeout when mouse enters panel
+                        if (hoverTimeoutRef.current) {
+                            clearTimeout(hoverTimeoutRef.current);
+                            hoverTimeoutRef.current = null;
+                        }
+                    }}
                 />
             )}
 
@@ -764,12 +992,59 @@ function CardCanvas() {
                         selectShape(null);
                         setEditingId(null);
                     }}
+                    onPanelEnter={() => {
+                        // Cancel any pending hide timeout when mouse enters panel
+                        if (hoverTimeoutRef.current) {
+                            clearTimeout(hoverTimeoutRef.current);
+                            hoverTimeoutRef.current = null;
+                        }
+                    }}
                 />
+            )}
+
+            {/* Inline Text Editor - appears on double-click */}
+            {editingId && (
+                <div
+                    className="inline-text-editor-overlay"
+                    onClick={(e) => {
+                        // Click outside the input closes the editor
+                        if ((e.target as HTMLElement).classList.contains('inline-text-editor-overlay')) {
+                            handleTextEditComplete();
+                        }
+                    }}
+                >
+                    <div className="inline-text-editor">
+                        <label>עריכת טקסט</label>
+                        {editingId === 'lore' || editingId === 'mech' ? (
+                            <textarea
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                autoFocus
+                                rows={4}
+                            />
+                        ) : (
+                            <input
+                                type="text"
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleTextEditComplete();
+                                    if (e.key === 'Escape') setEditingId(null);
+                                }}
+                            />
+                        )}
+                        <div className="editor-buttons">
+                            <button onClick={handleTextEditComplete}>✓ שמור</button>
+                            <button onClick={() => setEditingId(null)}>✕ בטל</button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Overlay Layer for Transformer/Selection Box - Removed (it belongs inside Stage) */}
         </div>
     );
-}
+});
 
 export default CardCanvas;

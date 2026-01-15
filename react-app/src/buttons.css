@@ -1,0 +1,154 @@
+/* ============================================
+   REFINED METALLIC BUTTON STYLES (Reference Match)
+   ============================================ */
+
+/* Base Metallic Button Structure */
+.btn-metallic {
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    /* Rounded corners */
+    padding: 0.8rem 2rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    z-index: 1;
+
+    /* Base Shadow + Deep 3D */
+    box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 3px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.btn-metallic.btn-small {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+    min-width: auto;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+}
+
+/* Shine Effect Animation */
+.btn-metallic::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.1) 20%,
+            /* Subtle initial shine */
+            rgba(255, 255, 255, 0.6) 50%,
+            /* Bright center */
+            rgba(255, 255, 255, 0.1) 80%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: skewX(-25deg);
+    pointer-events: none;
+    transition: none;
+}
+
+.btn-metallic:hover::after {
+    animation: shine 0.75s ease-in-out;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 200%;
+        opacity: 0;
+    }
+}
+
+.btn-metallic:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 7px 14px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-metallic:active {
+    transform: translateY(1px);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* --- GOLD VARIANT (Glowing 3D) --- */
+.btn-gold {
+    background: linear-gradient(to bottom,
+            #BF953F 0%,
+            #FCF6BA 25%,
+            #B38728 50%,
+            #FBF5B7 75%,
+            #AA771C 100%);
+    color: #3b2812;
+    border-color: #7c5c2a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    /* Radiant Gold Glow */
+    box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(212, 175, 55, 0.4),
+        0 0 40px rgba(212, 175, 55, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.btn-gold:hover {
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(212, 175, 55, 0.6),
+        0 0 60px rgba(212, 175, 55, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* --- SILVER VARIANT (Glowing 3D) --- */
+.btn-silver {
+    background: linear-gradient(to bottom,
+            #8A949A 0%,
+            #EBEBEB 25%,
+            #9EA6AC 50%,
+            #D8E0E6 75%,
+            #65737E 100%);
+    color: #1a252a;
+    border-color: #4a5a63;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    /* Radiant Silver Glow */
+    box-shadow:
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(200, 210, 220, 0.4),
+        0 0 40px rgba(200, 210, 220, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.btn-silver:hover {
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(200, 210, 220, 0.6),
+        0 0 60px rgba(200, 210, 220, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}

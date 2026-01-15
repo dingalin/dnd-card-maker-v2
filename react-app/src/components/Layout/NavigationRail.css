@@ -1,23 +1,26 @@
-/* Navigation Rail - Left Side */
+/* Navigation Rail - Left Side (Prestige Gold) */
 .nav-rail {
-    width: 110px;
-    background: var(--bg-panel);
-    border-right: 1px solid var(--border-subtle);
+    width: 100px;
+    background: linear-gradient(180deg, #0a0b10 0%, #0f1218 100%);
+    /* Very Dark BG */
+    border-right: 1px solid rgba(255, 215, 0, 0.1);
+    /* Subtle gold border */
     display: flex;
     flex-direction: column;
-    padding: var(--space-sm) 0;
+    padding: var(--space-md) 0;
     height: 100%;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
 }
 
-/* Reduced padding for tighter vertical layout */
 .nav-rail-items {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: var(--space-sm) 0;
-    gap: 4px;
-    /* Reduced from 8px */
+    gap: 24px;
+    /* Increased spacing */
     align-items: center;
+    padding-top: 2rem;
 }
 
 .nav-rail-item {
@@ -25,139 +28,132 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 6px 2px;
-    /* Reduced from 8px 4px */
-    margin: 0 var(--space-xs);
-    border-radius: var(--radius-md);
+    gap: 8px;
+    padding: 10px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    /* No pill shape */
     text-decoration: none;
-    color: var(--text-muted);
+
+    background: transparent;
+    /* No background box */
+    border: none;
+    box-shadow: none;
+
+    color: #8a8a8a;
+    /* Base muted grey/gold */
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    opacity: 0.7;
+}
+
+/* Icon Container */
+.nav-rail-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #e2c17a;
+    /* Pale Gold */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: all 0.3s ease;
+
+    /* Using SVG fill/stroke */
+    stroke: #e2c17a;
+    fill: url(#gold-gradient);
+    /* If we had one, but plain color is safer for SVGs initially */
+}
+
+/* Label Styling */
+.nav-rail-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #e2c17a;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+/* Hover State */
+.nav-rail-item:hover {
+    transform: translateY(-2px);
+    opacity: 1;
+    background: transparent;
+    /* Keep transparent */
+}
+
+.nav-rail-item:hover .nav-rail-icon {
+    filter: drop-shadow(0 0 8px rgba(226, 193, 122, 0.6));
+    color: #fff;
+    stroke: #fff;
+}
+
+.nav-rail-item:hover .nav-rail-label {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(226, 193, 122, 0.5);
+    opacity: 1;
+}
+
+/* Active State */
+.nav-rail-item.active {
+    opacity: 1;
     background: transparent;
     border: none;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    position: relative;
-    width: 90%;
+    box-shadow: none;
 }
 
-.nav-rail-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 0;
-    background: var(--accent-cyan);
-    border-radius: 0 2px 2px 0;
-    transition: height var(--transition-fast);
+.nav-rail-item.active .nav-rail-icon {
+    color: #ffd700;
+    stroke: #ffd700;
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+    transform: scale(1.1);
 }
 
-.nav-rail-item:hover {
-    color: var(--text-primary);
-    background: rgba(34, 211, 238, 0.08);
+.nav-rail-item.active .nav-rail-label {
+    color: #ffd700;
+    font-weight: 700;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
 }
 
-.nav-rail-item:hover::before {
-    height: 50%;
-}
-
-.nav-rail-item.active {
-    color: var(--accent-cyan);
-    background: rgba(34, 211, 238, 0.12);
-}
-
-.nav-rail-item.active::before {
-    height: 70%;
-    box-shadow: 0 0 10px var(--accent-cyan-glow);
-}
-
-.nav-rail-icon {
-    font-size: 1.3rem;
-    line-height: 1;
-}
-
-.nav-rail-label {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-}
-
+/* Footer & Settings */
 .nav-rail-footer {
-    border-top: none;
-    padding-top: var(--space-md);
-    margin-top: auto;
-    position: relative;
     display: flex;
-    justify-content: center;
-    padding-bottom: var(--space-md);
-}
-
-.mimic-maw-rail {
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 130%;
-    height: auto;
-    pointer-events: none;
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-}
-
-.mimic-maw-rail .mimic-maw-img {
-    width: 100%;
-    height: auto;
-    filter: drop-shadow(0 -5px 10px rgba(220, 38, 38, 0.4));
-    animation: pulse-maw 5s infinite ease-in-out;
-}
-
-@keyframes pulse-maw {
-
-    0%,
-    100% {
-        transform: scale(1);
-        filter: drop-shadow(0 -5px 10px rgba(220, 38, 38, 0.4));
-    }
-
-    50% {
-        transform: scale(1.05);
-        filter: drop-shadow(0 -5px 15px rgba(220, 38, 38, 0.8));
-    }
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 2rem;
+    gap: 1rem;
 }
 
 .settings-btn {
-    position: relative;
-    z-index: 20;
-    background: radial-gradient(circle, rgba(0, 0, 0, 0.8) 0%, transparent 70%);
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    margin-bottom: 120px;
-    transition: all var(--transition-normal);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 215, 0, 0.1);
 }
 
 .settings-btn:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 15px var(--accent-purple-glow);
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
 }
 
-.settings-btn .nav-rail-icon {
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    filter: drop-shadow(0 0 5px var(--accent-purple));
-    animation: slow-spin 10s linear infinite;
+/* Mimic Eye/Mouth - Keep existing */
+.mimic-maw-rail {
+    width: 60px;
+    opacity: 0.8;
+    transition: opacity 0.3s;
 }
 
-@keyframes slow-spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+.mimic-maw-rail:hover {
+    opacity: 1;
 }

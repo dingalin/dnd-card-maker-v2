@@ -57,6 +57,7 @@
     overflow: hidden !important;
     background: transparent !important;
     -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
     /* Fix for Safari/Chrome borderRadius clipping */
     isolation: isolate;
 }
@@ -84,64 +85,124 @@
 
 .canvas-controls {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.8rem;
     justify-content: center;
-    margin-top: 0.15rem;
+    align-items: center;
+    margin-top: 1rem;
+
+    /* Control Dock Styling */
+    background: linear-gradient(180deg,
+            rgba(20, 25, 40, 0.95) 0%,
+            rgba(10, 15, 25, 0.98) 100%);
+    padding: 12px 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(100, 120, 150, 0.3);
+    border-top: 1px solid rgba(212, 175, 55, 0.5);
+    /* Gold top edge */
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    position: relative;
+    backdrop-filter: blur(8px);
+}
+
+/* Decorative side accents for the dock */
+.canvas-controls::before,
+.canvas-controls::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 60%;
+    transform: translateY(-50%);
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 2px;
+}
+
+.canvas-controls::before {
+    left: 6px;
+}
+
+.canvas-controls::after {
+    right: 6px;
 }
 
 /* Gem-style Action Buttons */
+/* Gem-style Action Buttons - Crystal Gem Update */
 .flip-btn,
 .download-btn,
+.export-btn,
+/* Added export-btn */
 .edit-mode-btn {
-    padding: 0.5rem 1.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    padding: 0.6rem 1.4rem;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    /* Fallback */
+
+    /* Common Base Shadow */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 4px 12px rgba(0, 0, 0, 0.3);
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-clip: padding-box;
+    position: relative;
+    overflow: hidden;
 }
 
 /* Purple Amethyst - Back/Flip */
 .flip-btn {
-    background: linear-gradient(180deg, #9333ea 0%, #7e22ce 100%);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        0 4px 10px rgba(126, 34, 206, 0.4);
-    border-color: rgba(168, 85, 247, 0.5);
+    background: linear-gradient(180deg,
+            rgba(120, 40, 160, 0.9) 0%,
+            rgba(80, 20, 110, 0.95) 100%);
+    border-color: rgba(192, 132, 252, 0.6);
+    color: #f3e8ff;
 }
 
 .flip-btn:hover {
+    background: linear-gradient(180deg,
+            rgba(160, 60, 200, 0.95) 0%,
+            rgba(120, 40, 160, 1) 100%);
+    border-color: rgba(216, 180, 254, 0.9);
     transform: translateY(-2px);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-        0 6px 15px rgba(126, 34, 206, 0.5);
-    filter: brightness(1.1);
+        0 0 15px rgba(168, 85, 247, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 8px rgba(216, 180, 254, 0.8);
 }
 
-/* Green Emerald - Download */
+/* Yellow/Gold Topaz - Export/Save/Download */
+.export-btn,
 .download-btn {
-    background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        0 4px 10px rgba(21, 128, 61, 0.4);
-    border-color: rgba(74, 222, 128, 0.5);
+    background: linear-gradient(180deg,
+            rgba(200, 140, 20, 0.9) 0%,
+            rgba(160, 100, 10, 0.95) 100%);
+    border-color: rgba(250, 200, 80, 0.6);
+    color: #fffbeb;
 }
 
+.export-btn:hover,
 .download-btn:hover {
+    background: linear-gradient(180deg,
+            rgba(220, 160, 30, 0.95) 0%,
+            rgba(200, 140, 20, 1) 100%);
+    border-color: rgba(253, 224, 71, 0.9);
     transform: translateY(-2px);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-        0 6px 15px rgba(21, 128, 61, 0.5);
-    filter: brightness(1.1);
+        0 0 15px rgba(234, 179, 8, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
 }
 
-.download-btn:active,
+.export-btn:active,
 .flip-btn:active {
     transform: translateY(0);
 }
@@ -164,4 +225,100 @@
 
 .edit-mode-btn:active {
     transform: translateY(0);
+}
+
+/* ===== Inline Text Editor ===== */
+.inline-text-editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.inline-text-editor {
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-width: 320px;
+    max-width: 500px;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(255, 215, 0, 0.1);
+    direction: rtl;
+}
+
+.inline-text-editor label {
+    display: block;
+    color: #ffd700;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.inline-text-editor input,
+.inline-text-editor textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 1rem;
+    font-family: inherit;
+    direction: rtl;
+    text-align: right;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inline-text-editor input:focus,
+.inline-text-editor textarea:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.inline-text-editor textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.editor-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.editor-buttons button {
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+}
+
+.editor-buttons button:first-child {
+    background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+    color: white;
+}
+
+.editor-buttons button:last-child {
+    background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+}
+
+.editor-buttons button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
 }

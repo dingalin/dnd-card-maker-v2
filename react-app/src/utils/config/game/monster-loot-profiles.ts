@@ -11,7 +11,7 @@
  * - flavor: Description for the DM
  */
 
-// import { i18n } from '../i18n';  // TODO: Re-enable when i18n is migrated
+import i18n from '../../../i18n/config';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -19,7 +19,7 @@
 
 export interface MonsterLootProfile {
     id: string;
-    displayName: { en: string; he: string };
+    displayName: string; // Translation key
     icon: string;
     carriedItems: string[];          // Items found on the body
     nearbyItems: string[];           // Items found in lair/surroundings
@@ -29,7 +29,7 @@ export interface MonsterLootProfile {
     cursedChance: number;            // 0.0 to 1.0
     minCR: number;                   // Minimum CR for this creature type
     maxCR: number;                   // Maximum CR for this type
-    flavor: { en: string; he: string };
+    flavor: string;                  // Translation key
     specialLoot?: string[];          // Unique items specific to this monster
 }
 
@@ -41,7 +41,7 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
     // Humanoid - Basic Raiders
     humanoid: {
         id: 'humanoid',
-        displayName: { en: 'Humanoid', he: 'הומנואיד' },
+        displayName: 'monsterProfiles.humanoid.displayName',
         icon: '👤',
         carriedItems: ['Weapon', 'Shield', 'Coins', 'Personal trinket'],
         nearbyItems: ['Camp supplies', 'Stolen goods', 'Map or note'],
@@ -51,16 +51,13 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.05,
         minCR: 0,
         maxCR: 10,
-        flavor: {
-            en: 'Standard humanoid equipment and personal possessions',
-            he: 'ציוד הומנואידי סטנדרטי וחפצים אישיים'
-        }
+        flavor: 'monsterProfiles.humanoid.flavor'
     },
 
     // Goblinoid - Goblins, Hobgoblins, Bugbears
     goblinoid: {
         id: 'goblinoid',
-        displayName: { en: 'Goblinoid', he: 'גובלינואיד' },
+        displayName: 'monsterProfiles.goblinoid.displayName',
         icon: '👺',
         carriedItems: ['Crude weapon', 'Stolen coins', 'Shiny trinket', 'Keys'],
         nearbyItems: ['Stolen goods pile', 'Crude trap components', 'Prisoner belongings'],
@@ -70,17 +67,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.10,
         minCR: 0,
         maxCR: 5,
-        flavor: {
-            en: 'Crude weapons and a magpie collection of shiny stolen objects',
-            he: 'נשק גס ואוסף של חפצים נוצצים גנובים'
-        },
+        flavor: 'monsterProfiles.goblinoid.flavor',
         specialLoot: ['Bag of caltrops', 'Net', 'Hunting trap']
     },
 
     // Orc - Savage Warriors
     orc: {
         id: 'orc',
-        displayName: { en: 'Orc', he: 'אורק' },
+        displayName: 'monsterProfiles.orc.displayName',
         icon: '👹',
         carriedItems: ['Heavy weapon', 'War trophy', 'Warchief token', 'Rations'],
         nearbyItems: ['Enemy skulls', 'Tribal banner', 'Captured weapons'],
@@ -90,17 +84,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.15,
         minCR: 0,
         maxCR: 8,
-        flavor: {
-            en: 'Brutal weapons and trophies from fallen enemies',
-            he: 'נשק אכזרי וגביעים מאויבים שנפלו'
-        },
+        flavor: 'monsterProfiles.orc.flavor',
         specialLoot: ['Javelins', 'Greataxe']
     },
 
     // Undead - Zombies, Skeletons, Wights
     undead: {
         id: 'undead',
-        displayName: { en: 'Undead', he: 'אונדד' },
+        displayName: 'monsterProfiles.undead.displayName',
         icon: '💀',
         carriedItems: ['Ancient armor', 'Burial jewelry', 'Sword or mace'],
         nearbyItems: ['Tombstone', 'Broken coffin', 'Grave goods', 'Funeral offerings'],
@@ -110,17 +101,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.35,
         minCR: 0,
         maxCR: 15,
-        flavor: {
-            en: 'Remnants of a past life - corroded armor and burial jewelry',
-            he: 'שרידי חיים עברו - שריון חלוד ותכשיטי קבורה'
-        },
+        flavor: 'monsterProfiles.undead.flavor',
         specialLoot: ['Signet ring', 'Love letter', 'Family heirloom']
     },
 
     // Vampire/Lich - Powerful Undead
     powerfulUndead: {
         id: 'powerfulUndead',
-        displayName: { en: 'Powerful Undead', he: 'אונדד חזק' },
+        displayName: 'monsterProfiles.powerfulUndead.displayName',
         icon: '🧛',
         carriedItems: ['Noble clothing', 'Magical ring', 'Ancient medallion'],
         nearbyItems: ['Coffin with gold lining', 'Portrait collection', 'Vintage wine'],
@@ -130,16 +118,13 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.40,
         minCR: 10,
         maxCR: 30,
-        flavor: {
-            en: 'Centuries of accumulated wealth and dark artifacts',
-            he: 'עושר שנצבר במאות שנים וחפצי קסם אפלים'
-        }
+        flavor: 'monsterProfiles.powerfulUndead.flavor'
     },
 
     // Dragon - The Classic Hoarder
     dragon: {
         id: 'dragon',
-        displayName: { en: 'Dragon', he: 'דרקון' },
+        displayName: 'monsterProfiles.dragon.displayName',
         icon: '🐉',
         carriedItems: [],  // Dragons don't carry - they HOARD
         nearbyItems: ['Mountain of gold', 'Knight\'s armor', 'Royal crown', 'Ancient scrolls'],
@@ -149,17 +134,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.10,
         minCR: 5,
         maxCR: 30,
-        flavor: {
-            en: 'A magnificent hoard accumulated over centuries of terror',
-            he: 'אוצר מפואר שנצבר במאות שנים של טרור'
-        },
+        flavor: 'monsterProfiles.dragon.flavor',
         specialLoot: ['Dragon scale', 'Dragon tooth', 'Knight\'s holy sword']
     },
 
     // Giant - Big and Strong
     giant: {
         id: 'giant',
-        displayName: { en: 'Giant', he: 'ענק' },
+        displayName: 'monsterProfiles.giant.displayName',
         icon: '🗿',
         carriedItems: ['Oversized weapon', 'Boulder bag', 'Giant-sized coins', 'Trophy collection'],
         nearbyItems: ['Livestock bones', 'Crushed cart', 'Human-sized equipment'],
@@ -169,17 +151,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.05,
         minCR: 5,
         maxCR: 20,
-        flavor: {
-            en: 'Oversized possessions and trophies from smaller victims',
-            he: 'חפצים ענקיים וגביעים מקורבנות קטנים יותר'
-        },
+        flavor: 'monsterProfiles.giant.flavor',
         specialLoot: ['Giant-sized bag', 'Crushed wagon wheel']
     },
 
     // Beast - Wild Animals
     beast: {
         id: 'beast',
-        displayName: { en: 'Beast', he: 'חיה' },
+        displayName: 'monsterProfiles.beast.displayName',
         icon: '🐺',
         carriedItems: [],  // Beasts don't carry items
         nearbyItems: ['Previous victim remains', 'Shiny objects in nest', 'Bones'],
@@ -189,16 +168,13 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.0,
         minCR: 0,
         maxCR: 10,
-        flavor: {
-            en: 'Whatever remains of previous meals and their possessions',
-            he: 'מה שנשאר מארוחות קודמות והרכוש שלהם'
-        }
+        flavor: 'monsterProfiles.beast.flavor'
     },
 
     // Demon/Devil - Fiends
     fiend: {
         id: 'fiend',
-        displayName: { en: 'Fiend', he: 'שד' },
+        displayName: 'monsterProfiles.fiend.displayName',
         icon: '😈',
         carriedItems: ['Infernal weapon', 'Soul contract', 'Unholy symbol'],
         nearbyItems: ['Torture devices', 'Sacrificial altar', 'Bound souls'],
@@ -208,17 +184,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.60,
         minCR: 5,
         maxCR: 30,
-        flavor: {
-            en: 'Dark relics and corrupted artifacts from the lower planes',
-            he: 'שרידים אפלים וחפצים מושחתים מהמישורים התחתונים'
-        },
+        flavor: 'monsterProfiles.fiend.flavor',
         specialLoot: ['Soul coin', 'Infernal contract']
     },
 
     // Celestial - Angels
     celestial: {
         id: 'celestial',
-        displayName: { en: 'Celestial', he: 'שמימי' },
+        displayName: 'monsterProfiles.celestial.displayName',
         icon: '👼',
         carriedItems: ['Holy weapon', 'Divine blessing', 'Celestial armor'],
         nearbyItems: ['Sacred texts', 'Prayer beads', 'Holy water font'],
@@ -228,16 +201,13 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.0,
         minCR: 5,
         maxCR: 30,
-        flavor: {
-            en: 'Holy relics and blessed items from the upper planes',
-            he: 'שרידים קדושים וחפצים מבורכים מהמישורים העליונים'
-        }
+        flavor: 'monsterProfiles.celestial.flavor'
     },
 
     // Elemental - Pure Elements
     elemental: {
         id: 'elemental',
-        displayName: { en: 'Elemental', he: 'יסודי' },
+        displayName: 'monsterProfiles.elemental.displayName',
         icon: '🔥',
         carriedItems: [],  // Pure elementals don't carry items
         nearbyItems: ['Crystallized element', 'Elemental core', 'Magical residue'],
@@ -247,17 +217,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.0,
         minCR: 1,
         maxCR: 20,
-        flavor: {
-            en: 'Crystallized elemental essence and magical residue',
-            he: 'תמצית יסודית מגובשת ושאריות קסומות'
-        },
+        flavor: 'monsterProfiles.elemental.flavor',
         specialLoot: ['Elemental gem', 'Primordial essence']
     },
 
     // Construct - Golems, Animated Objects
     construct: {
         id: 'construct',
-        displayName: { en: 'Construct', he: 'מבנה' },
+        displayName: 'monsterProfiles.construct.displayName',
         icon: '🤖',
         carriedItems: ['Control amulet', 'Power core'],
         nearbyItems: ['Creator\'s notes', 'Spare parts', 'Tools'],
@@ -267,17 +234,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.10,
         minCR: 1,
         maxCR: 20,
-        flavor: {
-            en: 'Components, control items, and creator\'s research',
-            he: 'רכיבים, פריטי שליטה ומחקר של היוצר'
-        },
+        flavor: 'monsterProfiles.construct.flavor',
         specialLoot: ['Control amulet', 'Power core', 'Schematic']
     },
 
     // Aberration - Mind Flayers, Beholders
     aberration: {
         id: 'aberration',
-        displayName: { en: 'Aberration', he: 'חריגות' },
+        displayName: 'monsterProfiles.aberration.displayName',
         icon: '👁️',
         carriedItems: ['Alien artifact', 'Psionic focus', 'Brain jar'],
         nearbyItems: ['Strange geometry', 'Victim collection', 'Bizarre art'],
@@ -287,17 +251,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.30,
         minCR: 5,
         maxCR: 30,
-        flavor: {
-            en: 'Bizarre artifacts from beyond normal reality',
-            he: 'חפצים מוזרים מעבר למציאות הרגילה'
-        },
+        flavor: 'monsterProfiles.aberration.flavor',
         specialLoot: ['Illithid skull', 'Beholder eye stalk']
     },
 
     // Fey - Fairies, Satyrs, Hags
     fey: {
         id: 'fey',
-        displayName: { en: 'Fey', he: 'פיי' },
+        displayName: 'monsterProfiles.fey.displayName',
         icon: '🧚',
         carriedItems: ['Nature charm', 'Glamour token', 'Moonlight vial'],
         nearbyItems: ['Enchanted flowers', 'Fairy circle components', 'Stolen memories'],
@@ -307,17 +268,14 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.25,  // Fey curses!
         minCR: 1,
         maxCR: 15,
-        flavor: {
-            en: 'Enchanted natural items and stolen mortal treasures',
-            he: 'חפצי טבע מוקסמים ואוצרות בני תמותה גנובים'
-        },
+        flavor: 'monsterProfiles.fey.flavor',
         specialLoot: ['Pixie dust', 'Satyr pipes', 'Hag eye']
     },
 
     // Plant - Treants, Blights
     plant: {
         id: 'plant',
-        displayName: { en: 'Plant', he: 'צמח' },
+        displayName: 'monsterProfiles.plant.displayName',
         icon: '🌳',
         carriedItems: [],  // Plants don't carry
         nearbyItems: ['Druid remains', 'Nature shrine offerings', 'Overgrown equipment'],
@@ -327,16 +285,13 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.05,
         minCR: 0,
         maxCR: 15,
-        flavor: {
-            en: 'Remains of those who disturbed the forest',
-            he: 'שרידי אלה שהפריעו ליער'
-        }
+        flavor: 'monsterProfiles.plant.flavor'
     },
 
     // Ooze - Gelatinous Cubes, etc.
     ooze: {
         id: 'ooze',
-        displayName: { en: 'Ooze', he: 'רפש' },
+        displayName: 'monsterProfiles.ooze.displayName',
         icon: '🟢',
         carriedItems: [],  // Dissolved inside
         nearbyItems: ['Undigested metal items', 'Bones', 'Resistant gems'],
@@ -346,10 +301,7 @@ export const MONSTER_LOOT_PROFILES: Record<string, MonsterLootProfile> = {
         cursedChance: 0.0,
         minCR: 1,
         maxCR: 10,
-        flavor: {
-            en: 'Undigested remains of previous victims',
-            he: 'שרידים לא מעוכלים של קורבנות קודמים'
-        },
+        flavor: 'monsterProfiles.ooze.flavor',
         specialLoot: ['Acid-resistant ring', 'Gemstone']
     }
 };
@@ -363,21 +315,19 @@ export function getMonsterProfile(monsterType: string): MonsterLootProfile {
 }
 
 export function getAllMonsterTypes(): { id: string; displayName: string; icon: string }[] {
-    const locale = 'he'; // TODO: Get from i18n when migrated
     return Object.values(MONSTER_LOOT_PROFILES).map(profile => ({
         id: profile.id,
-        displayName: profile.displayName[locale as 'en' | 'he'] || profile.displayName.en,
+        displayName: i18n.t(profile.displayName),
         icon: profile.icon
     }));
 }
 
 export function getMonsterTypesForCR(cr: number): { id: string; displayName: string; icon: string }[] {
-    const locale = 'he'; // TODO: Get from i18n when migrated
     return Object.values(MONSTER_LOOT_PROFILES)
         .filter(profile => cr >= profile.minCR && cr <= profile.maxCR)
         .map(profile => ({
             id: profile.id,
-            displayName: profile.displayName[locale as 'en' | 'he'] || profile.displayName.en,
+            displayName: i18n.t(profile.displayName),
             icon: profile.icon
         }));
 }

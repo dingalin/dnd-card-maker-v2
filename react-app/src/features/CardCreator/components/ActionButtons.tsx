@@ -1,0 +1,55 @@
+import React from 'react';
+import './ItemCreationForm.css';
+
+interface ActionButtonsProps {
+    onCreate: () => void;
+    onGenerateImage: () => void;
+    onGenerateWithAI: () => void;
+    onGenerateBackground: () => void;
+    isGeneratingImage: boolean;
+    isGeneratingAI: boolean;
+    isGeneratingBg: boolean;
+}
+
+export const ActionButtons: React.FC<ActionButtonsProps> = ({
+    onCreate,
+    onGenerateImage,
+    onGenerateWithAI,
+    onGenerateBackground,
+    isGeneratingImage,
+    isGeneratingAI,
+    isGeneratingBg
+}) => {
+    return (
+        <div className="sticky-buttons">
+            {/* CREATE CARD button on the left */}
+            <button onClick={onCreate} className="btn-metallic btn-gold">
+                CREATE CARD
+            </button>
+            {/* Vertical stack of 3 colored buttons on the right */}
+            <div className="button-stack-vertical">
+                <button
+                    onClick={onGenerateImage}
+                    className="btn-metallic btn-silver"
+                    disabled={isGeneratingImage}
+                >
+                    {isGeneratingImage ? '...' : 'IMG'}
+                </button>
+                <button
+                    onClick={onGenerateWithAI}
+                    className="btn-metallic btn-silver"
+                    disabled={isGeneratingAI}
+                >
+                    {isGeneratingAI ? '...' : 'AI'}
+                </button>
+                <button
+                    onClick={onGenerateBackground}
+                    className="btn-metallic btn-silver"
+                    disabled={isGeneratingBg}
+                >
+                    {isGeneratingBg ? '...' : 'BG'}
+                </button>
+            </div>
+        </div>
+    );
+};

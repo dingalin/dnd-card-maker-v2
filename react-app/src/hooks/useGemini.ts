@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Logger } from '../utils/Logger';
+import { calculatePriceFromAIResult } from '../utils/pricing/ItemPricing';
 
 const WORKER_URL = 'https://dnd-api-proxy.dingalin2000.workers.dev/';
 
@@ -8,6 +9,7 @@ interface GenerateItemParams {
     subtype?: string;
     rarity: string;
     level?: number;
+    requiresAttunement?: boolean;
 }
 
 export function useGemini() {
@@ -99,19 +101,23 @@ export function useGemini() {
                 throw new Error(`Invalid item JSON from Gemini: ${jsonStr.substring(0, 100)}`);
             }
 
-            // 🛡️ FALLBACK: Ensure critical fields are always populated
-            // If AI didn't return these, generate smart defaults
-            if (!result.gold) {
-                const rarityPrices: Record<string, string> = {
-                    'נפוץ': '75',
-                    'לא נפוץ': '300',
-                    'נדיר': '2500',
-                    'נדיר מאוד': '25000',
-                    'אגדי': '100000'
-                };
-                result.gold = rarityPrices[result.rarityHe] || '250';
-                Logger.warn('useGemini', 'Added fallback gold', result.gold);
-            }
+            // 🛡️ PRICE CALCULATION: Use official D&D 5e pricing system
+            // Calculate price based on type, rarity, and abilities
+            const calculatedPrice = calculatePriceFromAIResult(
+                result.typeHe || type,
+                subtype || result.typeHe,
+                result.rarityHe || rarity,
+                result.abilityDesc || '',
+                false // requiresAttunement - could be extracted from result
+            );
+
+            // Override AI-generated price with calculated price
+            result.gold = calculatedPrice.toString();
+            Logger.info('useGemini', 'Calculated official D&D price', {
+                type: result.typeHe,
+                rarity: result.rarityHe,
+                calculatedPrice
+            });
 
             if (!result.weaponDamage && result.typeHe === 'נשק') {
                 // Default weapon damage for common subtypes
@@ -124,7 +130,7 @@ export function useGemini() {
                     (result.armorClass ? `AC ${result.armorClass}` : '');
             }
 
-            Logger.info('useGemini', 'Final result with fallbacks', {
+            Logger.info('useGemini', 'Final result with official pricing', {
                 name: result.name,
                 weaponDamage: result.weaponDamage,
                 gold: result.gold,
@@ -149,24 +155,48 @@ export function useGemini() {
 }
 
 function buildItemPrompt(type: string, subtype: string | undefined, rarity: string, level: number): string {
-    return `You are a D&D 5e item creator. Generate a ${rarity} ${subtype || type} for level ${level} party.
+    // Extract English name from subtype like "Javelin (כידון)" -> "Javelin"
+    let englishItemName = '';
+    let hebrewItemName = '';
+    if (subtype) {
+        const match = subtype.match(/^([^(]+)\s*\(([^)]+)\)$/);
+        if (match) {
+            englishItemName = match[1].trim();
+            hebrewItemName = match[2].trim();
+        } else {
+            englishItemName = subtype;
+            hebrewItemName = subtype;
+        }
+    }
+
+    // Build specific item description for prompt
+    const itemDescription = englishItemName
+        ? `a ${englishItemName} (${hebrewItemName} in Hebrew)`
+        : `a ${type}`;
+
+    return `You are a D&D 5e magical item creator. Generate a ${rarity} ${itemDescription} for level ${level} party.
+
+IMPORTANT - THIS IS A ${englishItemName.toUpperCase() || type.toUpperCase()}:
+- The item MUST be a ${englishItemName || type}
+- The visual prompt MUST describe a ${englishItemName || type}
+- For weapons: Include the weapon's specific appearance (blade shape, handle, etc.)
 
 REQUIREMENTS:
 - Rarity: ${rarity}
 - Type: ${type}
-- Subtype: ${subtype || 'any'}
+- Specific Item: ${englishItemName || 'any'} (${hebrewItemName || 'כל סוג'})
 - Level: ${level}
 
 RARITY GUIDELINES:
-- Common: 50-100gp, no magical abilities
-- Uncommon: 100-500gp, +1 bonus or minor ability
-- Rare: 500-5000gp, +2 bonus or moderate ability
-- Very Rare: 5000-50000gp, +3 bonus or powerful ability
-- Legendary: 50000+gp, +4/+5 bonus, unique abilities
+- Common (נפוץ): 50-100gp, no magical abilities
+- Uncommon (לא נפוץ): 100-500gp, +1 bonus or minor ability
+- Rare (נדיר): 500-5000gp, +2 bonus or moderate ability
+- Very Rare (נדיר מאוד): 5000-50000gp, +3 bonus or powerful ability
+- Legendary (אגדי): 50000+gp, +4/+5 bonus, unique abilities
 
 Return ONLY valid JSON with this EXACT structure (ALL fields are REQUIRED):
 {
-  "name": "Creative Hebrew name (2-3 words, NO item type in name)",
+  "name": "Creative Hebrew name (2-3 words). MUST fit the item type (e.g. do not call a hammer a 'Shield', do not call a sword a 'Ring').",
   "typeHe": "Hebrew type (נשק/שריון/שיקוי/טבעת)",
   "rarityHe": "Hebrew rarity (נפוץ/לא נפוץ/נדיר/נדיר מאוד/אגדי)",
   "abilityName": "Hebrew ability name",
@@ -176,7 +206,7 @@ Return ONLY valid JSON with this EXACT structure (ALL fields are REQUIRED):
   "weaponDamage": "REQUIRED for weapons: Damage dice in Hebrew (e.g., '1d8+1 חותך'). For non-weapons use ''.",
   "armorClass": "REQUIRED for armor: AC number. For non-armor use null.",
   "quickStats": "Short stats summary (damage or AC) in Hebrew",
-  "visualPrompt": "English description for image generation (max 20 words)"
+  "visualPrompt": "MUST describe a ${englishItemName || type}: English description for image generation (max 20 words) - describe this SPECIFIC weapon/item type"
 }
 
 CRITICAL RULES:
@@ -185,7 +215,8 @@ CRITICAL RULES:
 3. EVERY item MUST have "gold" as a price string
 4. Price must be realistic for rarity (Common: 50-100, Uncommon: 100-500, etc.)
 5. Use Hebrew for all text except visualPrompt
-6. Damage types in Hebrew: חותך (slashing), דוקר (piercing), מוחץ (bludgeoning), אש (fire), קור (cold), ברק (lightning)`;
+6. Damage types in Hebrew: חותך (slashing), דוקר (piercing), מוחץ (bludgeoning), אש (fire), קור (cold), ברק (lightning)
+7. The visualPrompt MUST specifically describe a ${englishItemName || type} - not a generic weapon/item`;
 }
 
 function getLevelFromRarity(rarity: string): number {
