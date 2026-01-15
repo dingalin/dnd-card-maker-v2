@@ -268,7 +268,7 @@ function FloatingStylePanel({ selectedElement, side, onClose, onPanelEnter }: Fl
                                         style={{ width: '60px', height: '30px', padding: 0 }}
                                     >
                                         <img
-                                            src={`/src/assets/banners/${banner}.png`}
+                                            src={`${import.meta.env.BASE_URL}assets/banners/${banner}.png`}
                                             alt={banner}
                                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                         />
@@ -323,35 +323,35 @@ function FloatingStylePanel({ selectedElement, side, onClose, onPanelEnter }: Fl
                                 onClick={() => updateStyle('currencyIcon', 'gold1')}
                                 title="מטבע זהב 1"
                             >
-                                <img src="/src/assets/gold1.png" alt="gold1" className="currency-img" />
+                                <img src={`${import.meta.env.BASE_URL}assets/gold1.png`} alt="gold1" className="currency-img" />
                             </button>
                             <button
                                 className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold2' ? 'active' : ''}`}
                                 onClick={() => updateStyle('currencyIcon', 'gold2')}
                                 title="מטבע זהב 2"
                             >
-                                <img src="/src/assets/gold2.png" alt="gold2" className="currency-img" />
+                                <img src={`${import.meta.env.BASE_URL}assets/gold2.png`} alt="gold2" className="currency-img" />
                             </button>
                             <button
                                 className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold3' ? 'active' : ''}`}
                                 onClick={() => updateStyle('currencyIcon', 'gold3')}
                                 title="מטבע זהב 3"
                             >
-                                <img src="/src/assets/gold3.png" alt="gold3" className="currency-img" />
+                                <img src={`${import.meta.env.BASE_URL}assets/gold3.png`} alt="gold3" className="currency-img" />
                             </button>
                             <button
                                 className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold4' ? 'active' : ''}`}
                                 onClick={() => updateStyle('currencyIcon', 'gold4')}
                                 title="מטבע זהב 4"
                             >
-                                <img src="/src/assets/gold4.png" alt="gold4" className="currency-img" />
+                                <img src={`${import.meta.env.BASE_URL}assets/gold4.png`} alt="gold4" className="currency-img" />
                             </button>
                             <button
                                 className={`tool-btn icon-btn ${getStyleValue('currencyIcon', 'gold1') === 'gold5' ? 'active' : ''}`}
                                 onClick={() => updateStyle('currencyIcon', 'gold5')}
                                 title="מטבע זהב 5"
                             >
-                                <img src="/src/assets/gold5.png" alt="gold5" className="currency-img" />
+                                <img src={`${import.meta.env.BASE_URL}assets/gold5.png`} alt="gold5" className="currency-img" />
                             </button>
                         </div>
                     </div>

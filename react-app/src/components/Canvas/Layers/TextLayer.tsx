@@ -176,7 +176,7 @@ const GoldDisplay = ({
     useEffect(() => {
         if (isImage) {
             const img = new window.Image();
-            img.src = `/src/assets/${currencyIcon}.png`;
+            img.src = `${import.meta.env.BASE_URL}assets/${currencyIcon}.png`;
             img.onload = () => setImage(img);
         }
     }, [currencyIcon, isImage]);
