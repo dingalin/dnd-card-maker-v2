@@ -74,7 +74,7 @@ body {
     background-color: var(--bg-deep);
     /* Complex background: Deep dark + Space Texture + subtle nebula spots */
     background-image:
-        linear-gradient(rgba(15, 15, 18, 0.7), rgba(15, 15, 18, 0.7)),
+        linear-gradient(rgba(15, 15, 18, 0.3), rgba(15, 15, 18, 0.3)),
         /* Overlay to darken */
         url('../assets/space.png'),
         radial-gradient(circle at 50% 50%, rgba(10, 15, 26, 0.8) 0%, rgba(10, 15, 26, 0.2) 100%);

@@ -55,7 +55,7 @@ const TextBoxBackground = ({
     useEffect(() => {
         if (bannerId && bannerId !== 'none') {
             const img = new window.Image();
-            img.src = `/src/assets/banners/${bannerId}.png`;
+            img.src = `${import.meta.env.BASE_URL}assets/banners/${bannerId}.png`;
             img.onload = () => setBannerImage(img);
         } else {
             setBannerImage(null);
