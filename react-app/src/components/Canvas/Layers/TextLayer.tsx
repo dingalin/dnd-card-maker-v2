@@ -186,7 +186,18 @@ const GoldDisplay = ({
     if (isImage && image) {
         const iconSize = fontSize * 1.5;
         const gap = 8;
-        const textWidth = numericText.length * fontSize * 0.6;
+
+        // Measure text width accurately
+        let textWidth = 0;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.font = `${textStyles.fontStyle || 'normal'} ${fontSize}px "${fontFamily}"`;
+            textWidth = ctx.measureText(numericText).width;
+        } else {
+            textWidth = numericText.length * fontSize * 0.6;
+        }
+
         const totalWidth = iconSize + gap + textWidth;
         const startX = (CARD_WIDTH - totalWidth) / 2;
 
