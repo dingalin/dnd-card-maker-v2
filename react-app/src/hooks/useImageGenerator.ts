@@ -77,7 +77,7 @@ const FLUX_STYLE_CONFIGS = {
         finish: 'classic superhero comic aesthetic, Marvel/DC comic book quality, bold colorful comic illustration, vintage comic book finish'
     },
     manga_action: {
-        primary: 'manga action style illustration, energetic speed lines background, anime card art, Japanese manga',
+        primary: 'manga action style illustration, energetic speed lines background, anime character art, Japanese manga',
         technique: 'bold black ink outlines, dynamic action lines radiating, comic sunburst effect, cel shaded elements',
         finish: 'high energy manga illustration, dramatic anime reveal style, Japanese comic aesthetic, dynamic action pose'
     },
@@ -87,9 +87,9 @@ const FLUX_STYLE_CONFIGS = {
         finish: 'monochrome black ink on white paper, vintage engraving aesthetic, medieval grimoire illustration, 19th century book art'
     },
     premium_fantasy: {
-        primary: 'premium fantasy trading card, ornate golden frame with Celtic patterns, luxurious D&D card design',
-        technique: 'intricate metallic gold filigree, embossed leather texture, aged parchment background, griffin and dragon motifs in corners',
-        finish: 'museum quality fantasy card, Elder Scrolls Legends aesthetic, Hearthstone golden card style, rich warm tones'
+        primary: 'premium fantasy object illustration, ornate golden details, luxurious D&D concept art',
+        technique: 'intricate metallic gold filigree, embossed leather texture, ancient artifact aesthetic, jeweled accents',
+        finish: 'museum quality fantasy art, Elder Scrolls Legends aesthetic, Hearthstone art style, rich warm tones'
     }
 };
 
