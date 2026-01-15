@@ -85,6 +85,11 @@ const FLUX_STYLE_CONFIGS = {
         primary: 'antique Victorian book illustration, detailed black and white engraving, pen and ink drawing, vintage etching',
         technique: 'intricate cross-hatching shading, fine black ink linework, classic storybook illustration style',
         finish: 'monochrome black ink on white paper, vintage engraving aesthetic, medieval grimoire illustration, 19th century book art'
+    },
+    premium_fantasy: {
+        primary: 'premium fantasy trading card, ornate golden frame with Celtic patterns, luxurious D&D card design',
+        technique: 'intricate metallic gold filigree, embossed leather texture, aged parchment background, griffin and dragon motifs in corners',
+        finish: 'museum quality fantasy card, Elder Scrolls Legends aesthetic, Hearthstone golden card style, rich warm tones'
     }
 };
 
