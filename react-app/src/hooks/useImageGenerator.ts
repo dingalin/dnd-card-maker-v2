@@ -262,11 +262,27 @@ export function useImageGenerator() {
 
             if (model === 'z-image') {
                 action = 'kie-zimage';
-                requestData = { prompt: finalPrompt, aspect_ratio: '1:1' };
+                // Z-Image has a strict character limit - create a condensed prompt
+                const shortPrompt = [
+                    styleConfig.primary,
+                    cleanVisualPrompt,
+                    itemTypeEnhancement,
+                    backgroundOption === 'no-background' ? 'white background, isolated item' : '',
+                    styleConfig.finish
+                ].filter(Boolean).join(', ').substring(0, 500);
+                requestData = { prompt: shortPrompt, aspect_ratio: '1:1' };
             } else if (model === 'fal-zimage') {
                 action = 'fal-zimage';
+                // Fal Z-Image also has limits - use condensed prompt
+                const shortPrompt = [
+                    styleConfig.primary,
+                    cleanVisualPrompt,
+                    itemTypeEnhancement,
+                    backgroundOption === 'no-background' ? 'white background, isolated item' : '',
+                    styleConfig.finish
+                ].filter(Boolean).join(', ').substring(0, 800);
                 requestData = {
-                    prompt: finalPrompt,
+                    prompt: shortPrompt,
                     image_size: { width: 1024, height: 1024 },
                     num_inference_steps: 8,
                     output_format: 'jpeg'
