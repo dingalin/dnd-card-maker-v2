@@ -22,11 +22,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
     return (
         <div className="sticky-buttons">
-            {/* CREATE CARD button on the left */}
-            <button onClick={onCreate} className="btn-metallic btn-gold">
-                CREATE CARD
-            </button>
-            {/* Vertical stack of 3 colored buttons on the right */}
+            {/* Vertical stack of 3 silver buttons on the left */}
             <div className="button-stack-vertical">
                 <button
                     onClick={onGenerateImage}
@@ -50,6 +46,10 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
                     {isGeneratingBg ? '...' : 'BG'}
                 </button>
             </div>
+            {/* CREATE CARD button on the right */}
+            <button onClick={onCreate} className="btn-metallic btn-gold">
+                CREATE CARD
+            </button>
         </div>
     );
 };
