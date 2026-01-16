@@ -959,7 +959,7 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
                     {/* Zoom controls could go here if needed */}
                 </div>
                 <button onClick={handleFlip} className="flip-btn" title="הפוך קלף">
-                    {isFlipped ? 'צד קדמי ⟳' : 'צד אחורי ⟳'}
+                    {isFlipped ? 'סובב קלף ⟳' : 'סובב קלף ⟳'}
                 </button>
             </div>
 

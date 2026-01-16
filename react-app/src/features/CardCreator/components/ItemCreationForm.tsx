@@ -363,6 +363,19 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
 
     return (
         <div className="item-creation-form">
+            {/* Sticky Action Buttons */}
+            <div className="sticky-actions-top">
+                <ActionButtons
+                    onCreate={handleCreate}
+                    onGenerateImage={handleGenerateImage}
+                    onGenerateWithAI={handleGenerateWithAI}
+                    onGenerateBackground={handleGenerateBackground}
+                    isGeneratingImage={isGeneratingImage}
+                    isGeneratingAI={isGenerating}
+                    isGeneratingBg={isGeneratingBg}
+                />
+            </div>
+
             {/* Scrollable Form Content */}
             <div className="form-scroll-content">
                 {showPasswordInput && (
@@ -418,16 +431,7 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
                 {imageError && <div className="error-message">⚠️ Image: {imageError}</div>}
             </div>
 
-            {/* Sticky Action Buttons */}
-            <ActionButtons
-                onCreate={handleCreate}
-                onGenerateImage={handleGenerateImage}
-                onGenerateWithAI={handleGenerateWithAI}
-                onGenerateBackground={handleGenerateBackground}
-                isGeneratingImage={isGeneratingImage}
-                isGeneratingAI={isGenerating}
-                isGeneratingBg={isGeneratingBg}
-            />
+
         </div>
     );
 }
