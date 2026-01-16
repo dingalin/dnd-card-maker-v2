@@ -124,9 +124,10 @@ const removeWhiteBackground = (imageSrc: string): Promise<string> => {
 
             // Soft Edge Parameters
             // Distance from White (0 = Pure White)
-            // NEWER: 5/25 - Balanced. Catches compression artifacts but preserves most silver details.
-            const transparencyThreshold = 5;
-            const opacityThreshold = 25;
+            // Increased thresholds to catch light gray backgrounds (not just pure white)
+            // 40/80 - Catches light gray backgrounds while preserving most item details
+            const transparencyThreshold = 40;
+            const opacityThreshold = 80;
 
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
@@ -267,7 +268,7 @@ export function useImageGenerator() {
                     styleConfig.primary,
                     cleanVisualPrompt,
                     itemTypeEnhancement,
-                    backgroundOption === 'no-background' ? 'white background, isolated item' : '',
+                    backgroundOption === 'no-background' ? 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item' : '',
                     styleConfig.finish
                 ].filter(Boolean).join(', ').substring(0, 500);
                 requestData = { prompt: shortPrompt, aspect_ratio: '1:1' };
@@ -278,7 +279,7 @@ export function useImageGenerator() {
                     styleConfig.primary,
                     cleanVisualPrompt,
                     itemTypeEnhancement,
-                    backgroundOption === 'no-background' ? 'white background, isolated item' : '',
+                    backgroundOption === 'no-background' ? 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item' : '',
                     styleConfig.finish
                 ].filter(Boolean).join(', ').substring(0, 800);
                 requestData = {
@@ -640,7 +641,7 @@ function getElementalEnhancement(abilityDesc: string): string {
 
 function getBackgroundPrompt(option: string, theme: string = 'Nature'): string {
     if (option === 'no-background') {
-        return 'solid pure white background (hex color #FFFFFF), flat lighting, no shadows, no gradient, isolated, high contrast';
+        return 'pure white background, solid bright white, completely flat white backdrop, no shadows, no gradient, no gray, isolated item on white';
     }
 
     if (option === 'colored') {
