@@ -5,6 +5,10 @@
 
 import { useState, useCallback } from 'react';
 import { API_CONFIG } from '../config/api';
+import { STYLE_CONFIGS } from '../utils/config/styleConfigs';
+
+// Re-export STYLE_CONFIGS for backward compatibility
+export { STYLE_CONFIGS } from '../utils/config/styleConfigs';
 
 // Theme configurations for card backgrounds
 export const THEME_CONFIGS: Record<string, { colors: string; elements: string; atmosphere: string; texture: string }> = {
@@ -133,95 +137,6 @@ export const THEME_CONFIGS: Record<string, { colors: string; elements: string; a
         elements: 'ornate Celtic knotwork borders, golden filigree corners, heraldic griffin emblems, intricate metalwork patterns',
         atmosphere: 'luxurious ancient tome, prestigious artifact display, museum quality presentation',
         texture: 'aged vellum parchment, embossed leather binding, gold leaf gilding, hammered metal frame'
-    }
-};
-
-// Style configurations
-export const STYLE_CONFIGS: Record<string, { primary: string; technique: string; finish: string }> = {
-    'watercolor': {
-        primary: 'beautiful watercolor painting, traditional watercolor artwork, hand-painted frame border',
-        technique: 'wet-on-wet watercolor technique, soft color bleeding edges, visible watercolor pigment granulation, loose flowing brushstrokes on frame',
-        finish: 'art paper texture visible, dreamy soft aesthetic, pastel color palette, artistic watercolor finish'
-    },
-    'realistic': {
-        primary: 'ultra-realistic photographic texture, detailed material rendering, professional studio lighting',
-        technique: 'high resolution textures, physical material properties visible, cinematic lighting setup',
-        finish: 'commercial product photography quality, crisp details, premium finish'
-    },
-    'oil': {
-        primary: 'classical oil painting artwork, traditional oil on canvas, museum quality painting',
-        technique: 'thick impasto brushstrokes on frame, visible oil paint texture, rich color glazing layers, dramatic chiaroscuro lighting',
-        finish: 'gallery masterpiece quality, baroque decorative details, warm color palette, canvas texture visible'
-    },
-    'dark_fantasy': {
-        primary: 'dark fantasy digital artwork, gothic fantasy illustration, grimdark aesthetic',
-        technique: 'dramatic rim lighting, deep shadows, ominous atmosphere, moody color grading, dark souls inspired aesthetic',
-        finish: 'high contrast, desaturated colors with accent highlights, cinematic dark atmosphere, Elden Ring art style'
-    },
-    'sketch': {
-        primary: 'detailed pencil sketch illustration, hand-drawn graphite artwork, professional sketch drawing',
-        technique: 'graphite pencil on textured paper, cross-hatching shading technique, varied line weights, light construction lines visible',
-        finish: 'monochrome grayscale, paper grain texture, concept art style, clean precise linework'
-    },
-    'epic_fantasy': {
-        primary: 'medieval woodcut print artwork, vintage woodblock illustration, old book engraving style',
-        technique: 'carved wood texture lines, black ink on paper, cross-hatched shading, hand-carved appearance',
-        finish: 'antique aged paper, historical artwork style, vintage printed aesthetic, monochrome ink'
-    },
-    'anime': {
-        primary: 'anime style illustration, Japanese anime artwork, manga art style drawing',
-        technique: 'clean cel shading, bold black outlines, flat color areas with subtle gradients',
-        finish: 'vibrant saturated colors, Studio Ghibli inspired, high quality anime illustration, clean vector-like finish'
-    },
-    'stained_glass': {
-        primary: 'stained glass window artwork, cathedral glass art, Art Nouveau glass design',
-        technique: 'bold black lead lines separating colored sections, translucent glass effect, geometric color panels',
-        finish: 'luminous backlit appearance, vibrant jewel tones, Gothic cathedral aesthetic, decorative border'
-    },
-    'pixel': {
-        primary: '16-bit pixel art style, retro video game aesthetic, SNES game graphics',
-        technique: 'blocky square pixels visible, pixelated image, chunky pixel blocks, retro gaming sprite',
-        finish: 'classic retro Nintendo aesthetic, visible pixel grid, no smooth edges, looks like old video game'
-    },
-    'simple_icon': {
-        primary: 'flat 2D vector design, minimalist icon design, simple flat illustration, clean lines',
-        technique: 'completely flat solid colors only, zero gradients, zero shading, bold simple shapes',
-        finish: 'mobile game UI style, clean geometric silhouette, high contrast, minimal detail'
-    },
-    'ink_drawing': {
-        primary: 'black ink illustration, hand-drawn pen and ink artwork, old fantasy book illustration',
-        technique: 'fine black ink lines, crosshatch shading, hand-drawn imperfections, quill pen strokes, detailed linework',
-        finish: 'vintage Dungeons and Dragons manual style, 1980s fantasy book illustration, black ink on parchment paper'
-    },
-    'silhouette': {
-        primary: 'heraldic emblem design, coat of arms symbol, medieval heraldry, simple emblem artwork',
-        technique: 'solid black graphic elements, clean iconic shapes, bold symbolic design, flat graphic emblem',
-        finish: 'royal crest style, knightly insignia, medieval guild symbol, simple bold shapes'
-    },
-    'synthwave': {
-        primary: 'synthwave neon artwork, retrowave 80s aesthetic, cyberpunk neon style',
-        technique: 'glowing neon lights, hot pink and cyan color scheme, grid lines, chrome reflections',
-        finish: 'retro futuristic atmosphere, vaporwave aesthetic, glowing edges, 1980s sci-fi movie poster style'
-    },
-    'comic_book': {
-        primary: 'exaggerated comic book style frame, hand-drawn comic border, vintage comic book aesthetic',
-        technique: 'bold thick outlines, halftone dot patterns, dramatic dynamic borders, vibrant pop art colors',
-        finish: 'classic comic book action style, hand-drawn comic art feel, vintage superhero comic aesthetic'
-    },
-    'manga_action': {
-        primary: 'manga action style frame, energetic speed lines background, anime card border',
-        technique: 'bold black ink outlines, dynamic action lines radiating from center, comic sunburst effect, cel shaded elements',
-        finish: 'high energy manga illustration, dramatic anime reveal style, Japanese comic aesthetic'
-    },
-    'vintage_etching': {
-        primary: 'antique vintage etching style frame, old book illustration border, grimoire page aesthetic',
-        technique: 'intricate woodcut details, cross-hatching shading, fine black and white ink lines, textured aged paper background',
-        finish: 'highly detailed Victorian engraving, medieval manuscript border, ancient tome aesthetic'
-    },
-    'premium_fantasy': {
-        primary: 'premium fantasy trading card, ornate golden frame with Celtic patterns, luxurious D&D card design',
-        technique: 'intricate metallic gold filigree, embossed leather texture, aged parchment background, griffin and dragon motifs in corners',
-        finish: 'museum quality fantasy card, Elder Scrolls Legends aesthetic, Hearthstone golden card style, rich warm tones'
     }
 };
 

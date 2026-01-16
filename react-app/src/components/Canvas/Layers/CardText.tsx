@@ -85,6 +85,7 @@ export const CardText = memo<CardTextProps>(({
             fontStyle={fontStyle}
             fill={fill}
             align={align}
+            direction="rtl"
             hitFunc={textHitFunc}
             draggable={isEditMode}
             dragBoundFunc={dragBoundFunc}

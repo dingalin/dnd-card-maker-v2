@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Konva from 'konva';
 import { Stage, Layer, Image as KonvaImage, Group, Rect, Shape } from 'react-konva';
+import domtoimage from 'dom-to-image-more';
 import FloatingStylePanel from './FloatingStylePanel';
 import FloatingImagePanel from './FloatingImagePanel';
 import { BackgroundLayer } from './Layers/BackgroundLayer';
@@ -58,6 +59,7 @@ export interface CardCanvasHandle {
 const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
     const { state, updateOffset, updateCardField, updateBatchOffsets } = useCardContext();
     const stageRef = useRef<any>(null);
+    const flipWrapperRef = useRef<HTMLDivElement>(null); // Ref for html2canvas export
     const itemImageGroupRef = useRef<any>(null);
     const shadowGroupRef = useRef<any>(null); // Ref for updating shadow cache
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Timeout for debounced hover leave
@@ -242,35 +244,159 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         }
     }, [cardData?.backgroundUrl]);
 
-    const handleExport = () => {
-        if (!stageRef.current) return;
+    const [showDownloadDialog, setShowDownloadDialog] = useState(false);
 
-        // Temporarily hide edit mode / selection so Transformer doesn't appear in export
+    const handleExport = () => {
+        setShowDownloadDialog(true);
+    };
+
+    const handleExportSingleSide = async () => {
+        setShowDownloadDialog(false);
+        if (!flipWrapperRef.current) return;
+
+        // Temporarily hide edit mode / selection so Transformer and panels don't appear in export
         const wasEditMode = isEditMode;
         const previousSelectedId = selectedId;
         const previousHoveredId = hoveredId;
+        const wasEditingId = editingId;
 
+        // Close all editing UI
+        setIsEditMode(false);
+        selectShape(null);
+        setHoveredId(null);
+        setEditingId(null); // Close inline text editor if open
+
+        // Wait for fonts to be loaded and UI to update
+        try {
+            await document.fonts.ready;
+        } catch (e) {
+            // Font API not available, continue anyway
+        }
+
+        // Wait for React to re-render without Transformer
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        try {
+            // Use dom-to-image-more which uses SVG foreignObject for text rendering
+            // This preserves Hebrew text with nikud correctly!
+            const dataUrl = await domtoimage.toPng(flipWrapperRef.current, {
+                quality: 1,
+                width: flipWrapperRef.current.offsetWidth * 3,
+                height: flipWrapperRef.current.offsetHeight * 3,
+                style: {
+                    transform: 'scale(3)',
+                    transformOrigin: 'top left'
+                }
+            });
+
+            const link = document.createElement('a');
+            link.download = `${cardData?.front?.title || cardData?.name || 'card'}_${isFlipped ? 'back' : 'front'}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Export failed:', error);
+            // Fallback to Konva export
+            const uri = stageRef.current?.toDataURL({ pixelRatio: 3 });
+            if (uri) {
+                const link = document.createElement('a');
+                link.download = `${cardData?.front?.title || cardData?.name || 'card'}_${isFlipped ? 'back' : 'front'}.png`;
+                link.href = uri;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Restore previous state
+        if (wasEditMode) {
+            setIsEditMode(true);
+            selectShape(previousSelectedId);
+            setHoveredId(previousHoveredId);
+            if (wasEditingId) setEditingId(wasEditingId);
+        }
+    };
+
+    const handleExportBothSides = async () => {
+        setShowDownloadDialog(false);
+        if (!stageRef.current) return;
+
+        // Temporarily hide edit mode / selection
         setIsEditMode(false);
         selectShape(null);
         setHoveredId(null);
 
-        // Use setTimeout to allow React to re-render without Transformer before capturing
-        setTimeout(() => {
-            const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-            const link = document.createElement('a');
-            link.download = `${cardData?.front?.title || cardData?.name || 'card'}.png`;
-            link.href = uri;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // Wait for render
+        await new Promise(resolve => setTimeout(resolve, 50));
 
-            // Restore previous state (optional - user may want to continue editing)
-            if (wasEditMode) {
-                setIsEditMode(true);
-                selectShape(previousSelectedId);
-                setHoveredId(previousHoveredId);
+        // Capture current side (front or back)
+        const currentSideFlipped = isFlipped;
+        const currentUri = stageRef.current.toDataURL({ pixelRatio: 2 });
+
+        // Flip to other side
+        setIsFlipped(!currentSideFlipped);
+
+        // Wait for flip animation and render
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Capture other side
+        const otherUri = stageRef.current.toDataURL({ pixelRatio: 2 });
+
+        // Restore original flip state
+        setIsFlipped(currentSideFlipped);
+
+        // Create side-by-side canvas
+        const frontImg = new Image();
+        const backImg = new Image();
+
+        const loadImage = (img: HTMLImageElement, src: string): Promise<void> => {
+            return new Promise((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject();
+                img.src = src;
+            });
+        };
+
+        try {
+            // Determine which is front and which is back
+            const frontUri = currentSideFlipped ? otherUri : currentUri;
+            const backUri = currentSideFlipped ? currentUri : otherUri;
+
+            await Promise.all([
+                loadImage(frontImg, frontUri),
+                loadImage(backImg, backUri)
+            ]);
+
+            // Create combined canvas (side by side)
+            const canvas = document.createElement('canvas');
+            const gap = 20; // Gap between cards
+            canvas.width = frontImg.width + backImg.width + gap;
+            canvas.height = Math.max(frontImg.height, backImg.height);
+
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                // Optional: Fill with background color
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw front on left
+                ctx.drawImage(frontImg, 0, 0);
+                // Draw back on right
+                ctx.drawImage(backImg, frontImg.width + gap, 0);
+
+                // Download combined image
+                const link = document.createElement('a');
+                link.download = `${cardData?.front?.title || cardData?.name || 'card'}_both_sides.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-        }, 50); // Small delay to ensure Transformer is hidden
+        } catch (e) {
+            console.error('Failed to create combined image:', e);
+            alert('שגיאה ביצירת תמונה משולבת');
+        }
     };
 
     const handleDragEnd = (e: any, key: string, side: 'front' | 'back' = 'front') => {
@@ -671,7 +797,7 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
 
     return (
         <div className="card-canvas-container">
-            <div className={`card-flip-wrapper ${isFlipped ? 'flipped' : ''}`} style={{ background: 'transparent' }}>
+            <div ref={flipWrapperRef} className={`card-flip-wrapper ${isFlipped ? 'flipped' : ''}`} style={{ background: 'transparent' }}>
                 <Stage
                     width={CARD_WIDTH * SCALE}
                     height={CARD_HEIGHT * SCALE}
@@ -691,22 +817,31 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
                             onMouseDown={checkDeselect}
                         />
 
-                        {/* Text Layer (Rendered BEFORE Text for Z-Index) */}
-                        {/* Text Layer (Rendered BEFORE Text for Z-Index) */}
-                        <TextLayer
-                            cardData={cardData}
-                            isFlipped={isFlipped}
-                            isEditMode={isEditMode}
-                            getOffset={getOffset}
-                            getCustomStyle={getCustomStyle}
-                            getTextStyles={getTextStyles}
-                            onSelect={handleSelect}
-                            onDblClick={handleTextDblClick}
-                            onDragEnd={handleDragEndWrapper}
-                            onTransformEnd={handleTransformEnd}
-                            onHoverEnter={handleHoverEnter}
-                            onHoverLeave={handleHoverLeave}
-                        />
+                        {/* Determine render order based on setting */}
+                        {(() => {
+                            const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
+
+                            const textLayerElement = (
+                                <TextLayer
+                                    cardData={cardData}
+                                    isFlipped={isFlipped}
+                                    isEditMode={isEditMode}
+                                    getOffset={getOffset}
+                                    getCustomStyle={getCustomStyle}
+                                    getTextStyles={getTextStyles}
+                                    onSelect={handleSelect}
+                                    onDblClick={handleTextDblClick}
+                                    onDragEnd={handleDragEndWrapper}
+                                    onTransformEnd={handleTransformEnd}
+                                    onHoverEnter={handleHoverEnter}
+                                    onHoverLeave={handleHoverLeave}
+                                />
+                            );
+
+                            // Render TextLayer FIRST (below) if imageAboveText is true
+                            // Render TextLayer SECOND (above) if imageAboveText is false
+                            return imageAboveText ? textLayerElement : null;
+                        })()}
 
                         {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) - FRONT ONLY */}
                         {!isFlipped && itemImage && (() => {
@@ -943,6 +1078,29 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
                             return null;
                         })()}
 
+                        {/* TextLayer AFTER image (image below text mode) */}
+                        {(() => {
+                            const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
+                            if (imageAboveText) return null; // Already rendered before image
+
+                            return (
+                                <TextLayer
+                                    cardData={cardData}
+                                    isFlipped={isFlipped}
+                                    isEditMode={isEditMode}
+                                    getOffset={getOffset}
+                                    getCustomStyle={getCustomStyle}
+                                    getTextStyles={getTextStyles}
+                                    onSelect={handleSelect}
+                                    onDblClick={handleTextDblClick}
+                                    onDragEnd={handleDragEndWrapper}
+                                    onTransformEnd={handleTransformEnd}
+                                    onHoverEnter={handleHoverEnter}
+                                    onHoverLeave={handleHoverLeave}
+                                />
+                            );
+                        })()}
+
                         <OverlayLayer selectedId={effectiveSelectedId} isEditMode={isEditMode} />
                     </Layer>
                 </Stage>
@@ -1043,6 +1201,42 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
             )}
 
             {/* Overlay Layer for Transformer/Selection Box - Removed (it belongs inside Stage) */}
+
+            {/* Download Options Dialog */}
+            {showDownloadDialog && (
+                <div className="modal-overlay" onClick={() => setShowDownloadDialog(false)}>
+                    <div className="modal-content download-dialog" onClick={(e) => e.stopPropagation()}>
+                        <h3>📥 הורדת קלף</h3>
+                        <div className="download-options">
+                            <button
+                                onClick={handleExportSingleSide}
+                                className="btn-metallic btn-gold"
+                            >
+                                📄 צד נוכחי בלבד
+                                <span style={{ fontSize: '0.8em', display: 'block', opacity: 0.8 }}>
+                                    {isFlipped ? '(גב הקלף)' : '(חזית הקלף)'}
+                                </span>
+                            </button>
+                            <button
+                                onClick={handleExportBothSides}
+                                className="btn-metallic btn-gold"
+                            >
+                                📑 שני הצדדים
+                                <span style={{ fontSize: '0.8em', display: 'block', opacity: 0.8 }}>
+                                    (זה לצד זה)
+                                </span>
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setShowDownloadDialog(false)}
+                            className="btn-metallic btn-silver"
+                            style={{ marginTop: '15px' }}
+                        >
+                            ביטול
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 });

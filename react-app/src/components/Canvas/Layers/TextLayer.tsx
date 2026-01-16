@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Group, Image as KonvaImage, Text, Rect } from 'react-konva';
 import Konva from 'konva';
 import i18n from '../../../i18n/config';
@@ -6,12 +6,15 @@ import { CardText } from './CardText';
 import { LAYOUT, dragBoundFunc, CARD_WIDTH } from '../utils/canvasUtils';
 
 // Helper: Convert dice notation from English (d) to Hebrew (ק) when in Hebrew mode
-// Examples: "1d4" -> "1ק4", "2d6+5" -> "2ק6+5"
+// Examples: "1d4" -> "1ק4", "2d6+5" -> "2ק6 +5"
 const localizedDice = (text: string): string => {
     if (!text) return text;
     if (i18n.language !== 'he') return text;
     // Replace "d" between digits with "ק" (e.g., 1d4 -> 1ק4, 2d6 -> 2ק6)
-    return text.replace(/(\d)d(\d)/gi, '$1ק$2');
+    let result = text.replace(/(\d)d(\d)/gi, '$1ק$2');
+    // Add space before + or - modifiers (e.g., 1ק6+1 -> 1ק6 +1, 2ק8-1 -> 2ק8 -1)
+    result = result.replace(/(\d)([+-])(\d)/g, '$1 $2$3');
+    return result;
 };
 
 interface TextLayerProps {
@@ -38,8 +41,8 @@ const hexToRgba = (hex: string, alpha: number): string => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Component to render text box background
-const TextBoxBackground = ({
+// Component to render text box background - memoized for performance
+const TextBoxBackground = memo(({
     id,
     text,
     width,
@@ -146,9 +149,11 @@ const TextBoxBackground = ({
             listening={false}
         />
     );
-};
+});
+TextBoxBackground.displayName = 'TextBoxBackground';
 
-const GoldDisplay = ({
+// GoldDisplay component - memoized for performance
+const GoldDisplay = memo(({
     id,
     goldValue,
     currencyIcon,
@@ -316,7 +321,8 @@ const GoldDisplay = ({
             />
         </Group>
     );
-};
+});
+GoldDisplay.displayName = 'GoldDisplay';
 
 export const TextLayer: React.FC<TextLayerProps> = ({
     cardData,

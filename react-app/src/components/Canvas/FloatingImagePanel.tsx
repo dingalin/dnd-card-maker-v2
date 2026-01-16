@@ -128,6 +128,43 @@ function FloatingImagePanel({ side, onClose, onPanelEnter }: FloatingImagePanelP
                 </div>
             </div>
 
+            {/* Layer Order Toggle */}
+            <div className="panel-section">
+                <div className="control-row" style={{ justifyContent: 'space-between' }}>
+                    <label>שכבת תמונה</label>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                            onClick={() => updateStyle('aboveText', false)}
+                            style={{
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                background: !getStyleValue('aboveText', true) ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                                border: !getStyleValue('aboveText', true) ? '1px solid #3498db' : '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: 'white'
+                            }}
+                        >
+                            מתחת לטקסט
+                        </button>
+                        <button
+                            onClick={() => updateStyle('aboveText', true)}
+                            style={{
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                background: getStyleValue('aboveText', true) ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                                border: getStyleValue('aboveText', true) ? '1px solid #3498db' : '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: 'white'
+                            }}
+                        >
+                            מעל לטקסט
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Mask Shape Selection */}
             <div className="panel-section">
                 <div className="control-row" style={{ marginBottom: '8px' }}>

@@ -123,7 +123,8 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
                         visualPrompt,
                         itemType: type,
                         itemSubtype: subtype || result.typeHe || 'Longsword (חרב ארוכה)',
-                        abilityDesc: result.abilityName,
+                        abilityDesc: result.abilityDesc || result.abilityName,
+                        itemName: result.name,
                         model: imageModel,
                         style: imageStyle,
                         backgroundOption: backgroundOption,
@@ -249,12 +250,15 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
 
         try {
             const visualPrompt = effectiveDescription || effectiveName || 'fantasy magic item';
+            // Include full item context for elemental extraction
+            const fullAbilityContext = `${effectiveAbility} ${state.cardData?.abilityDesc || ''}`;
             const imageUrl = await generateImage(
                 {
                     visualPrompt,
                     itemType: type,
                     itemSubtype: effectiveType,
-                    abilityDesc: effectiveAbility,
+                    abilityDesc: fullAbilityContext,
+                    itemName: effectiveName,
                     model: imageModel,
                     style: imageStyle,
                     backgroundOption: backgroundOption,

@@ -1,96 +1,8 @@
 import { useState } from 'react';
 import { THEME_CONFIGS } from './useBackgroundGenerator';
+import { FLUX_STYLE_CONFIGS } from '../utils/config/styleConfigs';
 
 const WORKER_URL = 'https://dnd-api-proxy.dingalin2000.workers.dev/';
-
-// Strengthened style configs - synchronized with useBackgroundGenerator for consistency
-const FLUX_STYLE_CONFIGS = {
-    realistic: {
-        primary: 'ultra-realistic photographic render, highly detailed photograph, professional studio shot',
-        technique: 'professional photography lighting, cinematic 4k rendering, sharp focus, shallow depth of field',
-        finish: 'commercial product photography quality, 8k resolution, hyperrealistic detail'
-    },
-    watercolor: {
-        primary: 'beautiful watercolor painting artwork, traditional watercolor illustration, hand-painted watercolor art',
-        technique: 'wet-on-wet watercolor technique, soft color bleeding edges, visible watercolor pigment granulation, loose flowing brushstrokes',
-        finish: 'art paper texture visible, dreamy soft aesthetic, artistic watercolor finish, traditional painting quality'
-    },
-    oil: {
-        primary: 'classical oil painting artwork, traditional oil on canvas, museum quality oil painting masterpiece',
-        technique: 'thick impasto brushstrokes, visible oil paint texture, rich color glazing layers, dramatic chiaroscuro lighting',
-        finish: 'gallery masterpiece quality, baroque decorative details, canvas texture visible, old masters painting style'
-    },
-    sketch: {
-        primary: 'detailed pencil sketch illustration, hand-drawn graphite artwork, professional sketch drawing',
-        technique: 'graphite pencil on textured paper, cross-hatching shading technique, varied line weights, artistic hand-drawn look',
-        finish: 'monochrome grayscale, paper grain texture, concept art sketch style, clean precise linework'
-    },
-    dark_fantasy: {
-        primary: 'dark fantasy digital artwork, gothic fantasy illustration, grimdark aesthetic, dark souls art style',
-        technique: 'dramatic rim lighting, deep shadows, ominous atmosphere, moody color grading, dark and gritty',
-        finish: 'high contrast, desaturated colors with accent highlights, Elden Ring art style, dark fantasy masterpiece'
-    },
-    epic_fantasy: {
-        primary: 'medieval woodcut print artwork, vintage woodblock illustration, old book engraving style, epic fantasy',
-        technique: 'heroic composition, carved wood texture lines, black ink on paper, hand-carved appearance',
-        finish: 'antique aged paper, historical artwork style, epic legendary quality, fantasy book illustration'
-    },
-    anime: {
-        primary: 'anime style illustration, Japanese anime artwork, manga art style drawing, high quality anime',
-        technique: 'clean cel shading, bold black outlines, flat color areas with subtle gradients, anime aesthetic',
-        finish: 'vibrant saturated colors, Studio Ghibli inspired, professional anime illustration, crisp clean finish'
-    },
-    pixel: {
-        primary: '16-bit pixel art style, retro video game aesthetic, SNES game graphics, colorful pixel art',
-        technique: 'blocky square pixels visible, pixelated image, chunky pixel blocks, retro gaming sprite',
-        finish: 'classic retro Nintendo aesthetic, visible pixel grid, no smooth edges, nostalgic video game art'
-    },
-    stained_glass: {
-        primary: 'stained glass window artwork, cathedral glass art, Art Nouveau glass design',
-        technique: 'bold black lead lines separating colored sections, translucent glass effect, geometric color panels',
-        finish: 'luminous backlit appearance, vibrant jewel tones, Gothic cathedral aesthetic, beautiful glass art'
-    },
-    simple_icon: {
-        primary: 'flat 2D vector design, minimalist icon design, simple flat illustration, clean bold shapes',
-        technique: 'completely flat solid colors only, zero gradients, zero shading, bold simple geometric shapes',
-        finish: 'mobile game UI style, clean geometric silhouette, high contrast, minimal detail, vector art'
-    },
-    ink_drawing: {
-        primary: 'black ink illustration, hand-drawn pen and ink artwork, old fantasy book illustration, detailed ink art',
-        technique: 'fine black ink lines, crosshatch shading, hand-drawn imperfections, quill pen strokes, detailed linework',
-        finish: 'vintage Dungeons and Dragons manual style, 1980s fantasy book illustration, black ink on parchment paper'
-    },
-    silhouette: {
-        primary: 'heraldic emblem design, coat of arms symbol, medieval heraldry, bold silhouette artwork',
-        technique: 'solid black graphic elements, clean iconic shapes, bold symbolic design, flat graphic emblem',
-        finish: 'royal crest style, knightly insignia, medieval guild symbol, stark black silhouette'
-    },
-    synthwave: {
-        primary: 'synthwave neon artwork, retrowave 80s aesthetic, cyberpunk neon style, retro futuristic',
-        technique: 'glowing neon lights, hot pink and cyan color scheme, chrome reflections, neon glow effects',
-        finish: 'retro futuristic atmosphere, vaporwave aesthetic, glowing edges, 1980s sci-fi movie poster style'
-    },
-    comic_book: {
-        primary: 'EXAGGERATED comic book illustration, bold thick outlines, vintage American comic book style, hand-drawn comic art',
-        technique: 'heavy black ink outlines, halftone dot pattern shading, vibrant pop art colors, dramatic ink shadows, Ben-Day dots texture',
-        finish: 'classic superhero comic aesthetic, Marvel/DC comic book quality, bold colorful comic illustration, vintage comic book finish'
-    },
-    manga_action: {
-        primary: 'manga action style illustration, energetic speed lines background, anime character art, Japanese manga',
-        technique: 'bold black ink outlines, dynamic action lines radiating, comic sunburst effect, cel shaded elements',
-        finish: 'high energy manga illustration, dramatic anime reveal style, Japanese comic aesthetic, dynamic action pose'
-    },
-    vintage_etching: {
-        primary: 'antique Victorian book illustration, detailed black and white engraving, pen and ink drawing, vintage etching',
-        technique: 'intricate cross-hatching shading, fine black ink linework, classic storybook illustration style',
-        finish: 'monochrome black ink on white paper, vintage engraving aesthetic, medieval grimoire illustration, 19th century book art'
-    },
-    premium_fantasy: {
-        primary: 'premium fantasy object illustration, ornate golden details, luxurious D&D concept art',
-        technique: 'intricate metallic gold filigree, embossed leather texture, ancient artifact aesthetic, jeweled accents',
-        finish: 'museum quality fantasy art, Elder Scrolls Legends aesthetic, Hearthstone art style, rich warm tones'
-    }
-};
 
 type ImageStyle = keyof typeof FLUX_STYLE_CONFIGS;
 
@@ -99,6 +11,7 @@ interface ImageGenerationParams {
     itemType?: string;
     itemSubtype?: string;
     abilityDesc?: string;
+    itemName?: string; // Name of the item (e.g., "Lightning Hammer") for elemental extraction
     model?: 'flux' | 'z-image' | 'fal-zimage';
     style?: ImageStyle;
     backgroundOption?: 'natural' | 'colored' | 'no-background';
@@ -188,6 +101,7 @@ export function useImageGenerator() {
                 itemType = '',
                 itemSubtype = '',
                 abilityDesc = '',
+                itemName = '',
                 model = 'flux',
                 style = 'realistic',
                 backgroundOption = 'no-background',
@@ -221,18 +135,28 @@ export function useImageGenerator() {
             }
 
             const itemTypeEnhancement = getItemTypeEnhancement(englishType, cleanSubtype, cleanVisualPrompt);
-            const elementalEnhancement = getElementalEnhancement(cleanAbilityDesc);
-            const backgroundPrompt = getBackgroundPrompt(backgroundOption, theme);
+            // Combine item name, ability, and description for comprehensive elemental extraction
+            const cleanItemName = removeHebrew(itemName);
+            const combinedForElements = `${cleanItemName} ${cleanAbilityDesc} ${cleanVisualPrompt}`.toLowerCase();
+            const elementalEnhancement = getElementalEnhancement(combinedForElements);
+            const backgroundPrompt = getBackgroundPrompt(backgroundOption, theme, elementalEnhancement);
 
             // NOTE: Z-Image Turbo does NOT support negative prompts. 
             // All constraints must be explicit in the positive prompt.
             // WE MUST EXPLICITLY FORBID TEXT via positive descriptions of "clean", "object only".
 
-            // Composition instructions - Using positive language only (FLUX doesn't support negative prompts)
-            let compositionInstructions = 'isolated single weapon floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, pure object photography, still life product shot, museum display style, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition, masterpiece, best quality, ultra detailed';
+            // Composition instructions based on background option
+            let compositionInstructions: string;
 
             if (backgroundOption === 'no-background') {
+                // Pure white background for later removal
                 compositionInstructions = 'isolated single item floating in air, vibrant colorful item, item fills two-thirds of image frame, complete item fully visible, pure object photography, museum artifact display, clean product shot style, sharp focus on item, centered composition, 3D render style, clean edges, flat studio lighting, product photography, item displayed on invisible stand';
+            } else if (backgroundOption === 'natural') {
+                // Natural themed background with bokeh effect
+                compositionInstructions = 'item prominently displayed in foreground, strong bokeh effect on background, shallow depth of field, beautiful blurred atmospheric background, item fills two-thirds of image frame, sharp focus on main item, dramatic lighting, cinematic composition, masterpiece, best quality, ultra detailed';
+            } else {
+                // Default composition (colored gradient or other)
+                compositionInstructions = 'isolated single weapon floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, pure object photography, still life product shot, museum display style, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition, masterpiece, best quality, ultra detailed';
             }
 
             // === BUILD FINAL PROMPT ===
@@ -264,22 +188,38 @@ export function useImageGenerator() {
             if (model === 'z-image') {
                 action = 'kie-zimage';
                 // Z-Image has a strict character limit - create a condensed prompt
+                // Build background instruction based on option
+                let bgInstruction = '';
+                if (backgroundOption === 'no-background') {
+                    bgInstruction = 'pure white background only, bright white, no shadows, isolated floating item';
+                } else if (backgroundOption === 'natural') {
+                    bgInstruction = `${backgroundPrompt}, bokeh effect, blurred atmospheric background`;
+                }
+
                 const shortPrompt = [
                     styleConfig.primary,
                     cleanVisualPrompt,
                     itemTypeEnhancement,
-                    backgroundOption === 'no-background' ? 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item' : '',
+                    bgInstruction,
                     styleConfig.finish
                 ].filter(Boolean).join(', ').substring(0, 500);
                 requestData = { prompt: shortPrompt, aspect_ratio: '1:1' };
             } else if (model === 'fal-zimage') {
                 action = 'fal-zimage';
                 // Fal Z-Image also has limits - use condensed prompt
+                // Build background instruction based on option
+                let bgInstruction = '';
+                if (backgroundOption === 'no-background') {
+                    bgInstruction = 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item';
+                } else if (backgroundOption === 'natural') {
+                    bgInstruction = `${backgroundPrompt}, strong bokeh effect, shallow depth of field`;
+                }
+
                 const shortPrompt = [
                     styleConfig.primary,
                     cleanVisualPrompt,
                     itemTypeEnhancement,
-                    backgroundOption === 'no-background' ? 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item' : '',
+                    bgInstruction,
                     styleConfig.finish
                 ].filter(Boolean).join(', ').substring(0, 800);
                 requestData = {
@@ -613,44 +553,110 @@ function getItemTypeEnhancement(itemType: string, itemSubtype: string, visualPro
     return `${itemTypeEnhancement}, ${compositionGuide}`;
 }
 
-function getElementalEnhancement(abilityDesc: string): string {
-    const desc = abilityDesc.toLowerCase();
+function getElementalEnhancement(combinedText: string): string {
+    const text = combinedText.toLowerCase();
+    const effects: string[] = [];
 
-    if (desc.includes('fire') || desc.includes('אש')) {
-        return 'glowing with fire, flames dancing, orange glow';
-    }
-    if (desc.includes('ice') || desc.includes('קרח')) {
-        return 'covered in frost, ice crystals, blue glow';
-    }
-    if (desc.includes('lightning') || desc.includes('ברק')) {
-        return 'crackling lightning, electric arcs, blue sparks';
-    }
-    if (desc.includes('poison') || desc.includes('רעל')) {
-        return 'dripping poison, green glow, toxic';
-    }
-    if (desc.includes('shadow') || desc.includes('צל')) {
-        return 'wreathed in shadows, dark wisps, purple-black aura';
-    }
-    if (desc.includes('holy') || desc.includes('divine') || desc.includes('קדוש')) {
-        return 'radiating holy light, golden glow, blessed';
+    // Fire/Flame related
+    if (text.includes('fire') || text.includes('אש') || text.includes('flame') || text.includes('להבה') ||
+        text.includes('burn') || text.includes('שריפה') || text.includes('inferno') || text.includes('blaze')) {
+        effects.push('glowing with fire, flames dancing, orange and red glow, ember particles');
     }
 
-    return '';
+    // Ice/Frost related
+    if (text.includes('ice') || text.includes('קרח') || text.includes('frost') || text.includes('כפור') ||
+        text.includes('cold') || text.includes('freeze') || text.includes('glacial') || text.includes('winter')) {
+        effects.push('covered in frost, ice crystals forming, blue cold glow, freezing mist');
+    }
+
+    // Lightning/Storm related
+    if (text.includes('lightning') || text.includes('ברק') || text.includes('thunder') || text.includes('רעם') ||
+        text.includes('storm') || text.includes('סערה') || text.includes('electric') || text.includes('חשמל') ||
+        text.includes('spark') || text.includes('ניצוץ') || text.includes('shock')) {
+        effects.push('crackling lightning, electric arcs, blue-white sparks, electricity dancing along surface');
+    }
+
+    // Poison/Toxic related
+    if (text.includes('poison') || text.includes('רעל') || text.includes('toxic') || text.includes('venom') ||
+        text.includes('acid') || text.includes('חומצה')) {
+        effects.push('dripping poison, green toxic glow, acidic bubbles, venomous aura');
+    }
+
+    // Shadow/Dark related
+    if (text.includes('shadow') || text.includes('צל') || text.includes('dark') || text.includes('חושך') ||
+        text.includes('abyss') || text.includes('void') || text.includes('necrotic') || text.includes('מוות')) {
+        effects.push('wreathed in shadows, dark wisps, purple-black aura, ethereal darkness');
+    }
+
+    // Holy/Divine related
+    if (text.includes('holy') || text.includes('קדוש') || text.includes('divine') || text.includes('אלוהי') ||
+        text.includes('blessed') || text.includes('מבורך') || text.includes('radiant') || text.includes('sacred')) {
+        effects.push('radiating holy light, golden divine glow, blessed aura, angelic radiance');
+    }
+
+    // Nature/Life related
+    if (text.includes('nature') || text.includes('טבע') || text.includes('life') || text.includes('חיים') ||
+        text.includes('druid') || text.includes('growth') || text.includes('forest') || text.includes('יער')) {
+        effects.push('glowing green energy, vines and leaves growing, natural life force');
+    }
+
+    // Water/Ocean related
+    if (text.includes('water') || text.includes('מים') || text.includes('ocean') || text.includes('ים') ||
+        text.includes('wave') || text.includes('גל') || text.includes('aqua') || text.includes('tide')) {
+        effects.push('water droplets floating, blue aquatic glow, ocean mist');
+    }
+
+    // Wind/Air related
+    if (text.includes('wind') || text.includes('רוח') || text.includes('air') || text.includes('אוויר') ||
+        text.includes('gust') || text.includes('tornado') || text.includes('cyclone')) {
+        effects.push('swirling wind currents, air vortex visible, windswept effect');
+    }
+
+    // Arcane/Magic related
+    if (text.includes('arcane') || text.includes('קסם') || text.includes('magic') || text.includes('מאגיה') ||
+        text.includes('mystic') || text.includes('enchant') || text.includes('כישוף') || text.includes('spell')) {
+        effects.push('glowing arcane runes, magical purple energy, mystical sparkles');
+    }
+
+    // Blood related
+    if (text.includes('blood') || text.includes('דם') || text.includes('vampir') || text.includes('ערפד')) {
+        effects.push('dripping blood red energy, crimson glow, sanguine aura');
+    }
+
+    // Celestial/Star related
+    if (text.includes('star') || text.includes('כוכב') || text.includes('celestial') || text.includes('שמימי') ||
+        text.includes('cosmic') || text.includes('galaxy') || text.includes('astral')) {
+        effects.push('starlight emanating, cosmic sparkles, celestial glow');
+    }
+
+    // Return combined effects or empty string
+    return effects.join(', ');
 }
 
 
-function getBackgroundPrompt(option: string, theme: string = 'Nature'): string {
+
+function getBackgroundPrompt(option: string, theme: string = 'Nature', elementalEnhancement: string = ''): string {
     if (option === 'no-background') {
         return 'pure white background, solid bright white, completely flat white backdrop, no shadows, no gradient, no gray, isolated item on white';
     }
 
     if (option === 'colored') {
+        // For colored gradient, add subtle elemental glow if present
+        if (elementalEnhancement) {
+            return `soft gradient background, ambient glow, ${elementalEnhancement}`;
+        }
         return 'soft gradient background, ambient glow';
     }
 
     const config = THEME_CONFIGS[theme] || THEME_CONFIGS['Nature'];
 
-    // Construct a background prompt that matches the theme's atmosphere but keeps it blurred/secondary
-    // to the main item
-    return `blurred background of ${config.atmosphere}, ${config.colors} ambient lighting, ${config.elements} in distance, strong bokeh effect, shallow depth of field, sharp focus on main item only`;
+    // Construct a background prompt that matches the theme's atmosphere
+    // Include elemental enhancement for natural backgrounds too
+    const basePrompt = `blurred background of ${config.atmosphere}, ${config.colors} ambient lighting, ${config.elements} in distance, strong bokeh effect, shallow depth of field, sharp focus on main item only`;
+
+    if (elementalEnhancement) {
+        return `${basePrompt}, ${elementalEnhancement} visible in atmosphere`;
+    }
+
+    return basePrompt;
 }
