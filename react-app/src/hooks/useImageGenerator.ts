@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { removeBackground } from '@imgly/background-removal';
 import { THEME_CONFIGS } from './useBackgroundGenerator';
 
 const WORKER_URL = 'https://dnd-api-proxy.dingalin2000.workers.dev/';
@@ -299,36 +298,19 @@ export function useImageGenerator() {
 
             const imageUrl = `data:image/jpeg;base64,${data.image}`;
 
+
             // Handle Background Removal
             if (backgroundOption === 'no-background') {
-                console.log('✂️ Removing background using AI...');
+                console.log('✂️ Removing white background...');
                 try {
-                    // 1. Fetch the image to get a Blob because imgly needs Blob/URL
-                    const imageResponse = await fetch(imageUrl);
-                    const imageBlob = await imageResponse.blob();
-
-                    // 2. Run background removal
-                    const blob = await removeBackground(imageBlob);
-
-                    // 3. Create object URL for the result
-                    const transparentUrl = URL.createObjectURL(blob);
-
+                    const transparentUrl = await removeWhiteBackground(imageUrl);
+                    console.log('✅ Background removal success');
                     setIsGenerating(false);
                     return transparentUrl;
                 } catch (bgError) {
                     console.error('Background removal failed:', bgError);
-                    console.log('⚠️ AI Removal failed, trying simple white removal fallback check...');
-
-                    try {
-                        const fallbackUrl = await removeWhiteBackground(imageUrl);
-                        console.log('✅ Fallback removal success');
-                        setIsGenerating(false);
-                        return fallbackUrl;
-                    } catch (fbError) {
-                        console.error('Fallback removal failed:', fbError);
-                        setIsGenerating(false);
-                        return imageUrl;
-                    }
+                    setIsGenerating(false);
+                    return imageUrl;
                 }
             }
 
