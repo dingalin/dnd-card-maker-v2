@@ -25,18 +25,18 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
             {/* Vertical stack of 3 silver buttons on the left */}
             <div className="button-stack-vertical">
                 <button
-                    onClick={onGenerateImage}
-                    className="btn-metallic btn-silver"
-                    disabled={isGeneratingImage}
-                >
-                    {isGeneratingImage ? '...' : 'IMG'}
-                </button>
-                <button
                     onClick={onGenerateWithAI}
                     className="btn-metallic btn-silver"
                     disabled={isGeneratingAI}
                 >
                     {isGeneratingAI ? '...' : 'AI'}
+                </button>
+                <button
+                    onClick={onGenerateImage}
+                    className="btn-metallic btn-silver"
+                    disabled={isGeneratingImage}
+                >
+                    {isGeneratingImage ? '...' : 'IMG'}
                 </button>
                 <button
                     onClick={onGenerateBackground}
