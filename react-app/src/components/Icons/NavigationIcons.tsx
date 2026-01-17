@@ -19,6 +19,13 @@ export const TemplatesIcon = () => (
     </svg>
 );
 
+export const CharacterSheetIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="7" r="4" />
+        <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+    </svg>
+);
+
 export const LibraryIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />

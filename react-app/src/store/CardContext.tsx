@@ -201,6 +201,14 @@ export function CardProvider({ children }: CardProviderProps) {
                 if (data.cardData.front?.imageUrl && data.cardData.front.imageUrl.startsWith('blob:')) {
                     data.cardData.front.imageUrl = null;
                 }
+                // Also clear itemImageUrl if it's a blob
+                if (data.cardData.itemImageUrl && data.cardData.itemImageUrl.startsWith('blob:')) {
+                    data.cardData.itemImageUrl = null;
+                }
+                // Also clear backgroundUrl if it's a blob
+                if (data.cardData.backgroundUrl && data.cardData.backgroundUrl.startsWith('blob:')) {
+                    data.cardData.backgroundUrl = null;
+                }
 
                 // 🛡️ SANITIZE: Reset problematic offsets that could push elements off-screen
                 // These were causing elements to disappear after initial render

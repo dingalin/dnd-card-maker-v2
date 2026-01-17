@@ -80,3 +80,61 @@ export const getRarityKey = (rarityValues: string | undefined): string => {
     if (r.includes('לא נפוץ') || r.includes('uncommon')) return 'uncommon';
     return 'common'; // Default
 };
+
+// =========================
+// SCALE & RENDER HELPERS
+// =========================
+
+export const SCALE = 0.36;
+
+// Custom Filter: Converts white background to transparent, and object to solid black (for shadow base)
+export const SilhouetteFilter = function (imageData: ImageData) {
+    const nPixels = imageData.data.length;
+    const data = imageData.data;
+    const threshold = 80; // Distance threshold (approx RGB 200 tolerance)
+
+    for (let i = 0; i < nPixels; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+
+        if (a > 0) {
+            // Calculate distance from white
+            const dist = Math.sqrt(
+                Math.pow(255 - r, 2) +
+                Math.pow(255 - g, 2) +
+                Math.pow(255 - b, 2)
+            );
+
+            // If close to white, make transparent
+            if (dist < threshold) {
+                data[i + 3] = 0; // Transparent
+            } else {
+                // For proper silhouette, set to opaque black
+                data[i] = 0;     // R
+                data[i + 1] = 0; // G
+                data[i + 2] = 0; // B
+                // Keep original alpha for antialiasing
+            }
+        }
+    }
+};
+
+// Clip function for rounded corners (Standard 1/8" / 3mm radius at 300dpi = ~38px)
+export const roundedCornerClip = (ctx: any) => {
+    const r = 38;
+    const w = CARD_WIDTH;
+    const h = CARD_HEIGHT;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(w - r, 0);
+    ctx.quadraticCurveTo(w, 0, w, r);
+    ctx.lineTo(w, h - r);
+    ctx.quadraticCurveTo(w, h, w - r, h);
+    ctx.lineTo(r, h);
+    ctx.quadraticCurveTo(0, h, 0, h - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+};

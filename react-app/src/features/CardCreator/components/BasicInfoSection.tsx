@@ -30,11 +30,12 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
     return (
         <>
             <div className="section-header" onClick={onToggle}>
-                <span className="section-title">📋 Basic Info</span>
                 <span className="section-icon">{isOpen ? '▼' : '▶'}</span>
+                <span className="section-title">BASIC INFO 📄</span>
             </div>
-            {isOpen && (
-                <div className="section-content">
+
+            <div className={`section-content ${isOpen ? 'open' : ''}`}>
+                <div style={{ padding: '15px' }}>
                     <div className="form-group">
                         <label>Type</label>
                         <select value={type} onChange={(e) => {
@@ -103,7 +104,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                         <label htmlFor="attunement" style={{ margin: 0 }}>Requires Attunement</label>
                     </div>
                 </div>
-            )}
+            </div>
         </>
     );
 };

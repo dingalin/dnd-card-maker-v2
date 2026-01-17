@@ -1,0 +1,214 @@
+.card-viewer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.card-viewer-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-viewer-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.card-viewer-close:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: rotate(90deg);
+}
+
+/* Flip Container */
+/* Flip Container - Scoped to Modal */
+.card-viewer-content .card-flip-container {
+    perspective: 1000px;
+    width: auto;
+    height: auto;
+}
+
+.card-viewer-content .card-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.card-viewer-content .card-flip-container.flipped .card-flip-inner {
+    transform: rotateY(180deg);
+}
+
+.card-viewer-content .card-face {
+    backface-visibility: hidden;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card-viewer-content .card-front {
+    position: relative;
+    /* Front establishes the container size */
+}
+
+.card-viewer-content .card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #2a2520, #1a1612);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d4a574;
+}
+
+.card-viewer-content .card-back-placeholder {
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+.card-viewer-image {
+    max-width: 95vw;
+    max-height: 80vh;
+    object-fit: contain;
+    display: block;
+}
+
+/* Action Buttons */
+.card-viewer-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn.delete:hover {
+    background: rgba(220, 53, 69, 0.5);
+}
+
+.action-btn.regenerate:hover {
+    background: rgba(40, 167, 69, 0.5);
+}
+
+.action-btn.rotate:hover {
+    background: rgba(0, 123, 255, 0.5);
+}
+
+.action-btn.edit:hover {
+    background: rgba(255, 193, 7, 0.5);
+}
+
+/* Loading Spin Animation */
+.action-btn .spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        transform: scale(1);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Loading Placeholder */
+.card-loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 300px;
+    height: 420px;
+    background: linear-gradient(135deg, #2a2520, #1a1612);
+    border-radius: 12px;
+    color: #d4a574;
+    font-size: 1.1rem;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(212, 165, 116, 0.2);
+    border-top-color: #d4a574;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}

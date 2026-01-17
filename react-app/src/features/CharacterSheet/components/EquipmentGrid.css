@@ -1,0 +1,165 @@
+/* Equipment Grid V2 - Uses character2.jpeg as background */
+
+.equipment-grid-v2 {
+    position: relative;
+    width: 324px;
+    /* Scaled down another 10% (was 360px) */
+    height: 450px;
+    /* Scaled down another 10% (was 500px) */
+    background-image: url('/assets/characteritems.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 8px;
+}
+
+/* Hide the flex layout - slots are positioned absolutely over the image */
+.equipment-row,
+.equipment-middle-rows,
+.equipment-side-column {
+    display: contents;
+}
+
+/* All slots positioned absolutely over the background */
+.equipment-grid-v2 .equipment-slot {
+    position: absolute;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Row 1 slot positions (crossbow, necklace, helmet, cape) */
+/* Row 1 slot positions (crossbow, necklace, helmet, cape) */
+.equipment-grid-v2 .equipment-slot[data-slot="ranged"] {
+    top: 8%;
+    left: 7.2%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="necklace"] {
+    top: 8%;
+    left: 29.5%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="helmet"] {
+    top: 8%;
+    left: 51.5%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="cape"] {
+    top: 8%;
+    right: 6.5%;
+    width: 19%;
+    height: 20%;
+}
+
+/* Row 2 side slots (shield, sword) */
+.equipment-grid-v2 .equipment-slot[data-slot="offhand"] {
+    top: 30%;
+    left: 7.2%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="mainhand"] {
+    top: 30%;
+    right: 6.5%;
+    width: 19%;
+    height: 20%;
+}
+
+/* Row 3 side slots (armor, gloves) */
+.equipment-grid-v2 .equipment-slot[data-slot="armor"] {
+    top: 52%;
+    left: 7.2%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="gloves"] {
+    top: 52%;
+    right: 6.5%;
+    width: 19%;
+    height: 20%;
+}
+
+/* Row 4 slot positions (ring, belt, boots, ring) */
+.equipment-grid-v2 .equipment-slot[data-slot="ring1"] {
+    top: 74%;
+    left: 7.2%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="belt"] {
+    top: 74%;
+    left: 29.5%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="boots"] {
+    top: 74%;
+    left: 51.5%;
+    width: 19%;
+    height: 20%;
+}
+
+.equipment-grid-v2 .equipment-slot[data-slot="ring2"] {
+    top: 74%;
+    right: 6.5%;
+    width: 19%;
+    height: 20%;
+}
+
+/* Portrait in center - Adjusted to fit inside parchment scroll graphic */
+.portrait-slot {
+    position: absolute;
+    top: 29%;
+    /* Moved down to sit correctly in the center frame */
+    left: 28%;
+    /* Centered (100% - 44% / 2) */
+    width: 44%;
+    /* Vertical portrait aspect ratio */
+    height: 42%;
+    /* Increased height for vertical portrait */
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.portrait-placeholder {
+    display: none;
+}
+
+.portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    /* Slight rounding to blend better */
+    mask-image: radial-gradient(circle, black 60%, transparent 100%);
+    /* Fade edges slightly */
+    -webkit-mask-image: radial-gradient(circle, black 60%, transparent 100%);
+}
+
+/* Equipment slot hover effect for items */
+.equipment-slot:hover .slot-item-image {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.slot-item-image {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    transition: transform 0.2s, filter 0.2s;
+}

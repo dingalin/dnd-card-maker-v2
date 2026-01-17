@@ -16,7 +16,15 @@ interface ImageGenerationParams {
     style?: ImageStyle;
     backgroundOption?: 'natural' | 'colored' | 'no-background';
     theme?: string;
+    rarity?: string;
+    width?: number; // Optional width
+    height?: number; // Optional height
+    isCharacter?: boolean;
 }
+
+// ... (code omitted)
+
+
 
 // Canvas-based fallback for removing white backgrounds
 // Canvas-based fallback for removing white backgrounds with Soft Edges
@@ -84,6 +92,26 @@ const removeHebrew = (text: string): string => {
         .trim();
 };
 
+function getRarityEnhancement(rarity: string): string {
+    const r = rarity || '';
+    if (r === 'אגדי' || r === 'Legendary') {
+        return 'legendary artifact, divine craftsmanship, intense magical aura, intricate gold details, masterpiece, epic scale, glowing with power';
+    }
+    if (r === 'נדיר מאוד' || r === 'Very Rare') {
+        return 'exquisite craftsmanship, ornate design, strong magical glow, premium materials, very detailed';
+    }
+    if (r === 'נדיר' || r === 'Rare') {
+        return 'fine craftsmanship, high quality materials, subtle magical shimmer, distinct design';
+    }
+    if (r === 'לא נפוץ' || r === 'Uncommon') {
+        return 'good quality, functional design, well-made, standard magical item';
+    }
+    if (r === 'נפוץ' || r === 'Common') {
+        return 'simple rustic design, worn texture, functional, common materials, no glow, plain appearance';
+    }
+    return '';
+}
+
 export function useImageGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -105,7 +133,11 @@ export function useImageGenerator() {
                 model = 'flux',
                 style = 'realistic',
                 backgroundOption = 'no-background',
-                theme = 'Nature'
+                theme = 'Nature',
+                rarity = '',
+                width,
+                height,
+                isCharacter = false // Default to false for backward compatibility
             } = params;
 
             // Hebrew to English Type Mapping (must happen BEFORE removeHebrew!)
@@ -134,7 +166,10 @@ export function useImageGenerator() {
                 };
             }
 
-            const itemTypeEnhancement = getItemTypeEnhancement(englishType, cleanSubtype, cleanVisualPrompt);
+            // Skip item enhancements for characters
+            const itemTypeEnhancement = isCharacter ? '' : getItemTypeEnhancement(englishType, cleanSubtype, cleanVisualPrompt);
+            const rarityEnhancement = isCharacter ? '' : getRarityEnhancement(rarity);
+
             // Combine item name, ability, and description for comprehensive elemental extraction
             const cleanItemName = removeHebrew(itemName);
             const combinedForElements = `${cleanItemName} ${cleanAbilityDesc} ${cleanVisualPrompt}`.toLowerCase();
@@ -148,15 +183,22 @@ export function useImageGenerator() {
             // Composition instructions based on background option
             let compositionInstructions: string;
 
-            if (backgroundOption === 'no-background') {
-                // Pure white background for later removal
-                compositionInstructions = 'isolated single item floating in air, vibrant colorful item, item fills two-thirds of image frame, complete item fully visible, pure object photography, museum artifact display, clean product shot style, sharp focus on item, centered composition, 3D render style, clean edges, flat studio lighting, product photography, item displayed on invisible stand';
+            // Get theme config for styling (even for no-background)
+            const themeConfig = THEME_CONFIGS[theme] || THEME_CONFIGS['Nature'];
+            const themeStyleForItem = `${themeConfig.elements}, ${themeConfig.colors} color accents on item`;
+
+            if (isCharacter) {
+                // === CHARACTER COMPOSITION ===
+                compositionInstructions = 'character portrait, centered composition, high quality character art, expressive face, dramatic lighting, detailed background, masterpiece, best quality';
+            } else if (backgroundOption === 'no-background') {
+                // Pure white background for later removal, BUT item styled with theme elements
+                compositionInstructions = `isolated single item floating in air, ${themeStyleForItem}, vibrant colorful item, extreme close up, item fills entire image frame, complete item fully visible, pure object photography, museum artifact display, clean product shot style, sharp focus on item, centered composition, 3D render style, clean edges, flat studio lighting, product photography, macro lens`;
             } else if (backgroundOption === 'natural') {
                 // Natural themed background with bokeh effect
-                compositionInstructions = 'item prominently displayed in foreground, strong bokeh effect on background, shallow depth of field, beautiful blurred atmospheric background, item fills two-thirds of image frame, sharp focus on main item, dramatic lighting, cinematic composition, masterpiece, best quality, ultra detailed';
+                compositionInstructions = 'extreme close up shot, macro photography, item prominently displayed in foreground, strong bokeh effect on background, shallow depth of field, beautiful blurred atmospheric background, item fills 80% of image frame, sharp focus on main item, dramatic lighting, cinematic composition, masterpiece, best quality, ultra detailed';
             } else {
                 // Default composition (colored gradient or other)
-                compositionInstructions = 'isolated single weapon floating in air, item fills two-thirds of image frame with generous space around, complete item fully visible, pure object photography, still life product shot, museum display style, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition, masterpiece, best quality, ultra detailed';
+                compositionInstructions = 'isolated single weapon floating in air, extreme close up, item fills 80% of image frame with minimal padding, complete item fully visible, pure object photography, still life product shot, museum display style, shot with 85mm lens at f/2.8, shallow depth of field, sharp focus on item, centered composition, masterpiece, best quality, ultra detailed';
             }
 
             // === BUILD FINAL PROMPT ===
@@ -164,25 +206,44 @@ export function useImageGenerator() {
             const styleEmphasis = `((${styleConfig.primary})), ${styleConfig.technique}`;
             const styleReinforcement = `MUST be rendered in ${style.replace('_', ' ')} style`;
 
-            const finalPrompt = [
-                styleEmphasis,  // Style at START with double weight
-                `(${cleanVisualPrompt})`,
-                itemTypeEnhancement,
-                styleReinforcement,  // Remind the model of the style mid-prompt
-                compositionInstructions,
-                elementalEnhancement,
-                backgroundPrompt,
-                styleConfig.finish,  // Style finish at END
-                `${style.replace('_', ' ')} art style` // Final style reinforcement
-            ].filter(Boolean).join(', ');
+            let finalPromptString = '';
 
-            console.log('🎨 Image prompt:', finalPrompt.substring(0, 150) + '...');
+            if (isCharacter) {
+                // Specialized Prompt Structure for Characters (Subject -> Style -> Composition -> Tech)
+                finalPromptString = [
+                    styleEmphasis,
+                    `(${cleanVisualPrompt})`,
+                    // Add subtle class-based details if needed here, but rely on Subject for now
+                    compositionInstructions,
+                    backgroundPrompt,
+                    styleConfig.finish,
+                    `${style.replace('_', ' ')} artwork`
+                ].filter(Boolean).join(', ');
+            } else {
+                // Specialized Prompt Structure for Items
+                finalPromptString = [
+                    styleEmphasis,  // Style at START with double weight
+                    `(${cleanVisualPrompt})`,
+                    itemTypeEnhancement,
+                    rarityEnhancement, // Add Rarity Influence
+                    styleReinforcement,  // Remind the model of the style mid-prompt
+                    compositionInstructions,
+                    elementalEnhancement,
+                    backgroundPrompt,
+                    styleConfig.finish,  // Style finish at END
+                    `${style.replace('_', ' ')} art style` // Final style reinforcement
+                ].filter(Boolean).join(', ');
+            }
+
+            console.log('🎨 Image prompt:', finalPromptString.substring(0, 150) + '...');
 
             let action = 'getimg-generate';
             let requestData: any = {
-                prompt: finalPrompt,
+                prompt: finalPromptString,
                 model: 'flux',
-                response_format: 'b64'
+                response_format: 'b64',
+                width: width || 512, // Default to 512 if not provided
+                height: height || 512
             };
 
             if (model === 'z-image') {
@@ -191,7 +252,7 @@ export function useImageGenerator() {
                 // Build background instruction based on option
                 let bgInstruction = '';
                 if (backgroundOption === 'no-background') {
-                    bgInstruction = 'pure white background only, bright white, no shadows, isolated floating item';
+                    bgInstruction = `pure white background only, bright white, item has ${themeStyleForItem}, no shadows, isolated floating item`;
                 } else if (backgroundOption === 'natural') {
                     bgInstruction = `${backgroundPrompt}, bokeh effect, blurred atmospheric background`;
                 }
@@ -210,7 +271,7 @@ export function useImageGenerator() {
                 // Build background instruction based on option
                 let bgInstruction = '';
                 if (backgroundOption === 'no-background') {
-                    bgInstruction = 'pure white background only, bright white, no shadows, no gradient, clean white backdrop, isolated floating item';
+                    bgInstruction = `pure white background only, bright white, item styled with ${themeStyleForItem}, no shadows, no gradient, clean white backdrop, isolated floating item`;
                 } else if (backgroundOption === 'natural') {
                     bgInstruction = `${backgroundPrompt}, strong bokeh effect, shallow depth of field`;
                 }

@@ -7,7 +7,7 @@ import { useBackgroundGenerator } from '../../hooks/useBackgroundGenerator';
 import { useWorkerPassword } from '../../hooks/useWorkerPassword';
 import { generateMimicCard } from '../../utils/mimicGenerator';
 import CardLibrary from '../Modals/CardLibrary';
-import { NewCardIcon, TemplatesIcon, LibraryIcon } from '../Icons/NavigationIcons';
+import { NewCardIcon, CharacterSheetIcon, LibraryIcon } from '../Icons/NavigationIcons';
 import './NavigationRail.css';
 import mouthImage from '../../assets/mouth.png';
 
@@ -19,8 +19,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { path: '/', icon: <NewCardIcon />, label: 'New Card' },
-    { path: '/templates', icon: <TemplatesIcon />, label: 'Templates' },
-    // Removed Import as per visual reference preference (only 3 items shown)
+    { path: '/character-sheet', icon: <CharacterSheetIcon />, label: 'Character' },
+    // Templates removed - Character Sheet takes its place
 ];
 
 export default function NavigationRail() {

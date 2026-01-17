@@ -16,6 +16,8 @@ interface ImageOptionsSectionProps {
     setImageTheme: (val: string) => void;
     cardTheme: string;
     setCardTheme: (val: string) => void;
+    useThemeForAI: boolean;
+    setUseThemeForAI: (val: boolean) => void;
 }
 
 export const ImageOptionsSection: React.FC<ImageOptionsSectionProps> = ({
@@ -30,7 +32,9 @@ export const ImageOptionsSection: React.FC<ImageOptionsSectionProps> = ({
     imageTheme,
     setImageTheme,
     cardTheme,
-    setCardTheme
+    setCardTheme,
+    useThemeForAI,
+    setUseThemeForAI
 }) => {
     const { t } = useTranslation();
     const { state, updateOffset } = useCardContext();
@@ -38,11 +42,12 @@ export const ImageOptionsSection: React.FC<ImageOptionsSectionProps> = ({
     return (
         <>
             <div className="section-header" onClick={onToggle}>
-                <span className="section-title">🎨 Image Options</span>
                 <span className="section-icon">{isOpen ? '▼' : '▶'}</span>
+                <span className="section-title">IMAGE OPTIONS 🎨</span>
             </div>
-            {isOpen && (
-                <div className="section-content">
+
+            <div className={`section-content ${isOpen ? 'open' : ''}`}>
+                <div style={{ padding: '15px' }}>
                     <div className="form-group">
                         <label>Image Model</label>
                         <select
@@ -163,6 +168,17 @@ export const ImageOptionsSection: React.FC<ImageOptionsSectionProps> = ({
                                 ? '🎨 Passive uses Art Style as the theme (instant, no API)'
                                 : 'Theme (content) used for card background generation (requires API call)'}
                         </small>
+
+                        <div className="checkbox-row" style={{ marginTop: '8px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9em', color: '#e0e0e0' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={useThemeForAI}
+                                    onChange={(e) => setUseThemeForAI(e.target.checked)}
+                                />
+                                Influence Text Generation with Theme (השפעה על הטקסט)
+                            </label>
+                        </div>
                     </div>
 
                     <div className="form-group" style={{ marginTop: '0.5rem' }}>
@@ -183,7 +199,7 @@ export const ImageOptionsSection: React.FC<ImageOptionsSectionProps> = ({
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </>
     );
 };

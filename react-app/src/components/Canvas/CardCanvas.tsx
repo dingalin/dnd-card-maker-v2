@@ -8,48 +8,10 @@ import { BackgroundLayer } from './Layers/BackgroundLayer';
 import { TextLayer } from './Layers/TextLayer';
 import { OverlayLayer } from './Layers/OverlayLayer';
 import { useCardContext } from '../../store';
-import { LAYOUT, CARD_WIDTH, CARD_HEIGHT, RARITY_GRADIENTS, getRarityKey } from './utils/canvasUtils';
+import { useCharacter } from '../../store/CharacterContext';
+import { LAYOUT, CARD_WIDTH, CARD_HEIGHT, RARITY_GRADIENTS, getRarityKey, SCALE, SilhouetteFilter, roundedCornerClip } from './utils/canvasUtils';
+import { RotateCcw, Save, BookOpen, Download, User } from 'lucide-react';
 import './CardCanvas.css';
-
-const SCALE = 0.36;
-
-// Custom Filter: Converts white background to transparent, and object to solid black (for shadow base)
-const SilhouetteFilter = function (imageData: ImageData) {
-    const nPixels = imageData.data.length;
-    const data = imageData.data;
-    const threshold = 80; // Distance threshold (approx RGB 200 tolerance)
-
-    for (let i = 0; i < nPixels; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-
-        if (a > 0) {
-            // Calculate distance from white
-            const dist = Math.sqrt(
-                Math.pow(255 - r, 2) +
-                Math.pow(255 - g, 2) +
-                Math.pow(255 - b, 2)
-            );
-
-            // If close to white, make transparent
-            if (dist < threshold) {
-                data[i + 3] = 0; // Transparent
-            } else {
-                // Determine "solidness"
-                // For proper silhouette, we want solid color where the object is.
-                // We set it to opaque black (which will be tinted later).
-                data[i] = 0;     // R
-                data[i + 1] = 0; // G
-                data[i + 2] = 0; // B
-                // data[i + 3] = 255; 
-                // We KEEP the original alpha to preserve antialiasing of the object edges!
-                // If it was fully opaque, it stays 255. If it was semi-transparent, it stays so.
-            }
-        }
-    }
-};
 
 export interface CardCanvasHandle {
     captureImage: () => string | null;
@@ -58,12 +20,14 @@ export interface CardCanvasHandle {
 
 const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
     const { state, updateOffset, updateCardField, updateBatchOffsets } = useCardContext();
+    const { equipItem, findNaturalSlot, isSlotOccupied, getSlotItem, addToBackpack } = useCharacter();
     const stageRef = useRef<any>(null);
     const flipWrapperRef = useRef<HTMLDivElement>(null); // Ref for html2canvas export
     const itemImageGroupRef = useRef<any>(null);
     const shadowGroupRef = useRef<any>(null); // Ref for updating shadow cache
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Timeout for debounced hover leave
     const [isFlipped, setIsFlipped] = useState(false);
+    const [isDualView, setIsDualView] = useState(false); // Dual View Mode
     const [isEditMode, setIsEditMode] = useState(false); // Local state for auto-edit mode
     const [itemImage, setItemImage] = useState<HTMLImageElement | null>(null);
     const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
@@ -127,6 +91,7 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
 
 
 
+    // Simple flip - CSS transition handles animation
     const handleFlip = () => {
         setIsFlipped(!isFlipped);
     };
@@ -139,6 +104,10 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         }
 
         try {
+            // Force Single View for saving (temporarily)
+            if (isDualView) setIsDualView(false);
+            await new Promise(r => setTimeout(r, 50)); // Wait for render
+
             // Dynamic import to avoid circular dependencies
             const { cardLibrary } = await import('../../utils/CardLibraryManager');
 
@@ -196,6 +165,9 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         } catch (error) {
             console.error('Failed to save to library', error);
             alert('שגיאה בשמירת הקלף');
+        } finally {
+            // Restore Dual View if it was active
+            if (isDualView) setIsDualView(true);
         }
     };
 
@@ -246,12 +218,102 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
 
     const [showDownloadDialog, setShowDownloadDialog] = useState(false);
 
+    // Handle equipping current card to character sheet
+    const handleEquipToCharacter = async () => {
+        if (!cardData) {
+            alert('אין קלף לשליחה');
+            return;
+        }
+
+        // Get item type from card data
+        const itemType = cardData.front?.type || cardData.typeHe || '';
+        if (!itemType) {
+            // If no type, add to backpack instead
+            const item = {
+                uniqueId: `card-${Date.now()}`,
+                name: cardData.front?.title || cardData.name || 'פריט',
+                nameHe: cardData.front?.title || cardData.name,
+                type: itemType || 'פריט',
+                rarity: cardData.front?.rarity || cardData.rarityHe || 'נפוץ',
+                thumbnail: stageRef.current?.toDataURL({ pixelRatio: 0.5 }) || '',
+                cardData: cardData
+            };
+            addToBackpack(item);
+            alert(`✅ "${item.name}" נוסף לתיק הגב`);
+            return;
+        }
+
+        // Find the natural slot for this item type
+        const slotId = findNaturalSlot(itemType);
+        if (!slotId) {
+            // No matching slot - add to backpack
+            const item = {
+                uniqueId: `card-${Date.now()}`,
+                name: cardData.front?.title || cardData.name || 'פריט',
+                nameHe: cardData.front?.title || cardData.name,
+                type: itemType,
+                rarity: cardData.front?.rarity || cardData.rarityHe || 'נפוץ',
+                thumbnail: stageRef.current?.toDataURL({ pixelRatio: 0.5 }) || '',
+                cardData: cardData
+            };
+            addToBackpack(item);
+            alert(`✅ "${item.name}" נוסף לתיק הגב (לא נמצא משבצת מתאימה)`);
+            return;
+        }
+
+        // Check if slot is occupied
+        if (isSlotOccupied(slotId)) {
+            const existingItem = getSlotItem(slotId);
+            const shouldReplace = confirm(
+                `המשבצת "${slotId}" כבר תפוסה ע"י "${existingItem?.name}".\n\nהאם להחליף?`
+            );
+            if (!shouldReplace) {
+                // Add to backpack instead
+                const item = {
+                    uniqueId: `card-${Date.now()}`,
+                    name: cardData.front?.title || cardData.name || 'פריט',
+                    nameHe: cardData.front?.title || cardData.name,
+                    type: itemType,
+                    rarity: cardData.front?.rarity || cardData.rarityHe || 'נפוץ',
+                    thumbnail: stageRef.current?.toDataURL({ pixelRatio: 0.5 }) || '',
+                    cardData: cardData
+                };
+                addToBackpack(item);
+                alert(`✅ "${item.name}" נוסף לתיק הגב`);
+                return;
+            }
+        }
+
+        // Create equipped item
+        const item = {
+            uniqueId: `card-${Date.now()}`,
+            name: cardData.front?.title || cardData.name || 'פריט',
+            nameHe: cardData.front?.title || cardData.name,
+            type: itemType,
+            rarity: cardData.front?.rarity || cardData.rarityHe || 'נפוץ',
+            thumbnail: stageRef.current?.toDataURL({ pixelRatio: 0.5 }) || '',
+            cardData: cardData
+        };
+
+        // Equip the item
+        equipItem(slotId, item);
+        alert(`✅ "${item.name}" הוצמד לציוד הדמות (${slotId})`);
+    };
+
     const handleExport = () => {
         setShowDownloadDialog(true);
     };
 
     const handleExportSingleSide = async () => {
         setShowDownloadDialog(false);
+
+        // Force Single View for export
+        const wasDual = isDualView;
+        if (wasDual) {
+            setIsDualView(false);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for re-render
+        }
+
         if (!flipWrapperRef.current) return;
 
         // Temporarily hide edit mode / selection so Transformer and panels don't appear in export
@@ -316,10 +378,19 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
             setHoveredId(previousHoveredId);
             if (wasEditingId) setEditingId(wasEditingId);
         }
+        if (wasDual) setIsDualView(true);
     };
 
     const handleExportBothSides = async () => {
         setShowDownloadDialog(false);
+
+        // Force Single View for export logic (which flips manually)
+        const wasDual = isDualView;
+        if (wasDual) {
+            setIsDualView(false);
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
         if (!stageRef.current) return;
 
         // Temporarily hide edit mode / selection
@@ -396,6 +467,8 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         } catch (e) {
             console.error('Failed to create combined image:', e);
             alert('שגיאה ביצירת תמונה משולבת');
+        } finally {
+            if (wasDual) setIsDualView(true);
         }
     };
 
@@ -741,7 +814,8 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         state.settings.front?.customStyles?.itemImage_maskShape,
         state.settings.back?.customStyles?.itemImage_maskShape,
         itemImage,
-        isFlipped
+        isFlipped,
+        isDualView
     ]);
 
     // Shadow Cache Effect: Ensure Shadow Group (Blur) is re-cached when image or shadow settings change.
@@ -769,7 +843,8 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
         itemImage,
         state.settings.front?.customStyles?.itemImage_shadowBlur,
         state.settings.front?.customStyles?.itemImage_shadowColor,
-        isFlipped
+        isFlipped,
+        isDualView
     ]);
 
     const handleDragEndWrapper = (e: any, key: string, side: 'front' | 'back' = 'front') => {
@@ -777,348 +852,419 @@ const CardCanvas = forwardRef<CardCanvasHandle>((_props, ref) => {
     };
 
 
-    // Clip function for rounded corners (Standard 1/8" / 3mm radius at 300dpi = ~38px)
-    const roundedCornerClip = (ctx: any) => {
-        const r = 38;
-        const w = CARD_WIDTH;
-        const h = CARD_HEIGHT;
-        ctx.beginPath();
-        ctx.moveTo(r, 0);
-        ctx.lineTo(w - r, 0);
-        ctx.quadraticCurveTo(w, 0, w, r);
-        ctx.lineTo(w, h - r);
-        ctx.quadraticCurveTo(w, h, w - r, h);
-        ctx.lineTo(r, h);
-        ctx.quadraticCurveTo(0, h, 0, h - r);
-        ctx.lineTo(0, r);
-        ctx.quadraticCurveTo(0, 0, r, 0);
-        ctx.closePath();
-    };
+    const renderCardContent = (showBack: boolean) => (
+        <Layer clipFunc={roundedCornerClip}>
+            <BackgroundLayer
+                width={CARD_WIDTH}
+                height={CARD_HEIGHT}
+                backgroundImage={backgroundImage}
+                backgroundScale={getOffset('backgroundScale') || 1}
+                onMouseDown={checkDeselect}
+            />
+
+            {/* Determine render order based on setting */}
+            {(() => {
+                const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
+
+                const textLayerElement = (
+                    <TextLayer
+                        cardData={cardData}
+                        isFlipped={showBack}
+                        isEditMode={isEditMode}
+                        getOffset={(val) => getOffset(val, showBack ? 'back' : 'front')}
+                        getCustomStyle={(k, p, d) => getCustomStyle(k, p, d, showBack ? 'back' : 'front')}
+                        getTextStyles={(k) => getTextStyles(k, showBack ? 'back' : 'front')}
+                        onSelect={handleSelect}
+                        onDblClick={handleTextDblClick}
+                        onDragEnd={(e, k) => handleDragEndWrapper(e, k, showBack ? 'back' : 'front')}
+                        onTransformEnd={(e, k) => handleTransformEnd(e, k, showBack ? 'back' : 'front')}
+                        onHoverEnter={handleHoverEnter}
+                        onHoverLeave={handleHoverLeave}
+                    />
+                );
+
+                // Render TextLayer FIRST (below) if imageAboveText is true
+                // Render TextLayer SECOND (above) if imageAboveText is false
+                return imageAboveText ? textLayerElement : null;
+            })()}
+
+            {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) - FRONT ONLY */}
+            {!showBack && itemImage && (() => {
+                // Safe reference for TS
+                const img = itemImage!;
+                const fade = getCustomStyle('itemImage', 'fade', 0);
+                const shadowBlur = getCustomStyle('itemImage', 'shadowBlur', 0);
+                const shadowColor = getCustomStyle('itemImage', 'shadowColor', '#000000');
+                // Shadow Logic: Counter-rotate shadow to maintain "Global Light" direction
+                const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
+                const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
+                const maskShape = getCustomStyle('itemImage', 'maskShape', 'square');
+                const borderWidth = getCustomStyle('itemImage', 'borderWidth', 0);
+
+                // Helper for mask path (reused for Clip and Border)
+                const drawMaskPath = (ctx: any) => {
+                    const w = img.width;
+                    const h = img.height;
+                    ctx.beginPath();
+                    if (maskShape === 'circle') {
+                        const r = Math.min(w, h) / 2;
+                        ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2, false);
+                    } else if (maskShape === 'rounded') {
+                        const r = 40;
+                        ctx.moveTo(r, 0);
+                        ctx.lineTo(w - r, 0);
+                        ctx.quadraticCurveTo(w, 0, w, r);
+                        ctx.lineTo(w, h - r);
+                        ctx.quadraticCurveTo(w, h, w - r, h);
+                        ctx.lineTo(r, h);
+                        ctx.quadraticCurveTo(0, h, 0, h - r);
+                        ctx.lineTo(0, r);
+                        ctx.quadraticCurveTo(0, 0, r, 0);
+                    } else if (maskShape === 'diamond') {
+                        ctx.moveTo(w / 2, 0);
+                        ctx.lineTo(w, h / 2);
+                        ctx.lineTo(w / 2, h);
+                        ctx.lineTo(0, h / 2);
+                    } else {
+                        ctx.rect(0, 0, w, h);
+                    }
+                    ctx.closePath();
+                };
+
+                // When the object rotates, the shadow context rotates with it.
+                // We need to rotate the offset vector in the opposite direction so it stays visually consistent.
+                const angleRad = (imgRotation * Math.PI) / 180;
+                const cos = Math.cos(-angleRad);
+                const sin = Math.sin(-angleRad);
+
+                // Rotate the offset vector (shadowOffsetX, shadowOffsetY) by -angle
+                const fixedShadowOffsetX = shadowOffsetX * cos - shadowOffsetY * sin;
+                const fixedShadowOffsetY = shadowOffsetX * sin + shadowOffsetY * cos;
+
+                return (
+                    <Group
+                        // OUTER GROUP: Position, Scale, Interactions, AND SHADOW
+                        // Shadow MUST be on the outer group because the inner group uses
+                        // globalCompositeOperation="destination-in" which clips EVERYTHING
+                        // outside the mask shape, including shadows!
+                        id="itemImage"
+                        x={imgX}
+                        y={imgY}
+                        offset={{ x: img.width / 2, y: img.height / 2 }} // ROTATION FIX: Pivot around center
+                        scaleX={imgScale}
+                        scaleY={imgScale}
+                        rotation={imgRotation}
+                        draggable={isEditMode}
+                        // No dragBoundFunc - let it drag freely, X will be reset in handleImageDragEnd
+                        onClick={(e) => handleSelect(e, 'itemImage')}
+                        onDragEnd={handleImageDragEnd}
+                        onTransformEnd={handleImageTransformEnd}
+                        onMouseEnter={(e) => {
+                            e.target.getStage()!.container().style.cursor = 'pointer';
+                            handleHoverEnter('itemImage');
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.getStage()!.container().style.cursor = 'default';
+                            handleHoverLeave();
+                        }}
+                        // Shadow applied to Outer Group (after masking is complete)
+                        shadowEnabled={false} // Disable native shadow, using manual layer below
+                    >
+                        {/* MANUAL SHADOW LAYER (Silhouette Shadow) */}
+                        <Group
+                            x={fixedShadowOffsetX}
+                            y={fixedShadowOffsetY}
+                            opacity={1}
+                            visible={shadowBlur > 0}
+                            name="shadow-group"
+                        >
+                            <Group
+                                ref={(node) => {
+                                    // We store the ref to handle updates via useEffect below
+                                    // We don't cache here immediately to avoid double-caching issues 
+                                    // or caching before image is ready (though image is ready here).
+                                    // Let the Effect handle it.
+                                    if (node) shadowGroupRef.current = node;
+                                }}
+                                filters={[Konva.Filters.Blur]}
+                                blurRadius={shadowBlur}
+                            >
+                                {/* Silhouette Image */}
+                                <KonvaImage
+                                    image={img}
+                                    width={img.width}
+                                    height={img.height}
+                                    filters={[SilhouetteFilter]}
+                                />
+
+                                {/* Shadow Tint */}
+                                {/* 'source-in' draws the ShadowColor Rect ONLY where the filtered Silhouette is opaque */}
+                                <Rect
+                                    width={img.width}
+                                    height={img.height}
+                                    fill={shadowColor}
+                                    globalCompositeOperation="source-in"
+                                />
+                            </Group>
+                        </Group>
+
+                        {/* INNER GROUP (Cached for Masking ONLY - NO SHADOW props) */}
+                        <Group
+                            ref={(node) => {
+                                if (node) itemImageGroupRef.current = node;
+                            }}
+                            // MASKING
+                            clipFunc={state.settings.front.customStyles?.itemImage_maskShape ? drawMaskPath : undefined}
+                        >
+                            <KonvaImage // The VISIBLE Image
+                                image={img}
+                                width={img.width}
+                                height={img.height}
+                                opacity={1} // Base opacity
+                            />
+
+                            {/* Implementing Soft Fade via Masking */}
+                            {fade > 0 && (
+                                <Rect
+                                    width={img.width}
+                                    height={img.height}
+                                    fillRadialGradientStartPoint={{ x: img.width / 2, y: img.height / 2 }}
+                                    fillRadialGradientStartRadius={0}
+                                    fillRadialGradientEndPoint={{ x: img.width / 2, y: img.height / 2 }}
+                                    // STRICT LIMIT: The fade MUST reach 0 opacity before the closest edge (width/2 or height/2).
+                                    // 0.5 ensures the circle is perfectly inscribed. No square edges possible.
+                                    fillRadialGradientEndRadius={Math.min(img.width, img.height) / 2}
+                                    fillRadialGradientColorStops={[
+                                        // Solid Center Zone determined by fade slider.
+                                        // Low fade = Large solid zone (close to 1). High fade = Small solid zone (close to 0).
+                                        0, 'white',
+                                        Math.max(0, 1 - (fade / 100)), 'white', // Solid stop
+                                        1, 'rgba(255,255,255,0)' // Transparent stop at the very edge (Radius 0.5)
+                                    ]}
+                                    globalCompositeOperation="destination-in"
+                                />
+                            )}
+                        </Group>
+
+                        {/* MASK BORDER (Drawn ON TOP of clipped group) */}
+                        {borderWidth > 0 && (() => {
+                            // Logic: "Fade" slider interpolates between Solid Stroke and Soft Shadow.
+                            // f = borderFade (0-100) / 100
+
+                            const f = (state.settings.front.customStyles?.itemImage_borderFade || 0) / 100;
+
+                            // Dynamic Logic for "Dispersed" look:
+                            // 1. STROKE: Decays as fade increases, but stays thick enough to cast a strong shadow.
+                            //    We keep 20% of the width as solid stroke even at max fade to ensure the "dark edge" remains.
+                            const dynamicStrokeWidth = Math.max(1, borderWidth * (1 - (f * 0.8)));
+
+                            // 2. SHADOW (Blur): Increases aggressively with fade.
+                            //    Multiplier of 3.0 creates a wide, dispersed glow that merges with the card.
+                            const dynamicShadowBlur = borderWidth * f * 3;
+
+                            return (
+                                <Shape
+                                    sceneFunc={(ctx: any, shape: any) => {
+                                        drawMaskPath(ctx);
+                                        ctx.fillStrokeShape(shape);
+                                    }}
+                                    stroke="black"
+                                    strokeWidth={dynamicStrokeWidth}
+                                    // Konva Shadow props
+                                    shadowColor="black"
+                                    shadowBlur={dynamicShadowBlur}
+                                    shadowOffset={{ x: 0, y: 0 }}
+                                    shadowOpacity={1} // Keep full opacity for the shadow itself
+                                    opacity={1}
+                                    listening={false}
+                                />
+                            );
+                        })()}
+                    </Group>
+                );
+            })()}
+
+
+
+            {/* RARITY BORDER EFFECT - FRONT ONLY */}
+            {!showBack && (() => {
+                // Look closer at the 'title' element settings for the border toggle
+                const isBorderEnabled = state.settings.front?.customStyles?.title_visualRarity_border;
+                if (isBorderEnabled) {
+                    const rarityKey = getRarityKey(cardData.front?.rarity || cardData.rarityHe);
+                    const colors = RARITY_GRADIENTS[rarityKey] || RARITY_GRADIENTS['common'];
+
+                    return (
+                        <Rect
+                            x={0}
+                            y={0}
+                            width={CARD_WIDTH}
+                            height={CARD_HEIGHT}
+                            strokeLinearGradientStartPoint={{ x: 0, y: 0 }}
+                            strokeLinearGradientEndPoint={{ x: CARD_WIDTH, y: CARD_HEIGHT }} // Diagonal gradient for border? or top-down
+                            // Let's do a reflective metallic gradient (diagonal)
+                            strokeLinearGradientColorStops={[
+                                0, colors[0],
+                                0.25, colors[1],
+                                0.5, colors[0],
+                                0.75, colors[2],
+                                1, colors[1]
+                            ]}
+                            strokeWidth={15} // Nice thick frame
+                            strokeScaleEnabled={false} // Don't scale stroke when scaling stage? No, we want it to look good.
+                            listening={false}
+                            shadowColor={colors[2]}
+                            shadowBlur={20}
+                            shadowOpacity={0.6}
+                            cornerRadius={0} // Outer edge is clipped by roundedCornerClip anyway
+                        />
+                    );
+                }
+                return null;
+            })()}
+
+            {/* TextLayer AFTER image (image below text mode) */}
+            {(() => {
+                const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
+                if (imageAboveText) return null; // Already rendered before image
+
+                return (
+                    <TextLayer
+                        cardData={cardData}
+                        isFlipped={showBack}
+                        isEditMode={isEditMode}
+                        getOffset={(val) => getOffset(val, showBack ? 'back' : 'front')}
+                        getCustomStyle={(k, p, d) => getCustomStyle(k, p, d, showBack ? 'back' : 'front')}
+                        getTextStyles={(k) => getTextStyles(k, showBack ? 'back' : 'front')}
+                        onSelect={handleSelect}
+                        onDblClick={handleTextDblClick}
+                        onDragEnd={(e, k) => handleDragEndWrapper(e, k, showBack ? 'back' : 'front')}
+                        onTransformEnd={(e, k) => handleTransformEnd(e, k, showBack ? 'back' : 'front')}
+                        onHoverEnter={handleHoverEnter}
+                        onHoverLeave={handleHoverLeave}
+                    />
+                );
+            })()}
+
+            <OverlayLayer selectedId={effectiveSelectedId} isEditMode={isEditMode} />
+        </Layer>
+    );
 
     return (
         <div className="card-canvas-container">
-            <div ref={flipWrapperRef} className={`card-flip-wrapper ${isFlipped ? 'flipped' : ''}`} style={{ background: 'transparent' }}>
-                <Stage
-                    width={CARD_WIDTH * SCALE}
-                    height={CARD_HEIGHT * SCALE}
-                    scaleX={SCALE}
-                    scaleY={SCALE}
-                    ref={stageRef}
-                    onMouseDown={checkDeselect}
-                    onTouchStart={checkDeselect}
-                    style={{ background: 'transparent' }}
-                >
-                    <Layer clipFunc={roundedCornerClip}>
-                        <BackgroundLayer
-                            width={CARD_WIDTH}
-                            height={CARD_HEIGHT}
-                            backgroundImage={backgroundImage}
-                            backgroundScale={getOffset('backgroundScale') || 1}
+            {isDualView ? (
+                // DUAL VIEW LAYOUT
+                <div className="dual-view-container">
+                    {/* Front View */}
+                    <div className="dual-view-stage">
+                        <Stage
+                            width={CARD_WIDTH * SCALE}
+                            height={CARD_HEIGHT * SCALE}
+                            scaleX={SCALE}
+                            scaleY={SCALE}
+                            ref={stageRef} // Attach ref to Front in Dual View
                             onMouseDown={checkDeselect}
-                        />
+                            onTouchStart={checkDeselect}
+                            style={{ background: 'transparent' }}
+                        >
+                            {renderCardContent(false)}
+                        </Stage>
 
-                        {/* Determine render order based on setting */}
-                        {(() => {
-                            const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
+                    </div>
 
-                            const textLayerElement = (
-                                <TextLayer
-                                    cardData={cardData}
-                                    isFlipped={isFlipped}
-                                    isEditMode={isEditMode}
-                                    getOffset={getOffset}
-                                    getCustomStyle={getCustomStyle}
-                                    getTextStyles={getTextStyles}
-                                    onSelect={handleSelect}
-                                    onDblClick={handleTextDblClick}
-                                    onDragEnd={handleDragEndWrapper}
-                                    onTransformEnd={handleTransformEnd}
-                                    onHoverEnter={handleHoverEnter}
-                                    onHoverLeave={handleHoverLeave}
-                                />
-                            );
+                    {/* Back View */}
+                    <div className="dual-view-stage">
+                        <Stage
+                            width={CARD_WIDTH * SCALE}
+                            height={CARD_HEIGHT * SCALE}
+                            scaleX={SCALE}
+                            scaleY={SCALE}
+                            // No ref for Back stage for now (TODO: Add backStageRef if needed)
+                            onMouseDown={checkDeselect}
+                            onTouchStart={checkDeselect}
+                            style={{ background: 'transparent' }}
+                        >
+                            {renderCardContent(true)}
+                        </Stage>
 
-                            // Render TextLayer FIRST (below) if imageAboveText is true
-                            // Render TextLayer SECOND (above) if imageAboveText is false
-                            return imageAboveText ? textLayerElement : null;
-                        })()}
+                    </div>
+                </div>
+            ) : (
+                // NORMAL FLIP LAYOUT - True 3D Card with Front and Back faces
+                <div ref={flipWrapperRef} className={`card-flip-wrapper ${isFlipped ? 'flipped' : ''}`} style={{ background: 'transparent' }}>
+                    <div className="card-flip-inner">
+                        {/* FRONT FACE */}
+                        <div className="card-face card-front">
+                            <Stage
+                                width={CARD_WIDTH * SCALE}
+                                height={CARD_HEIGHT * SCALE}
+                                scaleX={SCALE}
+                                scaleY={SCALE}
+                                ref={!isFlipped ? stageRef : undefined}
+                                onMouseDown={checkDeselect}
+                                onTouchStart={checkDeselect}
+                                style={{ background: 'transparent' }}
+                            >
+                                {renderCardContent(false)}
+                            </Stage>
+                        </div>
 
-                        {/* 4. ITEM IMAGE GROUP with Alpha Masking & Shadow (Hybrid Strategy) - FRONT ONLY */}
-                        {!isFlipped && itemImage && (() => {
-                            // Safe reference for TS
-                            const img = itemImage!;
-                            const fade = getCustomStyle('itemImage', 'fade', 0);
-                            const shadowBlur = getCustomStyle('itemImage', 'shadowBlur', 0);
-                            const shadowColor = getCustomStyle('itemImage', 'shadowColor', '#000000');
-                            // Shadow Logic: Counter-rotate shadow to maintain "Global Light" direction
-                            const shadowOffsetX = getCustomStyle('itemImage', 'shadowOffsetX', 0);
-                            const shadowOffsetY = getCustomStyle('itemImage', 'shadowOffsetY', 0);
-                            const maskShape = getCustomStyle('itemImage', 'maskShape', 'square');
-                            const borderWidth = getCustomStyle('itemImage', 'borderWidth', 0);
+                        {/* BACK FACE */}
+                        <div className="card-face card-back">
+                            <Stage
+                                width={CARD_WIDTH * SCALE}
+                                height={CARD_HEIGHT * SCALE}
+                                scaleX={SCALE}
+                                scaleY={SCALE}
+                                ref={isFlipped ? stageRef : undefined}
+                                onMouseDown={checkDeselect}
+                                onTouchStart={checkDeselect}
+                                style={{ background: 'transparent' }}
+                            >
+                                {renderCardContent(true)}
+                            </Stage>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                            // Helper for mask path (reused for Clip and Border)
-                            const drawMaskPath = (ctx: any) => {
-                                const w = img.width;
-                                const h = img.height;
-                                ctx.beginPath();
-                                if (maskShape === 'circle') {
-                                    const r = Math.min(w, h) / 2;
-                                    ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2, false);
-                                } else if (maskShape === 'rounded') {
-                                    const r = 40;
-                                    ctx.moveTo(r, 0);
-                                    ctx.lineTo(w - r, 0);
-                                    ctx.quadraticCurveTo(w, 0, w, r);
-                                    ctx.lineTo(w, h - r);
-                                    ctx.quadraticCurveTo(w, h, w - r, h);
-                                    ctx.lineTo(r, h);
-                                    ctx.quadraticCurveTo(0, h, 0, h - r);
-                                    ctx.lineTo(0, r);
-                                    ctx.quadraticCurveTo(0, 0, r, 0);
-                                } else if (maskShape === 'diamond') {
-                                    ctx.moveTo(w / 2, 0);
-                                    ctx.lineTo(w, h / 2);
-                                    ctx.lineTo(w / 2, h);
-                                    ctx.lineTo(0, h / 2);
-                                } else {
-                                    ctx.rect(0, 0, w, h);
-                                }
-                                ctx.closePath();
-                            };
-
-                            // When the object rotates, the shadow context rotates with it.
-                            // We need to rotate the offset vector in the opposite direction so it stays visually consistent.
-                            const angleRad = (imgRotation * Math.PI) / 180;
-                            const cos = Math.cos(-angleRad);
-                            const sin = Math.sin(-angleRad);
-
-                            // Rotate the offset vector (shadowOffsetX, shadowOffsetY) by -angle
-                            const fixedShadowOffsetX = shadowOffsetX * cos - shadowOffsetY * sin;
-                            const fixedShadowOffsetY = shadowOffsetX * sin + shadowOffsetY * cos;
-
-                            return (
-                                <Group
-                                    // OUTER GROUP: Position, Scale, Interactions, AND SHADOW
-                                    // Shadow MUST be on the outer group because the inner group uses
-                                    // globalCompositeOperation="destination-in" which clips EVERYTHING
-                                    // outside the mask shape, including shadows!
-                                    id="itemImage"
-                                    x={imgX}
-                                    y={imgY}
-                                    offset={{ x: img.width / 2, y: img.height / 2 }} // ROTATION FIX: Pivot around center
-                                    scaleX={imgScale}
-                                    scaleY={imgScale}
-                                    rotation={imgRotation}
-                                    draggable={isEditMode}
-                                    // No dragBoundFunc - let it drag freely, X will be reset in handleImageDragEnd
-                                    onClick={(e) => handleSelect(e, 'itemImage')}
-                                    onDragEnd={handleImageDragEnd}
-                                    onTransformEnd={handleImageTransformEnd}
-                                    onMouseEnter={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'pointer';
-                                        handleHoverEnter('itemImage');
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.getStage()!.container().style.cursor = 'default';
-                                        handleHoverLeave();
-                                    }}
-                                    // Shadow applied to Outer Group (after masking is complete)
-                                    shadowEnabled={false} // Disable native shadow, using manual layer below
-                                >
-                                    {/* MANUAL SHADOW LAYER (Silhouette Shadow) */}
-                                    <Group
-                                        x={fixedShadowOffsetX}
-                                        y={fixedShadowOffsetY}
-                                        opacity={1}
-                                        visible={shadowBlur > 0}
-                                        name="shadow-group"
-                                    >
-                                        <Group
-                                            ref={(node) => {
-                                                // We store the ref to handle updates via useEffect below
-                                                // We don't cache here immediately to avoid double-caching issues 
-                                                // or caching before image is ready (though image is ready here).
-                                                // Let the Effect handle it.
-                                                if (node) shadowGroupRef.current = node;
-                                            }}
-                                            filters={[Konva.Filters.Blur]}
-                                            blurRadius={shadowBlur}
-                                        >
-                                            {/* Silhouette Image */}
-                                            <KonvaImage
-                                                image={img}
-                                                width={img.width}
-                                                height={img.height}
-                                                filters={[SilhouetteFilter]}
-                                            />
-
-                                            {/* Shadow Tint */}
-                                            {/* 'source-in' draws the ShadowColor Rect ONLY where the filtered Silhouette is opaque */}
-                                            <Rect
-                                                width={img.width}
-                                                height={img.height}
-                                                fill={shadowColor}
-                                                globalCompositeOperation="source-in"
-                                            />
-                                        </Group>
-                                    </Group>
-
-                                    {/* INNER GROUP (Cached for Masking ONLY - NO SHADOW props) */}
-                                    <Group
-                                        ref={(node) => {
-                                            if (node) itemImageGroupRef.current = node;
-                                        }}
-                                        // MASKING
-                                        clipFunc={state.settings.front.customStyles?.itemImage_maskShape ? drawMaskPath : undefined}
-                                    >
-                                        <KonvaImage // The VISIBLE Image
-                                            image={img}
-                                            width={img.width}
-                                            height={img.height}
-                                            opacity={1} // Base opacity
-                                        />
-
-                                        {/* Implementing Soft Fade via Masking */}
-                                        {fade > 0 && (
-                                            <Rect
-                                                width={img.width}
-                                                height={img.height}
-                                                fillRadialGradientStartPoint={{ x: img.width / 2, y: img.height / 2 }}
-                                                fillRadialGradientStartRadius={0}
-                                                fillRadialGradientEndPoint={{ x: img.width / 2, y: img.height / 2 }}
-                                                // STRICT LIMIT: The fade MUST reach 0 opacity before the closest edge (width/2 or height/2).
-                                                // 0.5 ensures the circle is perfectly inscribed. No square edges possible.
-                                                fillRadialGradientEndRadius={Math.min(img.width, img.height) / 2}
-                                                fillRadialGradientColorStops={[
-                                                    // Solid Center Zone determined by fade slider.
-                                                    // Low fade = Large solid zone (close to 1). High fade = Small solid zone (close to 0).
-                                                    0, 'white',
-                                                    Math.max(0, 1 - (fade / 100)), 'white', // Solid stop
-                                                    1, 'rgba(255,255,255,0)' // Transparent stop at the very edge (Radius 0.5)
-                                                ]}
-                                                globalCompositeOperation="destination-in"
-                                            />
-                                        )}
-                                    </Group>
-
-                                    {/* MASK BORDER (Drawn ON TOP of clipped group) */}
-                                    {borderWidth > 0 && (() => {
-                                        // Logic: "Fade" slider interpolates between Solid Stroke and Soft Shadow.
-                                        // f = borderFade (0-100) / 100
-
-                                        const f = (state.settings.front.customStyles?.itemImage_borderFade || 0) / 100;
-
-                                        // Dynamic Logic for "Dispersed" look:
-                                        // 1. STROKE: Decays as fade increases, but stays thick enough to cast a strong shadow.
-                                        //    We keep 20% of the width as solid stroke even at max fade to ensure the "dark edge" remains.
-                                        const dynamicStrokeWidth = Math.max(1, borderWidth * (1 - (f * 0.8)));
-
-                                        // 2. SHADOW (Blur): Increases aggressively with fade.
-                                        //    Multiplier of 3.0 creates a wide, dispersed glow that merges with the card.
-                                        const dynamicShadowBlur = borderWidth * f * 3;
-
-                                        return (
-                                            <Shape
-                                                sceneFunc={(ctx: any, shape: any) => {
-                                                    drawMaskPath(ctx);
-                                                    ctx.fillStrokeShape(shape);
-                                                }}
-                                                stroke="black"
-                                                strokeWidth={dynamicStrokeWidth}
-                                                // Konva Shadow props
-                                                shadowColor="black"
-                                                shadowBlur={dynamicShadowBlur}
-                                                shadowOffset={{ x: 0, y: 0 }}
-                                                shadowOpacity={1} // Keep full opacity for the shadow itself
-                                                opacity={1}
-                                                listening={false}
-                                            />
-                                        );
-                                    })()}
-                                </Group>
-                            );
-                        })()}
-
-
-
-                        {/* RARITY BORDER EFFECT - FRONT ONLY */}
-                        {!isFlipped && (() => {
-                            // Look closer at the 'title' element settings for the border toggle
-                            const isBorderEnabled = state.settings.front?.customStyles?.title_visualRarity_border;
-                            if (isBorderEnabled) {
-                                const rarityKey = getRarityKey(cardData.front?.rarity || cardData.rarityHe);
-                                const colors = RARITY_GRADIENTS[rarityKey] || RARITY_GRADIENTS['common'];
-
-                                return (
-                                    <Rect
-                                        x={0}
-                                        y={0}
-                                        width={CARD_WIDTH}
-                                        height={CARD_HEIGHT}
-                                        strokeLinearGradientStartPoint={{ x: 0, y: 0 }}
-                                        strokeLinearGradientEndPoint={{ x: CARD_WIDTH, y: CARD_HEIGHT }} // Diagonal gradient for border? or top-down
-                                        // Let's do a reflective metallic gradient (diagonal)
-                                        strokeLinearGradientColorStops={[
-                                            0, colors[0],
-                                            0.25, colors[1],
-                                            0.5, colors[0],
-                                            0.75, colors[2],
-                                            1, colors[1]
-                                        ]}
-                                        strokeWidth={15} // Nice thick frame
-                                        strokeScaleEnabled={false} // Don't scale stroke when scaling stage? No, we want it to look good.
-                                        listening={false}
-                                        shadowColor={colors[2]}
-                                        shadowBlur={20}
-                                        shadowOpacity={0.6}
-                                        cornerRadius={0} // Outer edge is clipped by roundedCornerClip anyway
-                                    />
-                                );
-                            }
-                            return null;
-                        })()}
-
-                        {/* TextLayer AFTER image (image below text mode) */}
-                        {(() => {
-                            const imageAboveText = getCustomStyle('itemImage', 'aboveText', true);
-                            if (imageAboveText) return null; // Already rendered before image
-
-                            return (
-                                <TextLayer
-                                    cardData={cardData}
-                                    isFlipped={isFlipped}
-                                    isEditMode={isEditMode}
-                                    getOffset={getOffset}
-                                    getCustomStyle={getCustomStyle}
-                                    getTextStyles={getTextStyles}
-                                    onSelect={handleSelect}
-                                    onDblClick={handleTextDblClick}
-                                    onDragEnd={handleDragEndWrapper}
-                                    onTransformEnd={handleTransformEnd}
-                                    onHoverEnter={handleHoverEnter}
-                                    onHoverLeave={handleHoverLeave}
-                                />
-                            );
-                        })()}
-
-                        <OverlayLayer selectedId={effectiveSelectedId} isEditMode={isEditMode} />
-                    </Layer>
-                </Stage>
-            </div>
             {/* Controls moved OUTSIDE flip wrapper */}
             <div className="canvas-controls">
-                <button onClick={handleExport} className="btn-metallic btn-silver btn-small" title="הורד כתמונה">
-                    הורדה
+                <button onClick={handleExport} className="btn-metallic btn-silver btn-icon" title="הורדה כתמונה">
+                    <Download size={16} strokeWidth={2.2} />
                 </button>
-                <button onClick={handleSaveToLibrary} className="btn-metallic btn-silver btn-small" title="שמור קלף לספרייה">
-                    שמירת קלף
+                <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
+
+                <button onClick={handleSaveToLibrary} className="btn-metallic btn-silver btn-icon" title="שמירת קלף">
+                    <Save size={16} strokeWidth={2.2} />
                 </button>
+                <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
+
+                {/* SEND TO CHARACTER SHEET */}
+                <button onClick={handleEquipToCharacter} className="btn-metallic btn-purple btn-icon" title="שלח לדף הדמות">
+                    <User size={16} strokeWidth={2.2} />
+                </button>
+                <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
+
+                {/* DUAL VIEW TOGGLE */}
+                <button
+                    onClick={() => setIsDualView(!isDualView)}
+                    className={`btn-metallic btn-gold btn-icon ${isDualView ? 'active' : ''}`}
+                    title={isDualView ? "חזור לתצוגה רגילה" : "תצוגה כפולה"}
+                >
+                    <BookOpen size={16} strokeWidth={2.2} />
+                </button>
+
                 <div className="zoom-controls">
                     {/* Zoom controls could go here if needed */}
                 </div>
-                <button onClick={handleFlip} className="flip-btn" title="הפוך קלף">
-                    {isFlipped ? 'סובב קלף ⟳' : 'סובב קלף ⟳'}
-                </button>
+
+                {/* Hide Flip Button in Dual View (or disable it) */}
+                {!isDualView && (
+                    <button onClick={handleFlip} className="flip-btn btn-icon" title="סובב קלף">
+                        <RotateCcw size={20} strokeWidth={2.2} />
+                    </button>
+                )}
             </div>
 
             {/* Render ALL Floating Panels */}

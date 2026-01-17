@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Logger } from '../../../utils/Logger';
 import { useCardContext } from '../../../store';
 import { useGemini } from '../../../hooks/useGemini';
@@ -20,10 +21,17 @@ interface ItemCreationFormProps {
 
 function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps) {
     const { setCardData, state } = useCardContext();
-    const { generateItem, isLoading: isGenerating, error: genError } = useGemini();
+    const { generateItem, translatePrompt, isLoading: isGenerating, error: aiError } = useGemini();
     const { generateImage, isGenerating: isGeneratingImage, error: imageError } = useImageGenerator();
     const { generateBackground, isGenerating: isGeneratingBg, error: bgError } = useBackgroundGenerator();
     const { password, isConfigured, savePassword } = useWorkerPassword();
+
+    // Navigation & State
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [autoGenTriggered, setAutoGenTriggered] = useState(false);
+    const returnSlotId = location.state?.returnSlotId;
+    const smartLoot = location.state?.smartLootContext;
 
     const [showPasswordInput, setShowPasswordInput] = useState(false);
     const [tempPassword, setTempPassword] = useState('');
@@ -55,10 +63,171 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
     const [backgroundOption, setBackgroundOption] = useState<'natural' | 'colored' | 'no-background'>('no-background');
     const [imageTheme, setImageTheme] = useState('Nature');
     const [cardTheme, setCardTheme] = useState('Passive');
+    const [useThemeForAI, setUseThemeForAI] = useState(true);
+
+    // ==========================================
+    // AUTO-GENERATION EFFECT
+    // ==========================================
+    useEffect(() => {
+        if (location.state?.autoGenerate && smartLoot && !autoGenTriggered && isConfigured) {
+            Logger.info('ItemCreationForm', 'Auto-generating from Smart Loot Context', smartLoot);
+
+            // Pre-fill form
+            // Note: We map English baseType to Hebrew UI options if needed
+            const typeMap: Record<string, string> = {
+                'Weapon': 'נשק',
+                'Armor': 'שריון',
+                'Wondrous Item': 'חפץ פלא',
+                'Ring': 'טבעת',
+                'Potion': 'שיקוי'
+            };
+            const hebrewType = typeMap[smartLoot.baseType] || 'חפץ פלא';
+
+            const rarityMap: Record<string, string> = {
+                'Common': 'נפוץ',
+                'Uncommon': 'לא נפוץ',
+                'Rare': 'נדיר',
+                'Very Rare': 'נדיר מאוד',
+                'Legendary': 'אגדי'
+            };
+            const hebrewRarity = rarityMap[smartLoot.rarity] || 'לא נפוץ';
+
+            setType(hebrewType);
+            setSubtype(smartLoot.subtype);
+            setRarity(hebrewRarity);
+            setImageStyle('oil'); // Default to high quality
+
+            // Trigger generation
+            setAutoGenTriggered(true);
+
+            // We need to wait for state updates to settle or pass values directly
+            // Passing values directly to avoid stale state
+            handleCreateWithContext(hebrewType, smartLoot.subtype, hebrewRarity, smartLoot.theme);
+        }
+    }, [location.state, isConfigured]);
 
     // ==========================================
     // HANDLERS
     // ==========================================
+
+    // Specialized Create Handler accepting direct params for AutoGen
+    const handleCreateWithContext = async (
+        overrideType: string,
+        overrideSubtype: string,
+        overrideRarity: string,
+        overrideTheme?: string
+    ) => {
+        try {
+            Logger.info('ItemCreationForm', 'Starting Auto-Gen Sequence');
+
+            // Step 1: Text Gen
+            const level = getLevelFromRarity(overrideRarity);
+            const result = await generateItem(
+                {
+                    type: overrideType,
+                    subtype: overrideSubtype,
+                    rarity: overrideRarity,
+                    level,
+                    theme: overrideTheme
+                },
+                password
+            );
+
+            const computedStats = result.quickStats ||
+                (result.weaponDamage ? result.weaponDamage : '') ||
+                (result.armorClass ? `AC ${result.armorClass}` : '');
+
+            let newCard: CardData = {
+                name: result.name,
+                typeHe: result.typeHe,
+                subtype: overrideSubtype || result.typeHe,
+                rarityHe: result.rarityHe,
+                abilityName: result.abilityName,
+                abilityDesc: result.abilityDesc,
+                description: result.description,
+                gold: result.gold,
+                quickStats: computedStats,
+                weaponDamage: result.weaponDamage,
+                armorClass: result.armorClass,
+                front: {
+                    title: result.name,
+                    type: overrideSubtype || result.typeHe,
+                    rarity: result.rarityHe,
+                    quickStats: computedStats,
+                    gold: result.gold + ' זהב'
+                },
+                back: {
+                    title: result.abilityName,
+                    mechanics: result.abilityDesc,
+                    lore: result.description
+                },
+                legacy: false
+            };
+
+            setCardData(newCard);
+            setName(result.name);
+            setAbility(result.abilityName);
+            setDescription(result.description);
+
+            // Step 2: Image Gen
+            try {
+                // Use the visual hint from context if available + AI description
+                const contextHint = smartLoot?.visualHint || '';
+                const visualPrompt = `${contextHint}. ${result.description}`;
+
+                const imageUrl = await generateImage(
+                    {
+                        visualPrompt,
+                        itemType: overrideType,
+                        itemSubtype: overrideSubtype,
+                        abilityDesc: result.abilityDesc,
+                        itemName: result.name,
+                        model: 'flux', // Enforce Flux for best quality
+                        style: 'oil', // Default style
+                        backgroundOption: 'no-background',
+                        theme: overrideTheme || 'fantasy',
+                        rarity: overrideRarity
+                    },
+                    password
+                );
+                newCard = { ...newCard, itemImageUrl: imageUrl };
+                setCardData(newCard);
+            } catch (imgError) {
+                Logger.warn('ItemCreationForm', 'Image generation failed', imgError);
+            }
+
+            saveToHistory(newCard);
+
+        } catch (error: any) {
+            Logger.error('ItemCreationForm', 'Auto-Gen failed', error);
+        }
+    };
+
+    const handleEquipAndReturn = async () => {
+        if (!state.cardData) return;
+
+        // Save final version
+        await saveToHistory(state.cardData);
+
+        // Return to Character Sheet
+        // The Sheet will need to load this item. Since we don't have a global item store yet,
+        // we might need to pass the item back via state or context.
+        // For now, let's assume we pass it in navigation state.
+
+        navigate('/character-sheet', {
+            state: {
+                equippedItem: {
+                    uniqueId: `gen-${Date.now()}`,
+                    name: state.cardData.name,
+                    nameHe: state.cardData.name,
+                    type: state.cardData.typeHe,
+                    rarity: state.cardData.rarityHe,
+                    thumbnail: state.cardData.itemImageUrl || ''
+                },
+                targetSlotId: returnSlotId
+            }
+        });
+    };
 
     const handleCreate = async () => {
         if (!isConfigured) {
@@ -72,8 +241,15 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
             // Step 1: Generate AI Text Content
             Logger.info('ItemCreationForm', 'Step 1/3: Generating text with AI');
             const level = getLevelFromRarity(rarity);
+
+            // Determine effective theme for AI context
+            let effectiveTheme = undefined;
+            if (useThemeForAI) {
+                effectiveTheme = cardTheme === 'Passive' ? imageStyle : cardTheme;
+            }
+
             const result = await generateItem(
-                { type: type, subtype: subtype, rarity, level },
+                { type: type, subtype: subtype, rarity, level, theme: effectiveTheme },
                 password
             );
 
@@ -128,7 +304,8 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
                         model: imageModel,
                         style: imageStyle,
                         backgroundOption: backgroundOption,
-                        theme: imageTheme
+                        theme: imageTheme,
+                        rarity: rarity
                     },
                     password
                 );
@@ -178,8 +355,15 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
 
         try {
             const level = getLevelFromRarity(rarity);
+
+            // Determine effective theme for AI context
+            let effectiveTheme = undefined;
+            if (useThemeForAI) {
+                effectiveTheme = cardTheme === 'Passive' ? imageStyle : cardTheme;
+            }
+
             const result = await generateItem(
-                { type: type, subtype: subtype, rarity, level },
+                { type: type, subtype: subtype, rarity, level, theme: effectiveTheme },
                 password
             );
 
@@ -249,7 +433,22 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
         }
 
         try {
-            const visualPrompt = effectiveDescription || effectiveName || 'fantasy magic item';
+            let visualPrompt = effectiveDescription || effectiveName || 'fantasy magic item';
+
+            // 🌍 Automatic Translation: If prompt is in Hebrew, translate it!
+            if (/[א-ת]/.test(visualPrompt)) {
+                Logger.info('ItemCreationForm', 'Translating visual prompt from Hebrew...');
+                try {
+                    const translated = await translatePrompt(visualPrompt, password);
+                    Logger.info('ItemCreationForm', 'Translation complete', translated);
+                    if (translated) {
+                        visualPrompt = translated;
+                    }
+                } catch (transError) {
+                    Logger.warn('ItemCreationForm', 'Translation failed, using original', transError);
+                }
+            }
+
             // Include full item context for elemental extraction
             const fullAbilityContext = `${effectiveAbility} ${state.cardData?.abilityDesc || ''}`;
             const imageUrl = await generateImage(
@@ -262,7 +461,8 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
                     model: imageModel,
                     style: imageStyle,
                     backgroundOption: backgroundOption,
-                    theme: imageTheme
+                    theme: imageTheme,
+                    rarity: rarity
                 },
                 password
             );
@@ -367,6 +567,29 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
 
     return (
         <div className="item-creation-form">
+            {/* EQUIP BUTTON (Visible only when redirected) */}
+            {returnSlotId && (
+                <button
+                    className="equip-return-btn"
+                    onClick={handleEquipAndReturn}
+                    disabled={!state.cardData?.itemImageUrl}
+                    style={{
+                        backgroundColor: '#ffd700',
+                        color: '#000',
+                        padding: '12px',
+                        marginBottom: '10px',
+                        width: '100%',
+                        fontWeight: 'bold',
+                        border: '2px solid #b8860b',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        opacity: state.cardData?.itemImageUrl ? 1 : 0.5
+                    }}
+                >
+                    {isGenerating || isGeneratingImage ? 'Generating...' : '⚔️ EQUIP & RETURN'}
+                </button>
+            )}
+
             {/* Sticky Action Buttons */}
             <div className="sticky-actions-top">
                 <ActionButtons
@@ -428,10 +651,12 @@ function ItemCreationForm({ onOpenStyles: _onOpenStyles }: ItemCreationFormProps
                     setImageTheme={setImageTheme}
                     cardTheme={cardTheme}
                     setCardTheme={setCardTheme}
+                    useThemeForAI={useThemeForAI}
+                    setUseThemeForAI={setUseThemeForAI}
                 />
 
                 {bgError && <div className="error-message">⚠️ {bgError}</div>}
-                {genError && <div className="error-message">⚠️ {genError}</div>}
+                {aiError && <div className="error-message">⚠️ {aiError}</div>}
                 {imageError && <div className="error-message">⚠️ Image: {imageError}</div>}
             </div>
 

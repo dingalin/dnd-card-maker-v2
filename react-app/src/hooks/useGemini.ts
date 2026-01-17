@@ -10,6 +10,7 @@ interface GenerateItemParams {
     rarity: string;
     level?: number;
     requiresAttunement?: boolean;
+    theme?: string;
 }
 
 export function useGemini() {
@@ -21,13 +22,13 @@ export function useGemini() {
         setError(null);
 
         try {
-            const { type, subtype, rarity } = params;
+            const { type, subtype, rarity, theme } = params;
 
             // Infer level from rarity for better context
             const level = getLevelFromRarity(rarity);
 
             // Build prompt - use custom if provided
-            const prompt = customPrompt || buildItemPrompt(type, subtype, rarity, level);
+            const prompt = customPrompt || buildItemPrompt(type, subtype, rarity, level, theme);
 
             // Call via Cloudflare Worker
             const response = await fetch(WORKER_URL, {
@@ -147,14 +148,58 @@ export function useGemini() {
         }
     };
 
+    const translatePrompt = async (hebrewText: string, password: string): Promise<string> => {
+        if (!hebrewText || !/[א-ת]/.test(hebrewText)) return hebrewText;
+
+        try {
+            const prompt = `Translate the following Hebrew visual description into a detailed English image generation prompt. 
+            Keep it concise but descriptive. Focus on visual elements.
+            Input: "${hebrewText}"
+            Output (English only):`;
+
+            // Reuse the existing generate call logic or simplify
+            // For now, I'll reuse the existing infrastructure but simplified
+            // note: we could refactor the fetch part to a generic helper, but for minimal intrusion I'll duplicate the fetch core or reuse if possible.
+            // Actually, let's just make a direct call since generateItem is specific to Items.
+
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password: password,
+                    action: 'gemini-generate',
+                    data: {
+                        model: 'gemini-2.0-flash',
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.3, // Lower temp for accurate translation
+                            maxOutputTokens: 256
+                        }
+                    }
+                }),
+            });
+
+            if (!response.ok) return hebrewText; // Fallback to original if fails
+
+            const data = await response.json();
+            const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+            return translatedText || hebrewText;
+        } catch (e) {
+            Logger.warn('useGemini', 'Translation failed', e);
+            return hebrewText;
+        }
+    };
+
     return {
         generateItem,
+        translatePrompt,
         isLoading,
         error,
     };
 }
 
-function buildItemPrompt(type: string, subtype: string | undefined, rarity: string, level: number): string {
+function buildItemPrompt(type: string, subtype: string | undefined, rarity: string, level: number, theme?: string): string {
     // Extract English name from subtype like "Javelin (כידון)" -> "Javelin"
     let englishItemName = '';
     let hebrewItemName = '';
@@ -174,7 +219,9 @@ function buildItemPrompt(type: string, subtype: string | undefined, rarity: stri
         ? `a ${englishItemName} (${hebrewItemName} in Hebrew)`
         : `a ${type}`;
 
-    return `You are a D&D 5e magical item creator. Generate a ${rarity} ${itemDescription} for level ${level} party.
+    const themeInstruction = theme ? `The item MUST fit the '${theme}' theme/element.` : '';
+
+    return `You are a D&D 5e magical item creator. Generate a ${rarity} ${itemDescription} for level ${level} party. ${themeInstruction}
 
 IMPORTANT - THIS IS A ${englishItemName.toUpperCase() || type.toUpperCase()}:
 - The item MUST be a ${englishItemName || type}
@@ -196,7 +243,7 @@ RARITY GUIDELINES:
 
 Return ONLY valid JSON with this EXACT structure (ALL fields are REQUIRED):
 {
-  "name": "Creative Hebrew name (2-3 words). MUST fit the item type (e.g. do not call a hammer a 'Shield', do not call a sword a 'Ring').",
+  "name": "Creative Hebrew name (2-3 words). DO NOT include the item type in the name (e.g., for a hammer don't say 'פטיש הסערה', instead use something like 'מוחץ הברקים' or 'מנתץ הרעמים'). Use epic action-based names, titles, or metaphorical names.",
   "typeHe": "Hebrew type (נשק/שריון/שיקוי/טבעת)",
   "rarityHe": "Hebrew rarity (נפוץ/לא נפוץ/נדיר/נדיר מאוד/אגדי)",
   "abilityName": "Hebrew ability name",

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { CardProvider } from './store';
+import { CharacterProvider } from './store/CharacterContext';
 import Header from './components/Layout/Header';
 import NavigationRail from './components/Layout/NavigationRail';
 import './App.css';
@@ -21,27 +22,29 @@ const PageLoader = () => (
 function App() {
   return (
     <CardProvider>
-      <BrowserRouter>
-        <div className="app">
-          <Header />
+      <CharacterProvider>
+        <BrowserRouter>
+          <div className="app">
+            <Header />
 
-          <div className="app-layout">
-            {/* Left Navigation Rail */}
-            <NavigationRail />
+            <div className="app-layout">
+              {/* Left Navigation Rail */}
+              <NavigationRail />
 
-            {/* Main Content Area */}
-            <main className="app-main">
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<CardCreator />} />
-                  <Route path="/character-sheet" element={<CharacterSheet />} />
-                  <Route path="/treasure-generator" element={<TreasureGenerator />} />
-                </Routes>
-              </Suspense>
-            </main>
+              {/* Main Content Area */}
+              <main className="app-main">
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<CardCreator />} />
+                    <Route path="/character-sheet" element={<CharacterSheet />} />
+                    <Route path="/treasure-generator" element={<TreasureGenerator />} />
+                  </Routes>
+                </Suspense>
+              </main>
+            </div>
           </div>
-        </div>
-      </BrowserRouter>
+        </BrowserRouter>
+      </CharacterProvider>
     </CardProvider>
   );
 }

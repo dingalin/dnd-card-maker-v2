@@ -68,9 +68,6 @@ function Header() {
                     <button onClick={toggleLanguage} className="header-btn lang-toggle">
                         {i18n.language === 'he' ? 'EN' : 'עב'}
                     </button>
-                    <button className="header-btn-primary">
-                        SAVE / EXPORT
-                    </button>
                 </div>
             </header>
 

@@ -14,6 +14,9 @@
     border-left: 1px solid rgba(212, 175, 55, 0.3);
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
     background: rgba(10, 12, 16, 0.4);
+
+    /* Force RTL Layout for "Hebrew Mode" Design */
+    direction: rtl;
 }
 
 /* Scrollable Content Area (Top) */
@@ -27,7 +30,7 @@
     padding-bottom: var(--space-md);
 
     /* Limit max height so scroll area ends before fixed buttons */
-    max-height: calc(100vh - 220px);
+    max-height: calc(100vh - 170px);
 
     /* Smooth scroll behavior */
     scroll-behavior: smooth;
@@ -96,6 +99,9 @@
     cursor: pointer;
     user-select: none;
     transition: all var(--transition-fast);
+
+    /* Lock layout to Icon(Left)...Title(Right) regardless of app language */
+    direction: ltr;
 }
 
 .section-header:hover {
@@ -134,9 +140,20 @@
 }
 
 /* Section Content - Continuous Flow */
+/* Section Content - Continuous Flow */
 .section-content {
-    padding: var(--space-xs) 0;
-    overflow: visible;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    padding: 0;
+}
+
+.section-content.open {
+    max-height: 2000px;
+    opacity: 1;
+    /* Delay opacity slightly to wait for height to start */
+    transition-delay: 0s, 0.1s;
 }
 
 .section-content::-webkit-scrollbar {
@@ -321,6 +338,8 @@
     flex-direction: column;
     gap: 4px;
     justify-content: space-between;
+    margin-left: 18px;
+    /* Move buttons ~0.5cm to the left */
 }
 
 .button-stack-vertical button {

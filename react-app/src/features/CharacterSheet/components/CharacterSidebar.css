@@ -1,0 +1,224 @@
+/* Character Sidebar - Ultra Compact */
+.character-sidebar {
+    width: 100%;
+    background: linear-gradient(180deg,
+            rgba(20, 25, 40, 0.95) 0%,
+            rgba(10, 15, 25, 0.98) 100%);
+    border-radius: 12px 0 0 12px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-right: none;
+    padding: 8px;
+    /* Minimal padding */
+    height: 100%;
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Minimal gap */
+    overflow: hidden;
+    /* Prevent sidebar scroll if possible, content should fit */
+}
+
+.sidebar-header h3 {
+    color: #ffd700;
+    margin: 0;
+    font-size: 0.9rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    padding-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+/* Form - Ultra Compact layout */
+.sidebar-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Minimal gap between inputs */
+    flex: 1;
+    justify-content: center;
+    /* Center form vertically if space allows */
+}
+
+/* Row of inputs */
+.form-row {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    /* Allow groups to share row space equally */
+    min-width: 0;
+    /* Prevent flex overflow */
+}
+
+/* Inputs & Selects */
+.sidebar-input,
+.sidebar-select {
+    width: 100%;
+    height: 38px;
+    /* Slightly taller for better touch targets */
+    background: rgba(30, 35, 50, 0.95);
+    border: 1px solid rgba(140, 160, 180, 0.4);
+    border-radius: 6px;
+    color: #ffffff !important;
+    /* Force white text */
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: all 0.2s;
+    text-align: right;
+    direction: rtl;
+
+    /* Reset appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 0 8px 0 30px;
+    /* Right 8px (Text), Left 30px (Arrow) */
+}
+
+/* Fix for select text alignment in Firefox/standard browsers */
+select.sidebar-select {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 36px;
+}
+
+.sidebar-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-input:focus,
+.sidebar-select:focus {
+    outline: none;
+    border-color: rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.15);
+}
+
+/* Select arrow moved to left for RTL */
+.sidebar-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 10px center;
+    padding-left: 30px;
+    /* Space for arrow on left */
+}
+
+.sidebar-select option {
+    background: #1a1f2e;
+    color: #e0e0e0;
+    text-align: right;
+}
+
+/* Divider */
+.sidebar-divider {
+    height: 1px;
+    background: rgba(212, 175, 55, 0.2);
+    margin: 4px 0;
+}
+
+/* Generate Button - Premium Gold Style */
+.generate-btn {
+    margin-top: 4px;
+    padding: 0 12px;
+    height: 40px;
+
+    /* Gold Gradient Background - Force override */
+    background: linear-gradient(180deg,
+            #FBF5B7 0%,
+            #BF953F 50%,
+            #B38728 51%,
+            #FBF5B7 100%) !important;
+
+    border: 1px solid #8A6E2F !important;
+    border-radius: 8px;
+
+    /* Typography */
+    color: #3B2A05 !important;
+    font-size: 1rem;
+    font-weight: 700;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.5px;
+
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    /* 3D Depth */
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.generate-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+
+    /* Glowing Effect Animation */
+    box-shadow:
+        0 0 15px rgba(255, 215, 0, 0.6),
+        /* Gold Glow */
+        0 6px 8px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.generate-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    /* Pressed look */
+    filter: brightness(0.95);
+}
+
+.generate-btn:disabled {
+    background: linear-gradient(180deg, #555 0%, #333 100%);
+    border-color: #444;
+    color: #888;
+    text-shadow: none;
+    box-shadow: none;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+}
+
+.spinner-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Status message */
+.generation-status {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .character-sidebar {
+        width: 100%;
+    }
+}

@@ -1,0 +1,148 @@
+/* Equipment Slot - Positioned over character2.jpeg background */
+.equipment-slot {
+    /* Position is set by parent EquipmentGrid.css based on data-slot */
+    position: absolute;
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.equipment-slot:hover {
+    transform: scale(1.05);
+}
+
+.equipment-slot.has-item:hover {
+    transform: scale(1.08);
+}
+
+/* Hide slot labels - they're in the background image */
+.slot-label {
+    display: none;
+}
+
+/* Slot content area - full size */
+.slot-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Hide placeholder icons - background image has them */
+.slot-placeholder-icon {
+    display: none;
+}
+
+/* Equipped item icon */
+.equipped-item-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: grab;
+    transition: all 0.2s;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.equipped-item-icon:hover {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7)) brightness(1.1);
+}
+
+.equipped-item-icon.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+/* Slot Overlay - appears on hover */
+.slot-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 4px;
+    z-index: 10;
+    pointer-events: none;
+    /* Let clicks pass through unless on button */
+}
+
+.equipment-slot:hover .slot-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Dice Button Container */
+.dice-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    border: 2px solid #D4AF37;
+    /* Gold border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    transition: all 0.2s ease;
+}
+
+.dice-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+    background: #3a3a3a;
+}
+
+.dice-button:active {
+    transform: scale(0.95);
+}
+
+.dice-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Hide slot actions (original implementation) */
+.slot-actions {
+    display: none;
+}
+
+/* Slot Loader */
+.slot-loader {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+}
+
+.slot-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #D4AF37;
+    animation: slot-spin 1s ease-in-out infinite;
+}
+
+@keyframes slot-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

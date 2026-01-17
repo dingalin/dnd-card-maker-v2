@@ -169,6 +169,7 @@ const GoldDisplay = memo(({
     onTransformEnd,
     onHoverEnter,
     onHoverLeave,
+    onDblClick, // Added prop
     offsetY, // Explicitly pass offsets from parent
     offsetX,
     scaleX,
@@ -257,6 +258,7 @@ const GoldDisplay = memo(({
                     fontFamily={fontFamily}
                     fill={fill}
                     {...textStyles}
+                    onDblClick={(e) => onDblClick && onDblClick(e, id, goldValue?.toString() || '')} // Add DblClick Here
                 />
             </Group>
         );
@@ -318,6 +320,7 @@ const GoldDisplay = memo(({
                 textStyles={textStyles}
                 onSelect={() => { }}
                 onDragEnd={() => { }}
+                onDblClick={onDblClick} // Add DblClick here too
             />
         </Group>
     );
@@ -596,6 +599,7 @@ export const TextLayer: React.FC<TextLayerProps> = ({
                         onHoverEnter={onHoverEnter}
                         onHoverLeave={onHoverLeave}
                         onDragEnd={() => { }}
+                        onDblClick={onDblClick} // Enable double click for editing
                     />
                 </Group>
 
@@ -623,6 +627,7 @@ export const TextLayer: React.FC<TextLayerProps> = ({
                     onTransformEnd={(e: any, id: string) => onTransformEnd(e, id, 'front')}
                     onHoverEnter={onHoverEnter}
                     onHoverLeave={onHoverLeave}
+                    onDblClick={onDblClick} // Enable double click for editing
                 />
             </>
         );
